@@ -214,7 +214,7 @@ const rot=matchMedia('(orientation: portrait) and (max-width: 760px)');rot.addEv
 if(!rm){addEventListener('scroll',()=>{if(!tk)tk=requestAnimationFrame(upd)},{passive:true});upd();}
 document.getElementById('goDown').addEventListener('click',ev=>{ev.preventDefault();const t=document.getElementById('publicaciones');const y0=scrollY,y1=t.getBoundingClientRect().top+y0-64;
  if(rm){scrollTo(0,y1);return}const d=5200,s0=performance.now(),ease=x=>-(Math.cos(Math.PI*x)-1)/2;
- const A=.15,T=d/A*Math.log(1+A),warp=t=>Math.min(1,1-((1+A)*Math.exp(-A*t/d)-1)/A);const step=n=>{const t=Math.min(T,n-s0),k=warp(t);scrollTo(0,y0+(y1-y0)*ease(k));if(t<T)requestAnimationFrame(step)};requestAnimationFrame(step);});
+ const A=.3225,T=d/A*Math.log(1+A),warp=t=>Math.min(1,1-((1+A)*Math.exp(-A*t/d)-1)/A);const step=n=>{const t=Math.min(T,n-s0),k=warp(t);scrollTo(0,y0+(y1-y0)*ease(k));if(t<T)requestAnimationFrame(step)};requestAnimationFrame(step);});
 const fb=[...document.querySelectorAll('[data-f]')];
 fb.forEach(b=>b.addEventListener('click',()=>{const f=b.dataset.f;fb.forEach(x=>{const on=x===b;x.setAttribute('aria-pressed',on);x.style.fontWeight=on?'500':'300'});
  document.querySelectorAll('[data-if="showPub"]').forEach(e=>e.style.display=f==='Encargos'?'none':'contents');
