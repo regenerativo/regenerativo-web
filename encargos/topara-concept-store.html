@@ -158,7 +158,8 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
 document.addEventListener('contextmenu',e=>{if(e.target.closest('img,picture,.cs,.xf,.gs'))e.preventDefault()});
 document.addEventListener('dragstart',e=>{if(e.target.tagName==='IMG')e.preventDefault()});
 try{history.scrollRestoration="manual"}catch(e){}
-if(!location.hash){scrollTo(0,0);addEventListener("load",function(){scrollTo(0,0)});addEventListener("pageshow",function(e){if(e.persisted)scrollTo(0,0)})}
+if(!location.hash){scrollTo(0,0);addEventListener("load",function(){scrollTo(0,0)});addEventListener("pageshow",function(){scrollTo(0,0);setTimeout(function(){scrollTo(0,0)},50)})}
+addEventListener("pagehide",function(){try{scrollTo(0,0)}catch(e){}});
 document.querySelectorAll('.burger').forEach(b=>b.addEventListener('click',()=>{const h=b.closest('header');h.classList.toggle('open');b.setAttribute('aria-expanded',h.classList.contains('open'));}));
 
 document.querySelectorAll('.gcar').forEach(g=>{const s=g.querySelector('.gs'),p=g.querySelector('.gp'),n=g.querySelector('.gn');
