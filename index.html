@@ -45,6 +45,7 @@ button{font-family:inherit}
 @media (max-width: 760px){.navfull{display:none !important}.burger{display:flex}}
 .porx{display:inline-flex;align-items:baseline;gap:0;font-family:Stolzl,"Helvetica Neue",Arial,sans-serif;line-height:1;white-space:nowrap;letter-spacing:-.005em}.porx .p1{font-weight:300}.porx .p2{font-weight:500}.porx .ln{display:inline-block;width:1.65em;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em}
 @media (max-width: 600px){footer > div:last-child{grid-template-columns:1fr !important;gap:4px !important}footer > div:last-child > *{justify-self:start !important;text-align:left !important}}
+@media (max-width: 600px){.posts{gap:44px !important}.post{margin-left:0 !important;gap:6px 0 !important}.postmeta{padding-left:0 !important;flex:1 1 100% !important;flex-direction:row !important;align-items:center !important;gap:4px !important;min-height:0}.postmeta p{white-space:normal !important}.postmeta a{width:36px !important;height:36px !important;margin-left:-6px !important}.postbody{gap:10px !important}.postbody > a{margin-top:6px !important}}
 
 html,body{overflow-x:clip}
 #hero .stage{width:max(100%, calc(100svh * 1280 / 858.5))}
@@ -116,12 +117,12 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
     </div>
   </section>
 
-  <section style="max-width: 1344px; margin: 0 auto; padding: 0 clamp(20px, 3.3vw, 48px); display: flex; flex-direction: column; gap: clamp(56px, 5.5vw, 80px)">
+  <section class="posts" style="max-width: 1344px; margin: 0 auto; padding: 0 clamp(20px, 3.3vw, 48px); display: flex; flex-direction: column; gap: clamp(56px, 5.5vw, 80px)">
 
     <div data-if="showProj" style="display:contents">
-      <article id="ciento-dos" style="scroll-margin-top: 96px; margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
-        <div style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Encargo</p></div>
-        <div style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
+      <article id="ciento-dos" class="post" style="scroll-margin-top: 96px; margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
+        <div class="postmeta" style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Encargo</p></div>
+        <div class="postbody" style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
           <h2 style="margin: 0; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em"><a href="ciento-dos.html">Reforma Ciento dos</a></h2>
           <p style="margin: 0; display: flex; flex-direction: column; font-size: 13px; line-height: 1.5; color: #999999"><span>Residencial</span><span>Bogotá - Colombia</span><span>2026</span></p>
           <a href="ciento-dos.html" style="display: block; max-width: 680px; margin-top: 14px"><img src="assets/pub-ciento-dos.jpg" alt="Reforma Ciento dos: hall con muebles de madera clara e isla verde" style="display: block; width: 100%; height: auto"></a>
@@ -130,10 +131,10 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
     </div>
 
     <div data-if="showPub" style="display:contents">
-      <article style="margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
-        <div style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Servicios
+      <article class="post" style="margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
+        <div class="postmeta" style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Servicios
 2610</p><a href="https://instagram.com/_regenerativo_" aria-label="Ver esta publicación en Instagram" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#999999" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.1" cy="6.9" r="1" fill="#999999" stroke="none"></circle></svg></a></div>
-        <div style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
+        <div class="postbody" style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
           <h2 style="margin: 0; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em">Para quién diseñamos</h2>
           <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #999999; max-width: 560px; white-space: nowrap; overflow: hidden">Para quienes van a construir o transformar un lugar. Para quienes…</p>
           <img src="assets/pub-para-quien-h.jpg" alt="Burbujas translúcidas sobre fondo claro" style="display: block; width: 100%; max-width: none; height: auto; margin-top: 14px">
@@ -142,10 +143,10 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
     </div>
 
     <div data-if="showPub" style="display:contents">
-      <article style="margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
-        <div style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Manifiesto
+      <article class="post" style="margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
+        <div class="postmeta" style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Manifiesto
 2610</p><a href="https://instagram.com/_regenerativo_" aria-label="Ver esta publicación en Instagram" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#999999" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.1" cy="6.9" r="1" fill="#999999" stroke="none"></circle></svg></a></div>
-        <div style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
+        <div class="postbody" style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
           <h2 style="margin: 0; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em; max-width: 560px; text-wrap: balance">Diseñamos desde la naturaleza, no como referencia, sino como principio.</h2>
           <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #999999; max-width: 560px; white-space: nowrap; overflow: hidden">Entendemos el todo como un sistema vivo y respondemos con…</p>
           <img src="assets/pub-manifiesto-h.jpg" alt="Logo de regenerativo con el isotipo sobre la luz de la tarde en un piso de madera" style="display: block; width: 100%; max-width: none; height: auto; margin-top: 14px">
@@ -154,10 +155,10 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
     </div>
 
     <div data-if="showPub" style="display:contents">
-      <article style="margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
-        <div style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Estudio
+      <article class="post" style="margin-left: clamp(0px, 9vw, 136px); display: flex; flex-wrap: wrap; gap: 20px 40px; align-items: flex-start">
+        <div class="postmeta" style="flex: 1 1 180px; box-sizing: border-box; padding-left: 72px; display: flex; flex-direction: column; gap: 10px"><p style="margin: 0; font-size: 13px; line-height: 1.6; color: #999999; white-space: pre-line">Estudio
 2610</p><a href="https://instagram.com/_regenerativo_" aria-label="Ver esta publicación en Instagram" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#999999" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.1" cy="6.9" r="1" fill="#999999" stroke="none"></circle></svg></a></div>
-        <div style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
+        <div class="postbody" style="flex: 3 1 520px; display: flex; flex-direction: column; gap: 18px">
           <h2 style="margin: 0; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -0.01em">Somos regenerativo</h2>
           <p style="margin: 0; font-size: 13px; line-height: 1.7; color: #999999; max-width: 560px; white-space: nowrap; overflow: hidden">regenerativo nació de una idea simple: que un lugar puede quedar…</p>
           <img src="assets/pub-somos-regenerativo-h.jpg" alt="Andrés Pardo entre árboles" style="display: block; width: 100%; max-width: none; height: auto; margin-top: 14px">
