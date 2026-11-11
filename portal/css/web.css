@@ -118,3 +118,4 @@ body.ingreso .pie-ingreso,body:has(.acceso) .pie-ingreso{display:block}
 .firma{align-items:baseline;gap:0!important}
 .firma .linea{width:1.65em!important;border-bottom:0!important;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em;transform:none!important}
 .modal{border-radius:3px!important}
+.modal h2{font-size:20px!important;font-weight:500!important;color:#1E221D!important;line-height:1.3!important}

@@ -6,7 +6,10 @@
 //   'despegar' → {encargo_id}: crea "REG/26  I  NOMBRE" con la estructura de carpetas y mueve la propuesta a LEGALES/PROP _ ECONOMICAS
 //   'subir'    → {encargo_id, carpeta, nombre, base64}: guarda un archivo en la carpeta del encargo
 //   'propuesta'→ {propuesta_id}: crea la carpeta de la propuesta "SCREG_26xxx_NOMBRE" en ZL_REG_PROPUESTAS
-//   'subir_propuesta' → {propuesta_id, nombre, base64}: guarda el Word de la propuesta en su carpeta
+//   'subir_propuesta' → {propuesta_id, nombre, base64}: guarda el Word de la propuesta en su carpeta (y su ruta en la propuesta)
+//   'descargar_propuesta' → {propuesta_id}: devuelve el Word de la propuesta en base64
+//   'archivos_propuesta' → {propuesta_id}: lista Word/PDF/Excel de la carpeta de la propuesta
+//   'archivo_propuesta'  → {propuesta_id, nombre, pdf?}: descarga uno (pdf=true convierte el Word a PDF)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -93,14 +96,50 @@ async function carpetaPropuesta(at: string, propuestaId: string) {
   return { carpeta: ruta };
 }
 
+// Carpeta donde está el Word de la propuesta (o la carpeta por código si aún no tiene)
+async function carpetaDocs(at: string, propuestaId: string) {
+  const { data: p } = await admin.from("propuestas").select("archivo_ruta").eq("id", propuestaId).single();
+  if (p?.archivo_ruta) return p.archivo_ruta.split("/").slice(0, -1).join("/");
+  return (await carpetaPropuesta(at, propuestaId)).carpeta;
+}
+
 async function subirPropuesta(at: string, propuestaId: string, nombre: string, base64: string) {
-  const { carpeta } = await carpetaPropuesta(at, propuestaId);
+  const carpeta = await carpetaDocs(at, propuestaId);
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
   const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${carpeta}/${nombre}`)}:/content`, {
     method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/octet-stream" }, body: bytes,
   });
   const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || "No se pudo subir");
+  await admin.from("propuestas").update({ archivo_ruta: `${carpeta}/${nombre}`, archivo_web: d.webUrl, archivo_nombre: nombre }).eq("id", propuestaId);
   return { ruta: `${carpeta}/${nombre}`, web: d.webUrl };
+}
+
+const b64 = (buf: ArrayBuffer) => { const b = new Uint8Array(buf); let s = ""; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(s); };
+
+async function descargarPropuesta(at: string, propuestaId: string) {
+  const { data: p } = await admin.from("propuestas").select("archivo_ruta").eq("id", propuestaId).single();
+  if (!p?.archivo_ruta) throw new Error("Esta propuesta no tiene documento cargado.");
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(p.archivo_ruta)}:/content`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!r.ok) throw new Error("No se pudo descargar el documento de OneDrive.");
+  return { base64: b64(await r.arrayBuffer()), nombre: p.archivo_ruta.split("/").pop() };
+}
+
+// Documentos de la carpeta de la propuesta (Word, PDF, Excel)
+async function archivosPropuesta(at: string, propuestaId: string) {
+  const carpeta = await carpetaDocs(at, propuestaId);
+  const d = await graph(at, `/me/drive/root:/${enc(carpeta)}:/children?$top=200&$select=name,file,webUrl,size,lastModifiedDateTime`);
+  const archivos = (d?.value || []).filter((x: any) => x.file && /\.(docx?|pdf|xlsx?)$/i.test(x.name))
+    .map((x: any) => ({ nombre: x.name, web: x.webUrl, tamano: x.size, fecha: x.lastModifiedDateTime }));
+  return { carpeta, archivos };
+}
+
+// Descarga un documento de la carpeta de la propuesta; pdf=true convierte el Word a PDF
+async function archivoPropuesta(at: string, propuestaId: string, nombre: string, pdf = false) {
+  if (!nombre || nombre.includes("/")) throw new Error("Archivo no válido.");
+  const carpeta = await carpetaDocs(at, propuestaId);
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${carpeta}/${nombre}`)}:/content${pdf ? "?format=pdf" : ""}`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!r.ok) throw new Error(pdf ? "No se pudo convertir el Word a PDF." : "No se pudo descargar el archivo.");
+  return { base64: b64(await r.arrayBuffer()), nombre: pdf ? nombre.replace(/\.docx?$/i, ".pdf") : nombre };
 }
 
 async function subir(at: string, encargoId: string, carpeta: string, nombre: string, base64: string) {
@@ -154,6 +193,9 @@ Deno.serve(async (req) => {
     const at = await accesoGraph();
     if (b.accion === "despegar") return json(await despegar(at, b.encargo_id));
     if (b.accion === "subir_propuesta") return json(await subirPropuesta(at, b.propuesta_id, b.nombre, b.base64));
+    if (b.accion === "descargar_propuesta") return json(await descargarPropuesta(at, b.propuesta_id));
+    if (b.accion === "archivos_propuesta") return json(await archivosPropuesta(at, b.propuesta_id));
+    if (b.accion === "archivo_propuesta") return json(await archivoPropuesta(at, b.propuesta_id, b.nombre, !!b.pdf));
     if (b.accion === "propuesta") return json(await carpetaPropuesta(at, b.propuesta_id));
     if (b.accion === "subir") return json(await subir(at, b.encargo_id, b.carpeta, b.nombre, b.base64));
     return json({ error: "Acción desconocida" }, 400);
