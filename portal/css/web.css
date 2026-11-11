@@ -111,3 +111,4 @@ body.ingreso .pie-ingreso,body:has(.acceso) .pie-ingreso{display:block}
 .pie-ingreso .redes{position:fixed;right:calc(clamp(20px,3.3vw,48px) - 10px);bottom:33px;z-index:2;display:flex;gap:4px}
 .pie-ingreso .redes a{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 @media (max-height:640px){.pie-ingreso .porx,.pie-ingreso .redes{position:absolute}}
+.lado .pie{text-transform:none!important;letter-spacing:0!important}

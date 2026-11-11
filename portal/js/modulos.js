@@ -1,7 +1,7 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=20';
-import { descargarPDF } from './pdf.js?v=20';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=20';
+import * as D from './datos.js?v=21';
+import { descargarPDF } from './pdf.js?v=21';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=21';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

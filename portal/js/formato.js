@@ -65,7 +65,7 @@ export function fechaCorte(corte) {
 }
 
 export const DIAS_TRABAJO = { lv: 'Lunes a viernes', ls: 'Lunes a sábado', todos: 'Todos los días' };
-export const TIPOS = { diseno: 'Diseño', obra: 'Obra', ambos: 'Diseño y obra' };
+export const TIPOS = { diseno: 'Solo diseño', obra: 'Obra', ambos: 'Diseño y obra' };
 export const ESTADOS_ENCARGO = { activo: 'Activo', pausado: 'Pausado', cerrado: 'Cerrado' };
 
 /** Fecha en que termina una actividad que arranca en `inicio` y dura `n` días de trabajo. */

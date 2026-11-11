@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=20';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=21';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -39,6 +39,7 @@ const SEMILLA = {
     { id: 's2', nombre: 'Diseño de Espacios', orden: 2 },
     { id: 's3', nombre: 'Muebles y Objetos', orden: 3 },
     { id: 's4', nombre: 'Conceptualización de Proyectos', orden: 4 },
+    { id: 's5', nombre: 'Otro', orden: 5 },
   ],
   clientes: [
     { id: 'c1', tipo: 'empresa', nombre: 'CLIENTE EMPRESA SAS', documento: 'NIT XXX', representante: '' },

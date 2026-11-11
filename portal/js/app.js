@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=20';
-import * as M from './modulos.js?v=20';
-import { vistaFinanzas } from './finanzas.js?v=20';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=20';
+import * as D from './datos.js?v=21';
+import * as M from './modulos.js?v=21';
+import { vistaFinanzas } from './finanzas.js?v=21';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=21';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -257,7 +257,7 @@ async function vistaEncargos(s) {
       (!q || [e.nombre, e.codigo, e.cliente?.nombre].join(' ').toLowerCase().includes(q)));
     $('#tabla').innerHTML = f.length ? `
       <div class="tabla-cont"><table>
-        <thead><tr><th>Encargo</th><th class="col-opc">Cliente</th><th class="col-opc">Tipo</th><th class="col-opc">Inicio</th><th class="col-opc">Fin</th><th>Tiempo</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Encargo</th><th class="col-opc">Cliente</th><th class="col-opc">Alcance</th><th class="col-opc">Inicio</th><th class="col-opc">Fin</th><th>Tiempo</th><th>Estado</th></tr></thead>
         <tbody>${f.map(e => `
           <tr class="clic" data-c="${D.slugEncargo(e)}">
             <td><b>${esc(e.nombre)}</b><div class="sub">${esc(e.servicio?.nombre || '')}</div></td>
@@ -303,7 +303,7 @@ async function modalEncargo(e = null) {
       <div><label>Nombre del encargo</label><input name="nombre" value="${esc(e?.nombre || '')}" placeholder="20  I  PROYECTO" required></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli, e?.cliente_id)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc, e?.servicio_id)}</select></div>
-      <div><label>Tipo</label><select name="tipo">${opMap(TIPOS, e?.tipo || 'diseno')}</select></div>
+      <div><label>Alcance</label><select name="tipo">${opMap(TIPOS, e?.tipo || 'diseno')}</select></div>
       <div><label>Estado</label><select name="estado">${opMap(ESTADOS_ENCARGO, e?.estado || 'activo')}</select></div>
       <div class="ancho"><label>Dirección</label><input name="direccion" value="${esc(e?.direccion || '')}"></div>
       <div><label>Ciudad</label><input name="ciudad" value="${esc(e?.ciudad || 'Bogotá')}"></div>
@@ -384,7 +384,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
             <dt>Encargo</dt><dd class="det">${esc(e.nombre)}</dd>
             <dt>Cliente</dt><dd class="det">${xxx(e.cliente?.nombre)}</dd>
             <dt>Servicio</dt><dd class="det">${xxx(e.servicio?.nombre)}</dd>
-            <dt>Tipo</dt><dd class="det">${TIPOS[e.tipo] || ''}</dd>
+            <dt>Alcance</dt><dd class="det">${TIPOS[e.tipo] || ''}</dd>
             <dt>Ubicación</dt><dd class="det">${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>
             <dt>Área</dt><dd class="det">${e.area_m2 ? esc(e.area_m2) + ' m²' : xxx('')}</dd>
             <dt>Inicio · Fin</dt><dd class="det">${fecha(e.inicio)} · ${fecha(e.fin)}</dd>
@@ -613,7 +613,7 @@ async function modalPropuesta() {
       <div><label>Nombre (en mayúsculas)</label><input name="nombre" placeholder="PROYECTO" required style="text-transform:uppercase"></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc)}</select></div>
-      <div><label>Tipo</label><select name="tipo">${Object.entries(TIPOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+      <div><label>Alcance</label><select name="tipo">${Object.entries(TIPOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
       <div><label>Honorarios (COP)</label><input name="honorarios" inputmode="numeric" placeholder="8.200.000"></div>
     </div>
     <div class="aviso" id="aviso"></div>
