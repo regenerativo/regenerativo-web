@@ -1,7 +1,8 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=16';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=20';
 
-export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY;
+// Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
+export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
 let sb = null;
 
 async function cliente() {
@@ -40,14 +41,14 @@ const SEMILLA = {
     { id: 's4', nombre: 'Conceptualización de Proyectos', orden: 4 },
   ],
   clientes: [
-    { id: 'c1', tipo: 'empresa', nombre: 'GRUPO TREVENER SAS', documento: 'NIT XXX', representante: '' },
+    { id: 'c1', tipo: 'empresa', nombre: 'CLIENTE EMPRESA SAS', documento: 'NIT XXX', representante: '' },
     { id: 'c2', tipo: 'persona', nombre: 'XXX', documento: '', representante: '' },
   ],
   encargos: [
-    { id: 'e1', codigo: 'SCREG_26015', nombre: '26 I CEREZO 44', cliente_id: 'c2', servicio_id: 's2', tipo: 'obra',
+    { id: 'e1', codigo: 'SCREG_20001', nombre: '20  I  PROYECTO', cliente_id: 'c2', servicio_id: 's2', tipo: 'obra',
       direccion: 'XXX', ciudad: 'Bogotá', area_m2: null, inicio: '2026-11-10', fin: '2026-12-10',
       dias_trabajo: 'lv', fecha_corte: null, estado: 'activo' },
-    { id: 'e2', codigo: 'SCREG_26012', nombre: '26 I REFORMA I 102', cliente_id: 'c1', servicio_id: 's2', tipo: 'diseno',
+    { id: 'e2', codigo: 'SCREG_20002', nombre: '20  I  PROYECTO DOS', cliente_id: 'c1', servicio_id: 's2', tipo: 'diseno',
       direccion: 'XXX', ciudad: 'Bogotá', area_m2: null, inicio: '2026-07-30', fin: '2026-12-18',
       dias_trabajo: 'lv', fecha_corte: null, estado: 'activo' },
   ],
@@ -55,7 +56,7 @@ const SEMILLA = {
   festivos: FESTIVOS_CO,
 };
 
-const CLAVE = 'reg-portal-demo-v1';
+const CLAVE = 'reg-portal-demo-v2';
 function leer() {
   try { const d = JSON.parse(localStorage.getItem(CLAVE)); if (d && d.encargos) return d; } catch (e) {}
   return structuredClone(SEMILLA);
@@ -150,7 +151,7 @@ export async function cambiarClave(clave) {
 
 let _admin = null, _festivos = null;
 export async function esAdmin() {
-  if (MODO_DEMO) return true;
+  if (MODO_DEMO) { try { return (JSON.parse(sessionStorage.getItem('reg-demo-sesion')) || {}).email !== 'cliente@demo'; } catch (e) { return true; } }
   if (_admin === null) { const { data } = await (await cliente()).rpc('es_admin'); _admin = !!data; }
   return _admin;
 }
@@ -342,7 +343,8 @@ export function ordenCodigo(a, b) {
   return 0;
 }
 
-export const miRol = encargoId => MODO_DEMO ? Promise.resolve('admin') : q(c => c.rpc('rol_en_encargo', { p_encargo: encargoId })).then(ok);
+const demoCliente = () => { try { return (JSON.parse(sessionStorage.getItem('reg-demo-sesion')) || {}).email === 'cliente@demo'; } catch (e) { return false; } };
+export const miRol = encargoId => MODO_DEMO ? Promise.resolve(demoCliente() ? 'cliente' : 'admin') : q(c => c.rpc('rol_en_encargo', { p_encargo: encargoId })).then(ok);
 
 // ================= Finanzas (solo perfil de facturación) =================
 export const esFacturacion = () => MODO_DEMO ? Promise.resolve(false) : q(c => c.rpc('es_facturacion')).then(ok);
