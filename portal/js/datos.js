@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=16';
 
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY;
 let sb = null;
@@ -115,18 +115,31 @@ export async function salir() {
 
 export async function recuperarClave(email) {
   if (MODO_DEMO) return;
-  const { error } = await (await cliente()).auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '#/nueva-clave' });
+  const { error } = await (await cliente()).auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
   if (error) throw error;
 }
 
 /** Enlaces de invitación o recuperación: Supabase vuelve con #access_token=…&type=invite|recovery */
 export async function procesarEnlace() {
-  const h = location.hash;
-  if (MODO_DEMO || !/access_token=|error_description=/.test(h)) return null;
-  const q = new URLSearchParams(h.replace(/^#\/?/, ''));
-  if (q.get('error_description')) return { error: q.get('error_description') };
+  // Enlaces de invitación y recuperación: los tokens llegan en el hash (#access_token=…) o como ?code= (PKCE).
+  // Se leen a mano para que funcione aunque el hash venga mezclado (p. ej. "#/nueva-clave#access_token=…").
+  const h = location.hash, code = new URLSearchParams(location.search).get('code');
+  if (MODO_DEMO || (!/access_token=|error_description=/.test(h) && !code)) return null;
   const c = await cliente();
-  await c.auth.getSession();
+  if (code) {
+    const { error } = await c.auth.exchangeCodeForSession(code);
+    history.replaceState(null, '', location.pathname + '#/nueva-clave');
+    if (error) return { error: 'El enlace ya no es válido. Pide uno nuevo.' };
+    return { tipo: 'recovery' };
+  }
+  const q = new URLSearchParams(h.slice(h.lastIndexOf('#') + 1).replace(/^\/?/, ''));
+  if (q.get('error_description')) return { error: q.get('error_description') };
+  let { data } = await c.auth.getSession();
+  if (!data?.session && q.get('access_token') && q.get('refresh_token')) {
+    const r = await c.auth.setSession({ access_token: q.get('access_token'), refresh_token: q.get('refresh_token') });
+    if (r.error) return { error: 'El enlace ya no es válido. Pide uno nuevo.' };
+  }
+  history.replaceState(null, '', location.pathname + '#/nueva-clave');
   return { tipo: q.get('type') || 'recovery' };
 }
 

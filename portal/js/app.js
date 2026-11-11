@@ -1,7 +1,7 @@
-import * as D from './datos.js';
-import * as M from './modulos.js';
-import { vistaFinanzas } from './finanzas.js';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js';
+import * as D from './datos.js?v=16';
+import * as M from './modulos.js?v=16';
+import { vistaFinanzas } from './finanzas.js?v=16';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=16';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -16,6 +16,7 @@ function msg(err) {
     [/new password should be different/i, 'La nueva contraseña debe ser distinta a la anterior.'],
     [/rate limit|too many requests/i, 'Demasiados intentos. Espera un momento y vuelve a intentarlo.'],
     [/failed to fetch|networkerror|load failed/i, 'No se pudo conectar con el servidor. Revisa tu conexión a internet.'],
+    [/auth session missing|otp.?expired|email link is invalid|link.*expired/i, 'El enlace ya no es válido o venció. Pide uno nuevo en "Olvidé mi contraseña".'],
     [/jwt expired|session.*expired|refresh token/i, 'Tu sesión expiró. Vuelve a ingresar.'],
     [/unable to validate email|invalid email/i, 'El correo no es válido.'],
     [/signups not allowed|signup is disabled/i, 'El registro está cerrado. El acceso es solo por invitación.'],
