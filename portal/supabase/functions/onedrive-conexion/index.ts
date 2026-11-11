@@ -10,6 +10,8 @@
 //   'descargar_propuesta' → {propuesta_id}: devuelve el Word de la propuesta en base64
 //   'archivos_propuesta' → {propuesta_id}: lista Word/PDF/Excel de la carpeta de la propuesta
 //   'archivo_propuesta'  → {propuesta_id, nombre, pdf?}: descarga uno (pdf=true convierte el Word a PDF)
+//   'archivos_encargo' → {encargo_id, carpeta}: lista los documentos de esa carpeta del encargo (y sus subcarpetas)
+//   'archivo_encargo'  → {encargo_id, carpeta, ruta, pdf?}: descarga uno
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -142,6 +144,40 @@ async function archivoPropuesta(at: string, propuestaId: string, nombre: string,
   return { base64: b64(await r.arrayBuffer()), nombre: pdf ? nombre.replace(/\.docx?$/i, ".pdf") : nombre };
 }
 
+// Documentos de una carpeta del encargo (incluye un nivel de subcarpetas), para verlos desde el portal
+async function baseEncargo(encargoId: string) {
+  const { data: e } = await admin.from("encargos").select("nombre,onedrive_carpeta").eq("id", encargoId).single();
+  if (!e) throw new Error("Encargo no encontrado");
+  return e.onedrive_carpeta || `${RAIZ}/${e.nombre.toUpperCase()}`;
+}
+const rutaSegura = (r: string) => { if (!r || r.split("/").some((x) => x === ".." || x === "")) throw new Error("Ruta no válida."); return r; };
+
+async function archivosEncargo(at: string, encargoId: string, carpeta: string) {
+  const base = `${await baseEncargo(encargoId)}/${rutaSegura(carpeta)}`;
+  let raiz;
+  try { raiz = await graph(at, `/me/drive/root:/${enc(base)}?$select=webUrl`); } catch (_) { return { web: null, archivos: [] }; }
+  const sel = "$top=200&$select=name,file,folder,webUrl,size,lastModifiedDateTime";
+  const hijos = (await graph(at, `/me/drive/root:/${enc(base)}:/children?${sel}`))?.value || [];
+  const archivos: any[] = [];
+  for (const h of hijos) {
+    if (h.file) archivos.push({ nombre: h.name, ruta: h.name, web: h.webUrl, fecha: h.lastModifiedDateTime });
+    else if (h.folder) {
+      const sub = (await graph(at, `/me/drive/root:/${enc(`${base}/${h.name}`)}:/children?${sel}`))?.value || [];
+      for (const x of sub) if (x.file) archivos.push({ nombre: x.name, ruta: `${h.name}/${x.name}`, carpeta: h.name, web: x.webUrl, fecha: x.lastModifiedDateTime });
+    }
+  }
+  archivos.sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
+  return { web: raiz.webUrl, archivos };
+}
+
+async function archivoEncargo(at: string, encargoId: string, carpeta: string, ruta: string, pdf = false) {
+  const base = `${await baseEncargo(encargoId)}/${rutaSegura(carpeta)}/${rutaSegura(ruta)}`;
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(base)}:/content${pdf ? "?format=pdf" : ""}`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!r.ok) throw new Error(pdf ? "No se pudo convertir a PDF." : "No se pudo descargar el archivo.");
+  const nombre = ruta.split("/").pop()!;
+  return { base64: b64(await r.arrayBuffer()), nombre: pdf ? nombre.replace(/\.[^.]+$/, ".pdf") : nombre };
+}
+
 async function subir(at: string, encargoId: string, carpeta: string, nombre: string, base64: string) {
   const { data: e } = await admin.from("encargos").select("nombre,onedrive_carpeta").eq("id", encargoId).single();
   const base = e?.onedrive_carpeta || `${RAIZ}/${e?.nombre.toUpperCase()}`;
@@ -196,6 +232,8 @@ Deno.serve(async (req) => {
     if (b.accion === "descargar_propuesta") return json(await descargarPropuesta(at, b.propuesta_id));
     if (b.accion === "archivos_propuesta") return json(await archivosPropuesta(at, b.propuesta_id));
     if (b.accion === "archivo_propuesta") return json(await archivoPropuesta(at, b.propuesta_id, b.nombre, !!b.pdf));
+    if (b.accion === "archivos_encargo") return json(await archivosEncargo(at, b.encargo_id, b.carpeta));
+    if (b.accion === "archivo_encargo") return json(await archivoEncargo(at, b.encargo_id, b.carpeta, b.ruta, !!b.pdf));
     if (b.accion === "propuesta") return json(await carpetaPropuesta(at, b.propuesta_id));
     if (b.accion === "subir") return json(await subir(at, b.encargo_id, b.carpeta, b.nombre, b.base64));
     return json({ error: "Acción desconocida" }, 400);

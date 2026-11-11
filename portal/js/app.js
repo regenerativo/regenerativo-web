@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=28';
-import * as M from './modulos.js?v=28';
-import { vistaFinanzas } from './finanzas.js?v=28';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=28';
+import * as D from './datos.js?v=29';
+import * as M from './modulos.js?v=29';
+import { vistaFinanzas } from './finanzas.js?v=29';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=29';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -81,7 +81,10 @@ async function irSeguro() {
   const qs = new URLSearchParams(ruta.split('?')[1] || '');
   if (s.soloFinanzas && p[0] !== 'finanzas') { location.hash = '#/finanzas'; return; }   // facturacion@ solo ve Finanzas
   try {
-    if (p.length === 0) return await vistaEncargos(s);
+    let esCliente = s.email.endsWith('@clientes.portal.regenerativo.co');
+    if (!esCliente && !s.admin && p.length === 0) { const l = await D.encargos(); const roles = await Promise.all(l.slice(0, 5).map(e => D.miRol(e.id))); esCliente = roles.length > 0 && roles.every(r => r === 'cliente'); }
+    if (p.length === 0) return esCliente ? await vistaEncargos(s) : await vistaInicio(s);
+    if (p[0] === 'encargos' && !p[1]) return await vistaEncargos(s);
     if (p[0] === 'encargos' && p[1]) return await vistaExpediente(s, decodeURIComponent(p[1]), p[2] || 'resumen', p[3]);
     const RESERVADAS = ['finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
@@ -105,8 +108,9 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   const esCli = s.email.endsWith('@clientes.portal.regenerativo.co');
   const enlacesGen = esCli ? '' : `
     <div class="grupo">Portal</div>
+    ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'inicio' ? 'activo' : ''}">Inicio</a>`}
     ${s.admin ? `<a href="#/propuestas" class="${activo === 'propuestas' ? 'activo' : ''}">Propuestas preliminares</a>` : ''}
-    ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'encargos' ? 'activo' : ''}">Encargos</a>`}
+    ${s.soloFinanzas ? '' : `<a href="#/encargos" class="${activo === 'encargos' ? 'activo' : ''}">Encargos</a>`}
     ${s.facturacion ? `<a href="#/finanzas" class="${activo === 'finanzas' ? 'activo' : ''}">Finanzas</a>` : ''}
     ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">Base de precios</a>` : ''}
     ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">Ajustes generales</a>` : ''}`;
@@ -230,6 +234,61 @@ function vistaRecuperar() {
 }
 
 // ---------------- Lista de encargos ----------------
+// ---------------- Inicio del equipo: bienvenida, versículo y resumen ----------------
+const VERSICULOS = [
+  ['Y todo lo que hagan, háganlo de corazón, como para el Señor y no como para la gente.', 'COLOSENSES 3.23 RVC'],
+  ['Dos son mejor que uno, porque sacan más provecho de sus esfuerzos.', 'ECLESIASTÉS 4.9 RVC'],
+  ['Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.', 'ECLESIASTÉS 4.12 RVC'],
+];
+async function vistaInicio(s) {
+  const fest = new Set((await D.festivos()).map(f => f.fecha));
+  const [lista, props] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : []]);
+  const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
+  const espera = props.filter(p => p.estado === 'en_espera');
+  const borrador = props.filter(p => p.estado === 'borrador');
+  const mes = new Date().toISOString().slice(0, 7);
+  const dia = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const [texto, cita] = VERSICULOS[dia % VERSICULOS.length];
+  const h = new Date().getHours();
+  const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const accesos = [
+    ['#/encargos', 'Encargos', `${activos.length} activos`],
+    s.admin && ['#/propuestas', 'Propuestas preliminares', `${espera.length} en espera · ${borrador.length} en borrador`],
+    s.facturacion && ['#/finanzas', 'Finanzas', 'Movimientos y soportes'],
+    s.admin && ['#/base-precios', 'Base de precios', 'APU e insumos'],
+    s.admin && ['#/ajustes', 'Ajustes generales', 'Servicios, clientes y OneDrive'],
+  ].filter(Boolean);
+  const html = `
+    <section class="bienvenida">
+      <p class="bv-saludo">${saludo}, equipo.</p>
+      <blockquote class="bv-verso">“${esc(texto)}”<cite>${esc(cita)}</cite></blockquote>
+      <p class="bv-porque">No olvides por qué trabajamos: no intervenimos, regeneramos.</p>
+    </section>
+    <div class="kpis">
+      ${kpi('Encargos activos', activos.length, `${lista.length} en total`)}
+      ${s.admin ? kpi('Propuestas en espera', espera.length, 'Enviadas, por decidir') : kpi('Pausados', lista.filter(e => e.estado === 'pausado').length, 'En espera')}
+      ${s.admin ? kpi('En borrador', borrador.length, 'Sin enviar') : kpi('Cerrados', lista.filter(e => e.estado === 'cerrado').length, 'Terminados')}
+      ${kpi('Por terminar este mes', activos.filter(e => e.fin && e.fin.slice(0, 7) === mes).length, 'Fecha de fin en el mes')}
+    </div>
+    <div class="dos">
+      <section class="panel">
+        <h3>Encargos en curso</h3>
+        ${activos.length ? `<div class="od-lista">${activos.map(e => `<a class="od-fila inicio-fila" href="#/${D.slugEncargo(e)}"><div class="od-nom"><b>${esc(e.nombre)}</b><span class="sub">${esc(e.servicio?.nombre || '')}${e.fin ? ' · termina ' + fecha(e.fin) : ''}</span></div>
+          <div class="inicio-av">${pct(e.tiempo)}<div class="barra"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></div></a>`).join('')}</div>` : '<p class="sub">No hay encargos activos.</p>'}
+      </section>
+      ${s.admin ? `<section class="panel">
+        <h3>Propuestas por decidir</h3>
+        ${espera.length || borrador.length ? `<div class="od-lista">${[...espera, ...borrador].map(p => `<a class="od-fila inicio-fila" href="#/propuestas"><div class="od-nom"><b>${esc(p.nombre)}</b><span class="sub">${esc(p.codigo)} · ${p.estado === 'en_espera' && p.fecha_envio ? quedan(p.fecha_envio) : 'Borrador'}${p.archivo_nombre ? '' : ' · sin Word'}</span></div>
+          <div class="inicio-av">${p.honorarios ? cop(p.honorarios) : ''}</div></a>`).join('')}</div>` : '<p class="sub">No hay propuestas pendientes.</p>'}
+      </section>` : ''}
+    </div>
+    <section class="panel">
+      <h3>Entrar a</h3>
+      <div class="modulos">${accesos.map(([href, n, sub]) => `<a class="modulo" href="${href}"><b>${n}</b><span>${sub}</span></a>`).join('')}</div>
+    </section>`;
+  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html });
+}
+
 async function vistaEncargos(s) {
   const lista = await D.encargos();
   const admin = s.admin;
@@ -411,8 +470,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const ctx = { e, s, admin, rol, esCliente: rol === 'cliente', fest, base, sub, recargar: ir };
   if (M.VISTAS[seccion]) {
     const v = await M.VISTAS[seccion](ctx);
-    marco(s, { ...comun, ruta: `Encargos / ${esc(e.nombre)} / ${nombreSec}`, html: v.html });
+    const carpetaOd = admin && CARPETA_MODULO[seccion];
+    marco(s, { ...comun, ruta: `Encargos / ${esc(e.nombre)} / ${nombreSec}`, html: (carpetaOd ? '<section class="panel od-docs" id="od-docs"></section>' : '') + v.html });
     if (v.montar) v.montar();
+    if (carpetaOd) documentosOneDrive($('#od-docs'), e, carpetaOd);
     return;
   }
   if (seccion === 'resumen') {
@@ -532,6 +593,35 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   return marco(s, { ...comun, html: `<div class="vacio"><b>${nombreSec}</b><br>Este módulo llega en la fase ${FASE[seccion] || ''}.</div>` });
 }
 
+// Carpeta de OneDrive (dentro de "REG/26  I  NOMBRE") que corresponde a cada módulo del encargo
+const CARPETA_MODULO = {
+  brief: 'DOC _ RECIBIDOS', propuesta: 'LEGALES/PROP _ ECONOMICAS', contrato: 'LEGALES/OPS CONTRATOS', adendas: 'LEGALES',
+  presupuesto: 'PRESUPUESTO', gantt: 'COORDINACION _ OBRA', informes: 'DOC _ ENVIADOS',
+};
+const tipoDoc = n => /\.pdf$/i.test(n) ? 'PDF' : /\.xlsx?$/i.test(n) ? 'Excel' : /\.docx?$/i.test(n) ? 'Word' : (n.split('.').pop() || '').toUpperCase();
+
+// Lista los documentos de la carpeta del módulo en OneDrive: abrir (en OneDrive) y descargar (Word, PDF, Excel)
+async function documentosOneDrive(el, e, carpeta) {
+  const cab = web => `<div class="od-cab"><h3>Documentos en OneDrive</h3>${web ? `<a class="btn sec mini" href="${esc(web)}" target="_blank" rel="noopener">Abrir carpeta</a>` : ''}</div><p class="sub od-ruta">${esc(e.nombre)} / ${esc(carpeta)}</p>`;
+  if (D.MODO_DEMO) { el.innerHTML = cab('') + '<p class="sub">En el portal real aquí aparecen los documentos de esta carpeta de OneDrive, con Abrir y Descargar.</p>'; return; }
+  el.innerHTML = cab('') + '<p class="sub">Buscando documentos…</p>';
+  try {
+    const r = await D.onedrive('archivos_encargo', { encargo_id: e.id, carpeta });
+    if (!r.web) { el.innerHTML = cab('') + '<p class="sub">Esta carpeta todavía no existe en OneDrive.</p>'; return; }
+    el.innerHTML = cab(r.web) + (r.archivos.length ? `<div class="od-lista">${r.archivos.map((a, i) => `
+      <div class="od-fila"><div class="od-nom"><b>${esc(a.nombre)}</b><span class="sub">${tipoDoc(a.nombre)}${a.carpeta ? ' · ' + esc(a.carpeta) : ''}${a.fecha ? ' · ' + fecha(a.fecha.slice(0, 10)) : ''}</span></div>
+        <div class="od-acc"><a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir</a><button type="button" class="btn sec mini" data-od="${i}">Descargar ${tipoDoc(a.nombre)}</button></div></div>`).join('')}</div>`
+      : '<p class="sub">La carpeta está vacía.</p>');
+    const bajar = async (b, pdf) => {
+      const a = r.archivos[b.dataset.od ?? b.dataset.odpdf]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+      try { const x = await D.onedrive('archivo_encargo', { encargo_id: e.id, carpeta, ruta: a.ruta, pdf }); bajarBase64(x.base64, x.nombre); }
+      catch (err) { alert(msg(err)); } finally { b.disabled = false; b.textContent = t; }
+    };
+    el.querySelectorAll('[data-od]').forEach(b => b.onclick = () => bajar(b, false));
+    el.querySelectorAll('[data-odpdf]').forEach(b => b.onclick = () => bajar(b, true));
+  } catch (err) { el.innerHTML = cab('') + `<p class="sub">No se pudo leer OneDrive: ${esc(msg(err))}</p>`; }
+}
+
 function moduloAplica() { return true; }   // todos los encargos tienen todos los módulos (el servicio no limita módulos)
 
 // ---------------- Ajustes generales ----------------
@@ -592,7 +682,7 @@ async function vistaPropuestas(s) {
     const q = $('#buscar').value.toLowerCase(), est = $('#festado').value;
     const f = lista.filter(p => (!est || p.estado === est) && (!q || [p.nombre, p.codigo, p.cliente?.nombre].join(' ').toLowerCase().includes(q)));
     $('#tabla').innerHTML = f.length ? `
-      <div class="tabla-cont"><table>
+      <div class="tabla-cont"><table class="t-prop">
         <thead><tr><th class="col-opc">Código de propuesta</th><th>Propuesta</th><th class="col-opc">Cliente</th><th class="num col-opc">Honorarios</th><th class="col-opc">Enviada</th><th>Estado</th><th></th></tr></thead>
         <tbody>${f.map(p => `
           <tr>
@@ -764,10 +854,9 @@ async function modalPropuesta(p = null) {
     const tipo = n => /\.pdf$/i.test(n) ? 'PDF' : /\.xlsx?$/i.test(n) ? 'Excel' : 'Word';
     const pintarDocs = lista => {
       docs.innerHTML = `<h3 style="margin:8px 0 6px">Documentos de la propuesta</h3>
-        <div class="tabla-cont"><table><tbody>${lista.map((a, i) => `<tr><td><b>${esc(a.nombre)}</b><div class="sub">${tipo(a.nombre)}</div></td>
-          <td class="acciones-fila">${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir</a>` : ''}
-          <button type="button" class="btn sec mini" data-bajar="${i}">Descargar ${tipo(a.nombre)}</button>
-          ${tipo(a.nombre) === 'Word' ? `<button type="button" class="btn sec mini" data-pdf="${i}">Descargar PDF</button>` : ''}</td></tr>`).join('')}</tbody></table></div>`;
+        <div class="od-lista">${lista.map((a, i) => `<div class="od-fila"><div class="od-nom"><b>${esc(a.nombre)}</b><span class="sub">${tipo(a.nombre)}</span></div>
+          <div class="od-acc">${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir</a>` : ''}<button type="button" class="btn sec mini" data-bajar="${i}">Descargar ${tipo(a.nombre)}</button></div></div>`).join('')}</div>
+        <p class="sub" id="sinc" style="margin-top:8px"></p>`;
       const bajar = async (b, pdf) => {
         const a = lista[b.dataset.bajar ?? b.dataset.pdf]; const t = b.textContent; b.disabled = true; b.textContent = 'Descargando…';
         try {
@@ -782,9 +871,23 @@ async function modalPropuesta(p = null) {
     else {
       docs.innerHTML = '<p class="sub">Buscando documentos en OneDrive…</p>';
       D.onedrive('archivos_propuesta', { propuesta_id: p.id })
-        .then(r => pintarDocs(r.archivos?.length ? r.archivos : [{ nombre: p.archivo_nombre, web: p.archivo_web }]))
+        .then(r => { pintarDocs(r.archivos?.length ? r.archivos : [{ nombre: p.archivo_nombre, web: p.archivo_web }]); sincronizarDesdeWord(); })
         .catch(err => { docs.innerHTML = `<p class="sub">No se pudieron leer los documentos: ${esc(msg(err))}</p>`; });
     }
+  }
+  // Si el Word se editó en OneDrive (por ejemplo, terminado con Claude), el portal toma sus datos al abrir
+  async function sincronizarDesdeWord() {
+    const aviso = $('#sinc', fondo);
+    try {
+      aviso.textContent = 'Comparando con el Word de OneDrive…';
+      const w = await D.onedrive('descargar_propuesta', { propuesta_id: p.id });
+      const r = await leerPropuestaWord(new File([Uint8Array.from(atob(w.base64), c => c.charCodeAt(0))], w.nombre));
+      const cambios = {};
+      for (const [k] of DETALLES_PROPUESTA) if (r[k] && r[k] !== (p[k] || '')) { cambios[k] = r[k]; f[k].value = r[k]; }
+      if (r.honorarios && Number(r.honorarios) !== Number(p.honorarios || 0)) { cambios.honorarios = r.honorarios; f.honorarios.value = Number(r.honorarios).toLocaleString('es-CO').replace(/,/g, '.'); }
+      if (Object.keys(cambios).length) { await D.actualizarPropuesta(p.id, cambios); Object.assign(p, cambios); aviso.style.color = 'var(--petroleo)'; aviso.textContent = `Datos actualizados desde el Word de OneDrive (${Object.keys(cambios).length}).`; }
+      else aviso.textContent = 'Los datos coinciden con el Word de OneDrive.';
+    } catch (err) { aviso.textContent = 'No se pudo comparar con el Word: ' + msg(err); }
   }
   $('#cancelar', fondo).onclick = () => fondo.remove();
   f.honorarios.oninput = () => { const n = f.honorarios.value.replace(/\D/g, ''); f.honorarios.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
