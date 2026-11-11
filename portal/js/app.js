@@ -300,7 +300,7 @@ async function modalEncargo(e = null) {
     <p class="sub">Se escriben una sola vez y se usan en todos los documentos del encargo.</p>
     <div class="grilla-form">
       <div><label>Cotización</label><input name="codigo" value="${esc(codigo)}" required ${e ? 'readonly' : ''}></div>
-      <div><label>Nombre del encargo</label><input name="nombre" value="${esc(e?.nombre || '')}" placeholder="26 I CEREZO 44" required></div>
+      <div><label>Nombre del encargo</label><input name="nombre" value="${esc(e?.nombre || '')}" placeholder="20  I  PROYECTO" required></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli, e?.cliente_id)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc, e?.servicio_id)}</select></div>
       <div><label>Tipo</label><select name="tipo">${opMap(TIPOS, e?.tipo || 'diseno')}</select></div>
@@ -610,7 +610,7 @@ async function modalPropuesta() {
     <p class="sub">Si despega, se vuelve encargo con el mismo código y el nombre "${esc(codigo.slice(6, 8))}  I  NOMBRE".</p>
     <div class="grilla-form">
       <div><label>Código</label><input name="codigo" value="${esc(codigo)}" required></div>
-      <div><label>Nombre (en mayúsculas)</label><input name="nombre" placeholder="CEREZO 44" required style="text-transform:uppercase"></div>
+      <div><label>Nombre (en mayúsculas)</label><input name="nombre" placeholder="PROYECTO" required style="text-transform:uppercase"></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc)}</select></div>
       <div><label>Tipo</label><select name="tipo">${Object.entries(TIPOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
