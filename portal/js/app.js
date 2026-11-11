@@ -160,12 +160,12 @@ function vistaAcceso() {
         <button type="button" class="${cli ? '' : 'activa'}" data-m="equipo">Equipo regenerativo</button>
       </div>
       ${cli
-        ? `<label for="usuario">Nombre del encargo</label><input id="usuario" autocomplete="username" placeholder="Ej.: 26 I CEREZO 44" required>`
+        ? `<label for="usuario">Nombre del encargo</label><input id="usuario" autocomplete="username" placeholder="Ej.: 20  I  PROYECTO" required>`
         : `<label for="usuario">Correo</label><input id="usuario" type="email" autocomplete="username" required>`}
-      <label for="clave">Contraseña</label><input id="clave" type="password" autocomplete="current-password" ${D.MODO_DEMO ? '' : 'required'}>
+      <label for="clave">${cli ? 'Acceso' : 'Contraseña'}</label><input id="clave" type="password" autocomplete="current-password" ${D.MODO_DEMO ? '' : 'required'}>
       <button class="btn full" type="submit">Ingresar</button>
       <div class="aviso" id="aviso"></div>
-      ${cli ? '<p class="sub" style="margin:18px 0 0">¿No tienes la contraseña? Pídela a regenerativo.</p>'
+      ${cli ? '<p class="sub" style="margin:18px 0 0">¿No tienes tu acceso? Pídelo a regenerativo.</p>'
             : '<p style="margin:18px 0 0;font-size:13px"><a href="#/recuperar">Olvidé mi contraseña</a></p>'}
       <div class="firma"><span class="por">Por</span><span class="linea"></span><span class="reg">regenerativo</span></div>
     </form></div>`;
