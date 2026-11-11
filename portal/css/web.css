@@ -112,3 +112,8 @@ body.ingreso .pie-ingreso,body:has(.acceso) .pie-ingreso{display:block}
 .pie-ingreso .redes a{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 @media (max-height:640px){.pie-ingreso .porx,.pie-ingreso .redes{position:absolute}}
 .lado .pie{text-transform:none!important;letter-spacing:0!important}
+/* "Por — regenerativo": la línea va abajo, como guion bajo, igual que en toda la web */
+.porx{display:inline-flex;align-items:baseline;gap:0;line-height:1;white-space:nowrap;letter-spacing:-.005em}
+.porx .ln{display:inline-block;width:1.65em;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em!important;transform:none!important}
+.firma{align-items:baseline;gap:0!important}
+.firma .linea{width:1.65em!important;border-bottom:0!important;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em;transform:none!important}

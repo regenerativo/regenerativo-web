@@ -93,7 +93,7 @@ export async function descargarPDF({ servicio, documento, codigo, nombre, cuerpo
       { canvas: [{ type: 'rect', x: 0, y: 0, w: ANCHO, h: 22, color: GRIS }], margin: [0, 14, 0, 0] },
     ] }),
     footer: pag => ({ columns: [
-      { text: [{ text: 'Por  ', font: 'StolzlLight', fontSize: 10 }, { text: '———  ', color: TINTA, fontSize: 7 }, { text: 'regenerativo', bold: true, fontSize: 11 }], width: 'auto' },
+      { text: [{ text: 'Por  ', font: 'StolzlLight', fontSize: 10 }, { text: '____ ', color: TINTA, fontSize: 9 }, { text: 'regenerativo', bold: true, fontSize: 11 }], width: 'auto' },
       { text: 'info@regenerativo.co    @_regenerativo_    +57 320 215 0932', fontSize: 7.5, color: GRIS_TXT, alignment: 'right', marginTop: 2, width: '*' },
       { text: String(pag), bold: true, fontSize: 10.5, alignment: 'right', width: 28 },
     ], margin: [MI, 30, MD, 0] }),

@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=23';
-import * as M from './modulos.js?v=23';
-import { vistaFinanzas } from './finanzas.js?v=23';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=23';
+import * as D from './datos.js?v=24';
+import * as M from './modulos.js?v=24';
+import { vistaFinanzas } from './finanzas.js?v=24';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=24';
 
 // Mensajes de Supabase en español
 function msg(err) {
