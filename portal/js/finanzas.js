@@ -1,6 +1,6 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=22';
-import { cop, fecha, iso } from './formato.js?v=22';
+import * as D from './datos.js?v=23';
+import { cop, fecha, iso } from './formato.js?v=23';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -116,7 +116,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       <section class="panel"><h3>Ingresos y gastos de la operación · últimos 6 meses</h3>${barras(serie)}</section>
       <section class="panel"><h3>Encargos</h3><p class="sub">Toca un encargo para ver solo sus movimientos.</p>
       ${porEnc.length ? `<div class="tabla-cont"><table><thead><tr><th>Encargo</th><th class="num">Acordado</th><th class="num">Recibido</th><th class="num">Por cobrar</th><th class="num col-opc">Gastos</th><th class="num col-opc">Neto</th></tr></thead><tbody>
-      ${porEnc.map(r => `<tr class="fila-enc" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b><div class="sub">${esc(r.e.codigo)}</div></td><td class="num">${cop(r.esperado)}</td><td class="num">${cop(r.recibido)}</td><td class="num">${cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td><td class="num col-opc">${cop(r.neto)}</td></tr>`).join('')}
+      ${porEnc.map(r => `<tr class="fila-enc" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b></td><td class="num">${cop(r.esperado)}</td><td class="num">${cop(r.recibido)}</td><td class="num">${cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td><td class="num col-opc">${cop(r.neto)}</td></tr>`).join('')}
       <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.neto, 0))}</td></tr>
       </tbody></table></div>` : '<div class="vacio">Sin movimientos por encargo.</div>'}</section>
     </div>`;

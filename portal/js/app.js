@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=22';
-import * as M from './modulos.js?v=22';
-import { vistaFinanzas } from './finanzas.js?v=22';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=22';
+import * as D from './datos.js?v=23';
+import * as M from './modulos.js?v=23';
+import { vistaFinanzas } from './finanzas.js?v=23';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=23';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -353,13 +353,13 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const menu = visibles.map(([k, n, listo]) =>
     `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''}">${n}${listo ? '' : '<span class="pronto">Próximamente</span>'}</a>`).join('');
   const nombreSec = (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
-  const comun = { s, menu, ruta: `Encargos / ${esc(e.codigo)} / ${nombreSec}`, titulo: esc(e.nombre) };
+  const comun = { s, menu, ruta: `Encargos / ${esc(e.nombre)} / ${nombreSec}`, titulo: esc(e.nombre) };
   const fest = new Set((await D.festivos()).map(f => f.fecha));
 
   const ctx = { e, s, admin, rol, esCliente: rol === 'cliente', fest, base, sub, recargar: ir };
   if (M.VISTAS[seccion]) {
     const v = await M.VISTAS[seccion](ctx);
-    marco(s, { ...comun, ruta: `Encargos / ${esc(e.codigo)} / ${nombreSec}`, html: v.html });
+    marco(s, { ...comun, ruta: `Encargos / ${esc(e.nombre)} / ${nombreSec}`, html: v.html });
     if (v.montar) v.montar();
     return;
   }

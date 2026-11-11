@@ -1,7 +1,7 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=22';
-import { descargarPDF } from './pdf.js?v=22';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=22';
+import * as D from './datos.js?v=23';
+import { descargarPDF } from './pdf.js?v=23';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=23';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -161,7 +161,7 @@ async function propuesta(ctx) {
 // ---------------- Contrato ----------------
 function variables(texto, ctx, prop) {
   const v = {
-    'encargo.nombre': ctx.e.nombre, 'encargo.codigo': ctx.e.codigo, 'encargo.direccion': ctx.e.direccion,
+    'encargo.nombre': ctx.e.nombre, 'encargo.codigo': ctx.e.nombre, 'propuesta.codigo': ctx.e.codigo, 'encargo.direccion': ctx.e.direccion,
     'encargo.inicio': ctx.e.inicio ? fecha(ctx.e.inicio) : '', 'encargo.fin': ctx.e.fin ? fecha(ctx.e.fin) : '',
     'cliente.nombre': ctx.e.cliente?.nombre, 'propuesta.honorarios': prop?.contenido?.honorarios ? cop(prop.contenido.honorarios) : '',
   };
