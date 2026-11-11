@@ -117,3 +117,4 @@ body.ingreso .pie-ingreso,body:has(.acceso) .pie-ingreso{display:block}
 .porx .ln{display:inline-block;width:1.65em;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em!important;transform:none!important}
 .firma{align-items:baseline;gap:0!important}
 .firma .linea{width:1.65em!important;border-bottom:0!important;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em;transform:none!important}
+.modal{border-radius:3px!important}

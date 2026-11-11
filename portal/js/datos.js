@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=24';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=25';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -285,6 +285,13 @@ export async function actualizarPropuesta(id, cambios) {
   if (MODO_DEMO) { const d = leer(); const p = d.propuestas.find(x => x.id === id); Object.assign(p, cambios); guardar(d); return p; }
   const { data, error } = await (await cliente()).from('propuestas').update(cambios).eq('id', id).select().single();
   if (error) throw error; return data;
+}
+
+/** Propuesta (cotización) de la que nació el encargo: ahí vive la información del proyecto. */
+export async function propuestaDeEncargo(encargoId) {
+  if (MODO_DEMO) { const d = leer(); return (d.propuestas || []).find(p => p.encargo_id === encargoId) || null; }
+  try { const { data } = await (await cliente()).from('propuestas').select('*').eq('encargo_id', encargoId).maybeSingle(); return data || null; }
+  catch (e) { return null; }
 }
 
 /** "Despegó": crea el encargo "26  I  NOMBRE" con el mismo código. Devuelve el código. */
