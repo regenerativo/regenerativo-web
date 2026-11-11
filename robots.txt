@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+Disallow: /portal/
 Sitemap: https://regenerativo.co/sitemap.xml
