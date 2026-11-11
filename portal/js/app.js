@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=26';
-import * as M from './modulos.js?v=26';
-import { vistaFinanzas } from './finanzas.js?v=26';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=26';
+import * as D from './datos.js?v=27';
+import * as M from './modulos.js?v=27';
+import { vistaFinanzas } from './finanzas.js?v=27';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=27';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -651,8 +651,35 @@ const DETALLES_PROPUESTA = [
   ['area_predio', 'Área predio'], ['area_licencia', 'Área construida en licencia'],
   ['area_existente', 'Área construida existente'], ['area_intervenida', 'Área intervenida'],
   ['categoria_trabajo', 'Categoría de trabajo', 'ancho'],
-  ['duracion', 'Duración del proyecto'], ['otras_necesidades', 'Otras necesidades', 'ancho'], ['iva', 'IVA', 'ancho'],
 ];
+
+const aBase64 = archivo => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = mal; r.readAsDataURL(archivo); });
+
+// Lee la propuesta económica en Word (.docx) y saca los datos de la página 2 ("Detalles técnicos del encargo")
+async function leerPropuestaWord(archivo) {
+  if (!window.JSZip) await new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'js/vendor/jszip.min.js'; sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar el lector de Word.')); document.head.appendChild(sc); });
+  const zip = await JSZip.loadAsync(archivo);
+  const xml = new DOMParser().parseFromString(await zip.file('word/document.xml').async('string'), 'application/xml');
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const texto = n => [...n.getElementsByTagNameNS(W, 't')].map(t => t.textContent).join('').replace(/\s+/g, ' ').trim();
+  const pares = [];
+  for (const par of xml.getElementsByTagNameNS(W, 'p')) { const t = texto(par); const i = t.indexOf(':'); if (i > 2 && i < 60) pares.push([t.slice(0, i), t.slice(i + 1).trim()]); }
+  for (const fila of xml.getElementsByTagNameNS(W, 'tr')) { const c = [...fila.getElementsByTagNameNS(W, 'tc')].map(texto); if (c.length >= 2 && c[0] && c[1]) pares.push([c[0], c[1]]); }
+  const buscar = re => (pares.find(([k, v]) => re.test(k.toLowerCase()) && v) || [])[1] || '';
+  const r = {
+    propietario: buscar(/nombre del propietario/), ubicacion_propietario: buscar(/ubicaci[oó]n del propietario/),
+    cliente: buscar(/nombre del cliente/), ubicacion: buscar(/ubicaci[oó]n del encargo/), direccion: buscar(/direcci[oó]n del encargo/),
+    area_predio: buscar(/[áa]rea( del)? predio/), area_licencia: buscar(/licencia/), area_existente: buscar(/existente/),
+    area_intervenida: buscar(/intervenida/), categoria_trabajo: buscar(/categor[ií]a de trabajo/),
+    servicios: buscar(/categor[ií]a de servicios|servicios regenerativo/), encargo: buscar(/^encargo$/),
+  };
+  // Honorarios: fila que sigue al encabezado "VALOR TOTAL"
+  const filas = [...xml.getElementsByTagNameNS(W, 'tr')].map(f => [...f.getElementsByTagNameNS(W, 'tc')].map(texto));
+  const h = filas.findIndex(c => c.some(x => /valor total/i.test(x)));
+  if (h >= 0 && filas[h + 1]) { const v = filas[h + 1].filter(Boolean).at(-1) || ''; const n = v.replace(/[^\d]/g, ''); if (n) r.honorarios = Number(n); }
+  const m = archivo.name.toUpperCase().match(/SCREG_\d{5}/); if (m) r.codigo = m[0];
+  return r;
+}
 
 async function modalPropuesta(p = null) {
   const [svc, cli] = await Promise.all([D.servicios(), D.clientes()]);
@@ -662,7 +689,9 @@ async function modalPropuesta(p = null) {
   fondo.className = 'modal-fondo';
   fondo.innerHTML = `<form class="modal ancho" id="fp">
     <h2>${p ? 'Propuesta preliminar' : 'Nueva propuesta preliminar'}</h2>
-    <p class="sub">Aquí va toda la información del proyecto. Al crearla se guarda su carpeta en OneDrive con el código de propuesta. Si el cliente acepta y despega, se crea el encargo con el código de proyecto y su carpeta.</p>
+    <p class="sub">Sube la propuesta económica en Word y el portal toma los datos de la página 2 (detalles técnicos del encargo). Se guarda en su carpeta de OneDrive con el código de propuesta. Si el cliente acepta, se crea el encargo con el código de proyecto.</p>
+    <label for="word">Propuesta económica (Word .docx)</label><input id="word" type="file" accept=".docx">
+    <div class="aviso" id="aviso-word"></div>
     <div class="grilla-form">
       <div><label>Código de propuesta</label><input name="codigo" value="${esc(codigo)}" required ${p ? 'readonly' : ''}></div>
       <div><label>Nombre del proyecto (en mayúsculas)</label><input name="nombre" value="${esc(p?.nombre || '')}" placeholder="PROYECTO" required style="text-transform:uppercase"></div>
@@ -685,6 +714,27 @@ async function modalPropuesta(p = null) {
   f.honorarios.oninput = () => { const n = f.honorarios.value.replace(/\D/g, ''); f.honorarios.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
   const codProy = () => { const n = f.nombre.value.trim().toUpperCase().replace(/^\d{2}\s+I\s+/, ''); $('#codproy', fondo).value = `${(f.codigo.value.match(/_(\d{2})/) || [, '26'])[1]}  I  ${n || 'NOMBRE'}`; };
   f.nombre.oninput = codProy; f.codigo.oninput = codProy; codProy();
+  let archivoWord = null, clienteNuevo = '';
+  $('#word', fondo).onchange = async ev => {
+    const a = ev.target.files[0]; if (!a) return;
+    const av = $('#aviso-word', fondo); av.style.color = ''; av.textContent = 'Leyendo la propuesta…';
+    try {
+      const r = await leerPropuestaWord(a); archivoWord = a;
+      if (r.codigo && !p) f.codigo.value = r.codigo;
+      const nombre = (r.encargo || '').toUpperCase().replace(/\s*I\s*/g, ' ').replace(/\s+/g, ' ').trim();
+      if (nombre && !f.nombre.value) f.nombre.value = nombre;
+      for (const [k] of DETALLES_PROPUESTA) if (r[k]) f[k].value = r[k];
+      if (r.honorarios) f.honorarios.value = Number(r.honorarios).toLocaleString('es-CO').replace(/,/g, '.');
+      if (r.cliente) {
+        const c = cli.find(x => x.nombre.toLowerCase() === r.cliente.toLowerCase());
+        if (c) f.cliente_id.value = c.id; else { clienteNuevo = r.cliente; f.cliente_id.value = ''; }
+      }
+      if (r.servicios) { const sv = svc.find(x => r.servicios.toLowerCase().includes(x.nombre.toLowerCase())); if (sv) f.servicio_id.value = sv.id; }
+      codProy();
+      av.style.color = 'var(--petroleo)';
+      av.textContent = 'Datos cargados desde la propuesta. Revísalos y guarda.' + (clienteNuevo ? ` El cliente "${clienteNuevo}" no existe todavía: se crea al guardar.` : '');
+    } catch (err) { av.textContent = 'No se pudo leer el Word: ' + msg(err); }
+  };
   f.cliente_id.onchange = async () => {
     if (f.cliente_id.value !== '__nuevo') return;
     const nombre = prompt('Nombre o razón social del cliente');
@@ -698,16 +748,18 @@ async function modalPropuesta(p = null) {
     const v = Object.fromEntries(new FormData(f));
     v.nombre = v.nombre.trim().toUpperCase().replace(/^\d{2}\s+I\s+/, '');
     v.honorarios = v.honorarios ? Number(v.honorarios.replace(/\D/g, '')) : null;
+    if (!v.cliente_id && clienteNuevo) { const c = await D.crearCliente({ tipo: 'persona', nombre: clienteNuevo.trim().toUpperCase() }); v.cliente_id = c.id; }
     if (!v.cliente_id) v.cliente_id = null;
     for (const [k] of DETALLES_PROPUESTA) v[k] = (v[k] || '').trim() || null;
     try {
-      if (p) { delete v.codigo; await D.actualizarPropuesta(p.id, v); }
-      else {
-        const n = await D.crearPropuesta(v);
-        if (!D.MODO_DEMO) {
-          try { const r = await D.onedrive('propuesta', { propuesta_id: n.id }); alert(`Propuesta creada.\nCarpeta en OneDrive: ${r.carpeta}`); }
-          catch (e2) { alert('La propuesta se creó, pero no se pudo crear su carpeta en OneDrive: ' + msg(e2)); }
-        }
+      const n = p ? (delete v.codigo, await D.actualizarPropuesta(p.id, v)) : await D.crearPropuesta(v);
+      if (!D.MODO_DEMO) {
+        try {
+          const r = archivoWord
+            ? await D.onedrive('subir_propuesta', { propuesta_id: n.id, nombre: archivoWord.name, base64: await aBase64(archivoWord) })
+            : await D.onedrive('propuesta', { propuesta_id: n.id });
+          if (!p || archivoWord) alert(`Propuesta guardada.\nOneDrive: ${r.ruta || r.carpeta}`);
+        } catch (e2) { alert('La propuesta se guardó, pero no se pudo guardar en OneDrive: ' + msg(e2)); }
       }
       fondo.remove(); ir();
     } catch (err) { $('#aviso', fondo).textContent = msg(err); }
