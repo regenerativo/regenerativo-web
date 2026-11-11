@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=21';
-import * as M from './modulos.js?v=21';
-import { vistaFinanzas } from './finanzas.js?v=21';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=21';
+import * as D from './datos.js?v=22';
+import * as M from './modulos.js?v=22';
+import { vistaFinanzas } from './finanzas.js?v=22';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=22';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -240,8 +240,8 @@ async function vistaEncargos(s) {
   const html = `
     <div class="kpis">
       ${kpi('Encargos activos', activos.length, `${lista.length} en total`)}
-      ${kpi('De obra', lista.filter(e => e.tipo !== 'diseno').length, 'Obra o diseño y obra')}
-      ${kpi('De diseño', lista.filter(e => e.tipo !== 'obra').length, 'Diseño o diseño y obra')}
+      ${kpi('Pausados', lista.filter(e => e.estado === 'pausado').length, 'En espera')}
+      ${kpi('Cerrados', lista.filter(e => e.estado === 'cerrado').length, 'Terminados')}
       ${kpi('Por terminar este mes', activos.filter(e => e.fin && e.fin.slice(0, 7) === new Date().toISOString().slice(0, 7)).length, 'Fecha de fin en el mes')}
     </div>
     <div class="filtros">
@@ -257,12 +257,11 @@ async function vistaEncargos(s) {
       (!q || [e.nombre, e.codigo, e.cliente?.nombre].join(' ').toLowerCase().includes(q)));
     $('#tabla').innerHTML = f.length ? `
       <div class="tabla-cont"><table>
-        <thead><tr><th>Encargo</th><th class="col-opc">Cliente</th><th class="col-opc">Alcance</th><th class="col-opc">Inicio</th><th class="col-opc">Fin</th><th>Tiempo</th><th>Estado</th></tr></thead>
+        <thead><tr><th>Encargo</th><th class="col-opc">Cliente</th><th class="col-opc">Inicio</th><th class="col-opc">Fin</th><th>Tiempo</th><th>Estado</th></tr></thead>
         <tbody>${f.map(e => `
           <tr class="clic" data-c="${D.slugEncargo(e)}">
             <td><b>${esc(e.nombre)}</b><div class="sub">${esc(e.servicio?.nombre || '')}</div></td>
             <td class="col-opc">${xxx(e.cliente?.nombre)}</td>
-            <td class="col-opc">${TIPOS[e.tipo] || ''}</td>
             <td class="col-opc">${fecha(e.inicio)}</td><td class="col-opc">${fecha(e.fin)}</td>
             <td style="min-width:90px">${pct(e.tiempo)}<div class="barra"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
             <td><span class="etiqueta ${e.estado}">${ESTADOS_ENCARGO[e.estado] || e.estado}</span></td>
@@ -303,7 +302,7 @@ async function modalEncargo(e = null) {
       <div><label>Nombre del encargo</label><input name="nombre" value="${esc(e?.nombre || '')}" placeholder="20  I  PROYECTO" required></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli, e?.cliente_id)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc, e?.servicio_id)}</select></div>
-      <div><label>Alcance</label><select name="tipo">${opMap(TIPOS, e?.tipo || 'diseno')}</select></div>
+      <input type="hidden" name="tipo" value="${e?.tipo || 'ambos'}">
       <div><label>Estado</label><select name="estado">${opMap(ESTADOS_ENCARGO, e?.estado || 'activo')}</select></div>
       <div class="ancho"><label>Dirección</label><input name="direccion" value="${esc(e?.direccion || '')}"></div>
       <div><label>Ciudad</label><input name="ciudad" value="${esc(e?.ciudad || 'Bogotá')}"></div>
@@ -384,7 +383,6 @@ async function vistaExpediente(s, codigo, seccion, sub) {
             <dt>Encargo</dt><dd class="det">${esc(e.nombre)}</dd>
             <dt>Cliente</dt><dd class="det">${xxx(e.cliente?.nombre)}</dd>
             <dt>Servicio</dt><dd class="det">${xxx(e.servicio?.nombre)}</dd>
-            <dt>Alcance</dt><dd class="det">${TIPOS[e.tipo] || ''}</dd>
             <dt>Ubicación</dt><dd class="det">${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>
             <dt>Área</dt><dd class="det">${e.area_m2 ? esc(e.area_m2) + ' m²' : xxx('')}</dd>
             <dt>Inicio · Fin</dt><dd class="det">${fecha(e.inicio)} · ${fecha(e.fin)}</dd>
@@ -483,10 +481,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   return marco(s, { ...comun, html: `<div class="vacio"><b>${nombreSec}</b><br>Este módulo llega en la fase ${FASE[seccion] || ''}.</div>` });
 }
 
-function moduloAplica(k, tipo) {
-  if (tipo === 'diseno') return k !== 'presupuesto';
-  return true;
-}
+function moduloAplica() { return true; }   // todos los encargos tienen todos los módulos (el servicio no limita módulos)
 
 // ---------------- Ajustes generales ----------------
 async function vistaAjustes(s, qs) {
@@ -613,7 +608,7 @@ async function modalPropuesta() {
       <div><label>Nombre (en mayúsculas)</label><input name="nombre" placeholder="PROYECTO" required style="text-transform:uppercase"></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc)}</select></div>
-      <div><label>Alcance</label><select name="tipo">${Object.entries(TIPOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+      <input type="hidden" name="tipo" value="ambos">
       <div><label>Honorarios (COP)</label><input name="honorarios" inputmode="numeric" placeholder="8.200.000"></div>
     </div>
     <div class="aviso" id="aviso"></div>
