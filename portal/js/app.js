@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=25';
-import * as M from './modulos.js?v=25';
-import { vistaFinanzas } from './finanzas.js?v=25';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=25';
+import * as D from './datos.js?v=26';
+import * as M from './modulos.js?v=26';
+import { vistaFinanzas } from './finanzas.js?v=26';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=26';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -304,14 +304,14 @@ async function modalDesdeCotizacion() {
   fondo.className = 'modal-fondo';
   fondo.innerHTML = `<form class="modal" id="fc">
     <h2>Nuevo encargo</h2>
-    <p class="sub">Elige la cotización. El encargo se crea con toda su información: nombre, cliente, servicio y honorarios.</p>
+    <p class="sub">Elige la propuesta que el cliente aceptó. El encargo se crea con su código de proyecto, toda su información y su carpeta en OneDrive.</p>
     ${lista.length ? `
-    <label for="cot">Cotización</label>
-    <select id="cot" required><option value="">— Elegir cotización —</option>
+    <label for="cot">Propuesta</label>
+    <select id="cot" required><option value="">— Elegir propuesta —</option>
       ${lista.map(p => `<option value="${p.id}">${esc(p.codigo)} · ${esc(p.nombre)}${p.cliente ? ' · ' + esc(p.cliente.nombre) : ''}</option>`).join('')}
     </select>
     <dl class="datos" id="vista" style="margin-top:18px"></dl>` :
-    `<div class="vacio">No hay cotizaciones pendientes. Primero crea la cotización en <a href="#/propuestas">Propuestas preliminares</a>.</div>`}
+    `<div class="vacio">No hay propuestas pendientes. Primero crea la propuesta en <a href="#/propuestas">Propuestas preliminares</a>.</div>`}
     <div class="aviso" id="aviso"></div>
     <div class="pie-modal"><button type="button" class="btn sec" id="cancelar">Cancelar</button>${lista.length ? '<button class="btn" type="submit">Crear encargo</button>' : ''}</div>
   </form>`;
@@ -323,7 +323,7 @@ async function modalDesdeCotizacion() {
   sel.onchange = () => {
     const p = lista.find(x => x.id === sel.value);
     $('#vista', fondo).innerHTML = p ? `
-      <dt>Encargo</dt><dd>${esc(p.codigo.slice(6, 8))}  I  ${esc(p.nombre.toUpperCase())}</dd>
+      <dt>Código de proyecto</dt><dd>${esc(p.codigo.slice(6, 8))}  I  ${esc(p.nombre.toUpperCase())}</dd><dt>Código de propuesta</dt><dd>${esc(p.codigo)}</dd>
       <dt>Cliente</dt><dd>${xxx(p.cliente?.nombre)}</dd>
       <dt>Servicio</dt><dd>${esc(p.servicio?.nombre || '—')}</dd>
       <dt>Honorarios</dt><dd>${p.honorarios ? cop(p.honorarios) : '—'}</dd>` : '';
@@ -349,7 +349,7 @@ async function modalEncargo(e = null) {
     <h2>${e ? 'Datos generales del encargo' : 'Nuevo encargo'}</h2>
     <p class="sub">Se escriben una sola vez y se usan en todos los documentos del encargo.</p>
     <div class="grilla-form">
-      <div><label>Cotización</label><input name="codigo" value="${esc(codigo)}" required ${e ? 'readonly' : ''}></div>
+      <div><label>Código de propuesta</label><input name="codigo" value="${esc(codigo)}" required ${e ? 'readonly' : ''}></div>
       <div><label>Nombre del encargo</label><input name="nombre" value="${esc(e?.nombre || '')}" placeholder="20  I  PROYECTO" required></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli, e?.cliente_id)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc, e?.servicio_id)}</select></div>
@@ -437,7 +437,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
             <dt>Servicio</dt><dd class="det">${xxx(e.servicio?.nombre)}</dd>
             ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, t]) => `<dt>${t.replace(' del encargo', '')}</dt><dd class="det">${esc(prop[k])}</dd>`).join('')}
             ${prop ? '' : `<dt>Ubicación</dt><dd class="det">${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
-            ${prop && admin ? `<dt>Cotización</dt><dd class="det">${esc(prop.codigo)}</dd>` : ''}
+            ${prop && admin ? `<dt>Código de propuesta</dt><dd class="det">${esc(prop.codigo)}</dd>` : ''}
             <dt>Responsables</dt><dd class="det">${e.responsables.length ? e.responsables.map(r => `${r.numero}. ${esc(r.nombre)}`).join('<br>') : xxx('')}</dd>
           </dl>
         </section>
@@ -593,7 +593,7 @@ async function vistaPropuestas(s) {
     const f = lista.filter(p => (!est || p.estado === est) && (!q || [p.nombre, p.codigo, p.cliente?.nombre].join(' ').toLowerCase().includes(q)));
     $('#tabla').innerHTML = f.length ? `
       <div class="tabla-cont"><table>
-        <thead><tr><th class="col-opc">Cotización</th><th>Propuesta</th><th class="col-opc">Cliente</th><th class="num col-opc">Honorarios</th><th class="col-opc">Enviada</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th class="col-opc">Código de propuesta</th><th>Propuesta</th><th class="col-opc">Cliente</th><th class="num col-opc">Honorarios</th><th class="col-opc">Enviada</th><th>Estado</th><th></th></tr></thead>
         <tbody>${f.map(p => `
           <tr>
             <td class="sub col-opc">${esc(p.codigo)}</td>
@@ -662,10 +662,11 @@ async function modalPropuesta(p = null) {
   fondo.className = 'modal-fondo';
   fondo.innerHTML = `<form class="modal ancho" id="fp">
     <h2>${p ? 'Propuesta preliminar' : 'Nueva propuesta preliminar'}</h2>
-    <p class="sub">Aquí va toda la información del proyecto. Si despega, el encargo "${esc(codigo.slice(6, 8))}  I  NOMBRE" se crea con estos datos.</p>
+    <p class="sub">Aquí va toda la información del proyecto. Al crearla se guarda su carpeta en OneDrive con el código de propuesta. Si el cliente acepta y despega, se crea el encargo con el código de proyecto y su carpeta.</p>
     <div class="grilla-form">
-      <div><label>Cotización</label><input name="codigo" value="${esc(codigo)}" required ${p ? 'readonly' : ''}></div>
+      <div><label>Código de propuesta</label><input name="codigo" value="${esc(codigo)}" required ${p ? 'readonly' : ''}></div>
       <div><label>Nombre del proyecto (en mayúsculas)</label><input name="nombre" value="${esc(p?.nombre || '')}" placeholder="PROYECTO" required style="text-transform:uppercase"></div>
+      <div class="ancho"><label>Código de proyecto (cuando despegue)</label><input id="codproy" readonly tabindex="-1" value=""></div>
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli, p?.cliente_id)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       <div><label>Servicio</label><select name="servicio_id">${op(svc, p?.servicio_id)}</select></div>
       <input type="hidden" name="tipo" value="${p?.tipo || 'ambos'}">
@@ -682,6 +683,8 @@ async function modalPropuesta(p = null) {
   const f = $('#fp', fondo);
   $('#cancelar', fondo).onclick = () => fondo.remove();
   f.honorarios.oninput = () => { const n = f.honorarios.value.replace(/\D/g, ''); f.honorarios.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
+  const codProy = () => { const n = f.nombre.value.trim().toUpperCase().replace(/^\d{2}\s+I\s+/, ''); $('#codproy', fondo).value = `${(f.codigo.value.match(/_(\d{2})/) || [, '26'])[1]}  I  ${n || 'NOMBRE'}`; };
+  f.nombre.oninput = codProy; f.codigo.oninput = codProy; codProy();
   f.cliente_id.onchange = async () => {
     if (f.cliente_id.value !== '__nuevo') return;
     const nombre = prompt('Nombre o razón social del cliente');
@@ -698,7 +701,14 @@ async function modalPropuesta(p = null) {
     if (!v.cliente_id) v.cliente_id = null;
     for (const [k] of DETALLES_PROPUESTA) v[k] = (v[k] || '').trim() || null;
     try {
-      if (p) { delete v.codigo; await D.actualizarPropuesta(p.id, v); } else await D.crearPropuesta(v);
+      if (p) { delete v.codigo; await D.actualizarPropuesta(p.id, v); }
+      else {
+        const n = await D.crearPropuesta(v);
+        if (!D.MODO_DEMO) {
+          try { const r = await D.onedrive('propuesta', { propuesta_id: n.id }); alert(`Propuesta creada.\nCarpeta en OneDrive: ${r.carpeta}`); }
+          catch (e2) { alert('La propuesta se creó, pero no se pudo crear su carpeta en OneDrive: ' + msg(e2)); }
+        }
+      }
       fondo.remove(); ir();
     } catch (err) { $('#aviso', fondo).textContent = msg(err); }
   };

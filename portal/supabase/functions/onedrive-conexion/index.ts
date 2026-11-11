@@ -5,6 +5,7 @@
 //   'estado'   → si está conectado
 //   'despegar' → {encargo_id}: crea "REG/26  I  NOMBRE" con la estructura de carpetas y mueve la propuesta a LEGALES/PROP _ ECONOMICAS
 //   'subir'    → {encargo_id, carpeta, nombre, base64}: guarda un archivo en la carpeta del encargo
+//   'propuesta'→ {propuesta_id}: crea la carpeta de la propuesta "SCREG_26xxx_NOMBRE" en ZL_REG_PROPUESTAS
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -83,6 +84,14 @@ async function despegar(at: string, encargoId: string) {
   return { carpeta: base, movidos };
 }
 
+async function carpetaPropuesta(at: string, propuestaId: string) {
+  const { data: p } = await admin.from("propuestas").select("codigo,nombre").eq("id", propuestaId).single();
+  if (!p) throw new Error("Propuesta no encontrada");
+  const ruta = `${PROPUESTAS}/${p.codigo.toUpperCase()}_${p.nombre.toUpperCase()}`;
+  await asegurarCarpeta(at, ruta);
+  return { carpeta: ruta };
+}
+
 async function subir(at: string, encargoId: string, carpeta: string, nombre: string, base64: string) {
   const { data: e } = await admin.from("encargos").select("nombre,onedrive_carpeta").eq("id", encargoId).single();
   const base = e?.onedrive_carpeta || `${RAIZ}/${e?.nombre.toUpperCase()}`;
@@ -133,6 +142,7 @@ Deno.serve(async (req) => {
     }
     const at = await accesoGraph();
     if (b.accion === "despegar") return json(await despegar(at, b.encargo_id));
+    if (b.accion === "propuesta") return json(await carpetaPropuesta(at, b.propuesta_id));
     if (b.accion === "subir") return json(await subir(at, b.encargo_id, b.carpeta, b.nombre, b.base64));
     return json({ error: "Acción desconocida" }, 400);
   } catch (err) {
