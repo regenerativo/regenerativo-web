@@ -89,3 +89,25 @@ select{padding-right:18px!important}
 .lado a{border-radius:0!important}
 .filtros select{width:auto!important;min-width:180px}
 @media (max-width:760px){.filtros select{width:100%!important}}
+
+/* ---------- Ingreso como la portada de la web: burbujas en movimiento detrás del vidrio,
+   logo centrado, "Por — regenerativo" abajo a la izquierda y redes abajo a la derecha ---------- */
+.stage{width:max(calc(100vw * 1280 / 858.5), calc(100vh * 1280 / 858.5))}
+@media (orientation: portrait) and (max-width: 760px){.stage{transform:translate(-50%,-50%) rotate(90deg)}}
+body.ingreso .gl,body:has(.acceso) .gl{background:rgba(255,255,255,.42);-webkit-backdrop-filter:blur(22px) saturate(1.7) brightness(1.04);backdrop-filter:blur(22px) saturate(1.7) brightness(1.04)}
+.acceso{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:96px clamp(20px,3.3vw,48px) 120px!important}
+.acceso-caja{width:100%;max-width:420px!important;margin:0 auto}
+.acceso-caja>img{display:block;width:clamp(72px,6vw,96px)!important;height:auto;margin:0 auto 28px!important}
+.acceso-caja h1{text-align:center}
+.acceso-caja p,.acceso-caja .aviso{text-align:center}
+.pestanas{justify-content:center}
+.acceso-caja .firma{display:none!important}
+.pie-ingreso{display:none}
+body.ingreso .pie-ingreso,body:has(.acceso) .pie-ingreso{display:block}
+.pie-ingreso .porx{position:fixed;left:clamp(20px,3.3vw,48px);bottom:48px;z-index:2;display:inline-flex;align-items:baseline;font-size:14.25px;line-height:1;white-space:nowrap;letter-spacing:-.005em;color:#1E221D}
+.pie-ingreso .porx .p1{font-weight:300}
+.pie-ingreso .porx .p2{font-weight:500}
+.pie-ingreso .porx .ln{display:inline-block;width:1.65em;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em}
+.pie-ingreso .redes{position:fixed;right:calc(clamp(20px,3.3vw,48px) - 10px);bottom:33px;z-index:2;display:flex;gap:4px}
+.pie-ingreso .redes a{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+@media (max-height:640px){.pie-ingreso .porx,.pie-ingreso .redes{position:absolute}}

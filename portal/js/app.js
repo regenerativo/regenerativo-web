@@ -60,7 +60,7 @@ async function ir() {
   try { await irSeguro(); }
   catch (err) {
     console.error(err);
-    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="assets/isotipo.png" alt=""><h1>Sin conexión</h1><p>${esc(msg(err))}</p>
+    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="/assets/33b2a586a276.png" alt=""><h1>Sin conexión</h1><p>${esc(msg(err))}</p>
       <button class="btn full" onclick="location.reload()">Reintentar</button></div></div>`;
   } finally { clearTimeout(cargando); document.body.classList.remove('cargando'); }
 }
@@ -153,7 +153,7 @@ function vistaAcceso() {
     const cli = modo === 'cliente';
     raiz.innerHTML = `
     <div class="acceso"><form class="acceso-caja" id="f">
-      <img src="assets/isotipo.png" alt="regenerativo">
+      <img src="/assets/33b2a586a276.png" alt="regenerativo">
       <h1>Portal de encargos</h1>
       <div class="pestanas">
         <button type="button" class="${cli ? 'activa' : ''}" data-m="cliente">Clientes</button>
@@ -188,14 +188,14 @@ function vistaAcceso() {
 function vistaNuevaClave(enlace) {
   document.body.classList.add('ingreso');
   if (enlace.error) {
-    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="assets/isotipo.png" alt=""><h1>El enlace ya no sirve</h1>
+    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="/assets/33b2a586a276.png" alt=""><h1>El enlace ya no sirve</h1>
       <p>${esc(enlace.error)}. Pide una nueva invitación o usa "Olvidé mi contraseña".</p><a class="btn full" href="#/acceso">Ir al ingreso</a></div></div>`;
     return;
   }
   const bienvenida = enlace.tipo === 'invite';
   raiz.innerHTML = `
   <div class="acceso"><form class="acceso-caja" id="f">
-    <img src="assets/isotipo.png" alt="regenerativo">
+    <img src="/assets/33b2a586a276.png" alt="regenerativo">
     <h1>${bienvenida ? 'Bienvenido al portal' : 'Nueva contraseña'}</h1>
     <p>${bienvenida ? 'Crea tu contraseña para entrar a tus encargos.' : 'Escribe tu nueva contraseña.'}</p>
     <label for="c1">Contraseña (mínimo 8 caracteres)</label><input id="c1" type="password" autocomplete="new-password" minlength="8" required>
@@ -214,7 +214,7 @@ function vistaNuevaClave(enlace) {
 function vistaRecuperar() {
   raiz.innerHTML = `
   <div class="acceso"><form class="acceso-caja" id="f">
-    <img src="assets/isotipo.png" alt="regenerativo">
+    <img src="/assets/33b2a586a276.png" alt="regenerativo">
     <h1>Recuperar contraseña</h1>
     <p>Te enviaremos un enlace para crear una nueva.</p>
     <label for="email">Correo</label><input id="email" type="email" required>
