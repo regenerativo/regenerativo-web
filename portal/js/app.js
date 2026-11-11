@@ -3,6 +3,38 @@ import * as M from './modulos.js';
 import { vistaFinanzas } from './finanzas.js';
 import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js';
 
+// Mensajes de Supabase en español
+function msg(err) {
+  const t = String(err && (err.message || err) || '');
+  const seg = t.match(/after (\d+) seconds?/i);
+  if (seg) return `Por seguridad, puedes pedirlo de nuevo en ${seg[1]} segundos.`;
+  const M = [
+    [/invalid login credentials/i, 'Correo o contraseña incorrectos.'],
+    [/email not confirmed/i, 'Este correo aún no está confirmado. Revisa tu bandeja de entrada.'],
+    [/user not found/i, 'No encontramos ese usuario.'],
+    [/password should be at least (\d+)/i, m => `La contraseña debe tener al menos ${m[1]} caracteres.`],
+    [/new password should be different/i, 'La nueva contraseña debe ser distinta a la anterior.'],
+    [/rate limit|too many requests/i, 'Demasiados intentos. Espera un momento y vuelve a intentarlo.'],
+    [/failed to fetch|networkerror|load failed/i, 'No se pudo conectar con el servidor. Revisa tu conexión a internet.'],
+    [/jwt expired|session.*expired|refresh token/i, 'Tu sesión expiró. Vuelve a ingresar.'],
+    [/unable to validate email|invalid email/i, 'El correo no es válido.'],
+    [/signups not allowed|signup is disabled/i, 'El registro está cerrado. El acceso es solo por invitación.'],
+    [/permission denied|row-level security/i, 'No tienes permiso para esta acción.'],
+  ];
+  for (const [re, es] of M) { const m = t.match(re); if (m) return typeof es === 'function' ? es(m) : es; }
+  return t;
+}
+// Cuenta regresiva cuando Supabase pide esperar antes de reenviar
+function esperaReenvio(err, btn, aviso) {
+  const seg = String(err && (err.message || err) || '').match(/after (\d+) seconds?/i);
+  if (!seg) return false;
+  let n = Number(seg[1]); btn.disabled = true;
+  const pinta = () => { aviso.textContent = `Por seguridad, puedes pedirlo de nuevo en ${n} segundo${n === 1 ? '' : 's'}.`; };
+  pinta();
+  const t = setInterval(() => { n--; if (n <= 0) { clearInterval(t); btn.disabled = false; aviso.textContent = 'Ya puedes pedir el enlace de nuevo.'; } else pinta(); }, 1000);
+  return true;
+}
+
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const xxx = v => (v === null || v === undefined || v === '' || v === 'XXX') ? '<span class="xxx">XXX</span>' : esc(v);
@@ -27,7 +59,7 @@ async function ir() {
   try { await irSeguro(); }
   catch (err) {
     console.error(err);
-    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="assets/isotipo.png" alt=""><h1>Sin conexión</h1><p>${esc(err.message || err)}</p>
+    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="assets/isotipo.png" alt=""><h1>Sin conexión</h1><p>${esc(msg(err))}</p>
       <button class="btn full" onclick="location.reload()">Reintentar</button></div></div>`;
   } finally { clearTimeout(cargando); document.body.classList.remove('cargando'); }
 }
@@ -62,7 +94,7 @@ async function irSeguro() {
     return marco(s, { titulo: 'Página no encontrada', html: `<div class="vacio">Esta página no existe. <a href="#/">Volver a los encargos</a></div>` });
   } catch (err) {
     console.error(err);
-    marco(s, { titulo: 'Algo salió mal', html: `<div class="vacio">${esc(err.message || err)}<br><br><a href="#/">Volver a los encargos</a></div>` });
+    marco(s, { titulo: 'Algo salió mal', html: `<div class="vacio">${esc(msg(err))}<br><br><a href="#/">Volver a los encargos</a></div>` });
   }
 }
 
@@ -145,7 +177,7 @@ function vistaAcceso() {
         if (modo === 'cliente') await D.ingresarCliente($('#usuario').value, $('#clave').value);
         else await D.ingresar($('#usuario').value.trim(), $('#clave').value);
         location.hash = '#/';
-      } catch (err) { $('#aviso').textContent = err.message; btn.disabled = false; }
+      } catch (err) { $('#aviso').textContent = msg(err); btn.disabled = false; }
     };
   };
   pintar();
@@ -172,7 +204,7 @@ function vistaNuevaClave(enlace) {
     e.preventDefault();
     if ($('#c1').value !== $('#c2').value) { $('#aviso').textContent = 'Las contraseñas no coinciden.'; return; }
     try { await D.cambiarClave($('#c1').value); history.replaceState(null, '', location.pathname + '#/'); ir(); }
-    catch (err) { $('#aviso').textContent = err.message; }
+    catch (err) { $('#aviso').textContent = msg(err); }
   };
 }
 
@@ -190,7 +222,7 @@ function vistaRecuperar() {
   $('#f').onsubmit = async e => {
     e.preventDefault();
     try { await D.recuperarClave($('#email').value.trim()); $('#aviso').style.color = 'var(--petroleo)'; $('#aviso').textContent = 'Si el correo está registrado, te llegará el enlace.'; }
-    catch (err) { $('#aviso').textContent = err.message; }
+    catch (err) { const b = $('#f button[type=submit]'); if (!esperaReenvio(err, b, $('#aviso'))) $('#aviso').textContent = msg(err); }
   };
 }
 
@@ -304,7 +336,7 @@ async function modalEncargo(e = null) {
       fondo.remove();
       location.hash = `#/${e ? D.slugEncargo(e) : encodeURIComponent(v.codigo)}`;
       ir();
-    } catch (err) { $('#aviso', fondo).textContent = err.message; }
+    } catch (err) { $('#aviso', fondo).textContent = msg(err); }
   };
 }
 
@@ -424,22 +456,22 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     $('#agregar').onclick = () => { resp.push({ nombre: '', cargo: '' }); pintar(); };
     $('#guardar-resp').onclick = async () => {
       try { await D.guardarResponsables(e.id, resp.filter(r => r.nombre.trim())); $('#aviso-resp').style.color = 'var(--petroleo)'; $('#aviso-resp').textContent = 'Responsables guardados.'; }
-      catch (err) { $('#aviso-resp').textContent = err.message; }
+      catch (err) { $('#aviso-resp').textContent = msg(err); }
     };
     $('#asignar-clave').onclick = async () => {
       const clave = $('#clave-cliente').value;
       if (clave.length < 8) { $('#aviso-cli').textContent = 'La contraseña debe tener al menos 8 caracteres.'; return; }
       try { await D.asignarAccesoCliente(e.id, clave); ir(); }
-      catch (err) { $('#aviso-cli').textContent = err.message; }
+      catch (err) { $('#aviso-cli').textContent = msg(err); }
     };
     const q = $('#quitar-clave');
     if (q) q.onclick = async () => {
       try { await D.asignarAccesoCliente(e.id, null, true); ir(); }
-      catch (err) { $('#aviso-cli').textContent = err.message; }
+      catch (err) { $('#aviso-cli').textContent = msg(err); }
     };
     $('#invitar').onclick = async () => {
       try { await D.invitar($('#inv-email').value.trim(), e.id, $('#inv-rol').value); $('#aviso-inv').style.color = 'var(--petroleo)'; $('#aviso-inv').textContent = 'Invitación enviada.'; }
-      catch (err) { $('#aviso-inv').style.color = ''; $('#aviso-inv').textContent = err.message; }
+      catch (err) { $('#aviso-inv').style.color = ''; $('#aviso-inv').textContent = msg(err); }
     };
     return;
   }
@@ -545,7 +577,7 @@ async function vistaPropuestas(s) {
       }
       if (acc === 'ver') { const e3 = await D.encargo(p.codigo); location.hash = `#/${e3 ? D.slugEncargo(e3) : p.codigo}`; return; }
       ir();
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert(msg(err)); }
   };
   $('#buscar').oninput = pintar; $('#festado').onchange = pintar; pintar();
   $('#nueva').onclick = () => modalPropuesta();
@@ -603,7 +635,7 @@ async function modalPropuesta() {
     v.honorarios = v.honorarios ? Number(v.honorarios.replace(/\D/g, '')) : null;
     if (!v.cliente_id) v.cliente_id = null;
     try { await D.crearPropuesta(v); fondo.remove(); ir(); }
-    catch (err) { $('#aviso', fondo).textContent = err.message; }
+    catch (err) { $('#aviso', fondo).textContent = msg(err); }
   };
 }
 
