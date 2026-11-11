@@ -69,6 +69,7 @@ async function irSeguro() {
   if (enlace && (enlace.error || enlace.tipo === 'invite' || enlace.tipo === 'recovery')) return vistaNuevaClave(enlace);
   if (enlace) { history.replaceState(null, '', location.pathname + '#/'); }
   const ruta = location.hash.replace(/^#/, '') || '/';
+  document.body.classList.toggle('ingreso', ['/acceso', '/recuperar', '/nueva-clave'].includes(ruta));
   const s = await D.sesion();
   if (s) { s.admin = await D.esAdmin(); s.facturacion = await D.esFacturacion(); s.soloFinanzas = s.facturacion && !s.admin; }  // se guarda en memoria por sesión (datos.js)
   if (!s && ruta !== '/acceso' && ruta !== '/recuperar') { location.hash = '#/acceso'; return; }
@@ -184,6 +185,7 @@ function vistaAcceso() {
 }
 
 function vistaNuevaClave(enlace) {
+  document.body.classList.add('ingreso');
   if (enlace.error) {
     raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="assets/isotipo.png" alt=""><h1>El enlace ya no sirve</h1>
       <p>${esc(enlace.error)}. Pide una nueva invitación o usa "Olvidé mi contraseña".</p><a class="btn full" href="#/acceso">Ir al ingreso</a></div></div>`;
