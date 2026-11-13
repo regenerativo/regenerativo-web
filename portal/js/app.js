@@ -234,10 +234,9 @@ function vistaRecuperar() {
 
 // ---------------- Lista de encargos ----------------
 // ---------------- Inicio del equipo: bienvenida, versículo y resumen ----------------
-const VERSICULOS = [
-  ['Y todo lo que hagan, háganlo de corazón, como para el Señor y no como para la gente.', 'COLOSENSES 3.23 RVC'],
-  ['Dos son mejor que uno, porque sacan más provecho de sus esfuerzos.', 'ECLESIASTÉS 4.9 RVC'],
-  ['Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.', 'ECLESIASTÉS 4.12 RVC'],
+const VERSICULOS = [   // los mismos de regenerativo.co/about
+  ['Y Dios creó al hombre a su imagen. Lo creó a imagen de Dios. Hombre y mujer los creó.', 'GÉNESIS 1.27 RVC'],
+  ['Dos son mejor que uno, porque sacan más provecho de sus esfuerzos. Si uno de ellos se tropieza, el otro lo levanta. ¡Pero ay del que cae y no tiene quien lo levante! Además, si dos duermen juntos, se calientan mutuamente; pero uno solo no puede calentarse. Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.', 'ECLESIASTÉS 4.9-12 RVC'],
 ];
 async function vistaInicio(s) {
   const festLista = await D.festivos();
