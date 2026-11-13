@@ -392,3 +392,24 @@
   :root body .titulo-pag h1{font-size:28px!important}
   :root body .titulo-pag p{font-size:14px}
 }
+/* Cifras y tarjetas compactas en todo el portal (escritorio, iPad y celular) */
+:root body .kpi{padding:12px 14px!important;border-radius:14px!important}
+:root body .kpi .va{font-size:clamp(20px,1.6vw,24px)!important;margin-top:2px}
+:root body .kpi .et{font-size:11px!important}
+:root body .kpi .su{font-size:12.5px!important}
+:root body .tile{padding:8px 10px}
+:root body .tile b{font-size:19px}
+:root body .ce-va{font-size:22px}
+:root body .cifra-emp{padding:9px 6px}
+:root body .cifra-grande{font-size:24px}
+:root body .mon-cifra{font-size:clamp(30px,3vw,42px)!important}
+:root body .tarjeta-cli{padding:12px}
+:root body .tc-ico{width:32px;height:32px}
+:root body .tc-txt b{font-size:15px}
+:root body .btn:not(.mini){min-height:34px;padding:6px 14px!important;font-size:14px!important}
+@media (max-width:600px){
+  :root body .kpi .va{font-size:19px!important}
+  :root body .ce-va{font-size:19px}
+  :root body .mon-cifra{font-size:30px!important}
+  :root body .btn:not(.mini){min-height:38px;font-size:14px!important}
+}
