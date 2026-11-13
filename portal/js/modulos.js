@@ -1,7 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=31';
-import { descargarPDF } from './pdf.js?v=31';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=31';
+import * as D from './datos.js?v=32';
+import { descargarPDF } from './pdf.js?v=32';
+import { btnIco } from './iconos.js?v=32';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=32';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -64,9 +65,9 @@ export function descargar(nombre, html, tipo) {
 // ---------------- Barra común de documentos ----------------
 function barraDoc(ctx, d, tipo) {
   const b = [];
-  if (ctx.admin && d.estado === 'borrador') b.push(`<button class="btn sec mini" data-doc="enviar">Marcar enviado</button>`);
-  if (ctx.admin && tipo === 'contrato' && d.estado !== 'firmado') b.push(`<button class="btn sec mini" data-doc="firmar">Marcar firmado</button>`);
-  if (d.estado === 'enviado' && ctx.admin && tipo !== 'informe') b.push(`<button class="btn ok mini" data-doc="aprobar">✓ Aprobar</button>`);
+  if (ctx.admin && d.estado === 'borrador') b.push(btnIco('enviar', 'Marcar enviado', 'data-doc="enviar"'));
+  if (ctx.admin && tipo === 'contrato' && d.estado !== 'firmado') b.push(btnIco('firmar', 'Marcar firmado', 'data-doc="firmar"'));
+  if (d.estado === 'enviado' && ctx.admin && tipo !== 'informe') b.push(btnIco('check', 'Aprobar', 'data-doc="aprobar"', 'ok'));
   if (!(ctx.esCliente && ['presupuesto', 'gantt'].includes(tipo))) b.push(`<button class="btn-envio" data-doc="pdf">Descargar PDF <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button>`);
   if (!ctx.esCliente) b.push(`<button class="btn-envio" data-doc="word">Descargar Word <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button>`);
   return `<div class="barra-doc">
@@ -272,7 +273,7 @@ async function presupuesto(ctx) {
   const cuerpo = () => `<h1 class="doc-titulo">Presupuesto de obra</h1><p class="doc-sub">${esc(ctx.e.nombre)} · versión ${p.version}</p>${tabla(false)}${cierreHTML(p, t, area)}`;
   const d = { ...p, titulo: 'Presupuesto de obra' };
   const html = barraDoc(ctx, d, 'presupuesto') + `<div class="barra-doc" style="margin-top:-8px"><div class="sub">${editable ? 'Borrador: puedes cambiar cantidades; los totales se recalculan solos.' : `Versión ${ESTADOS_DOC[p.estado].toLowerCase()}: los valores están congelados.`} El cliente solo ve los totales por tipo de actividad.</div>
-    <div class="barra-acc"><button class="btn sec mini" id="xls">Excel</button>${ctx.admin && p.estado !== 'borrador' ? '<button class="btn sec mini" id="reabrir-p">Volver a borrador</button>' : ''}</div></div>` +
+    <div class="barra-acc">${btnIco('excel', 'Descargar Excel', 'id="xls"')}${ctx.admin && p.estado !== 'borrador' ? btnIco('reabrir', 'Volver a borrador', 'id="reabrir-p"') : ''}</div></div>` +
     kpisPres(t) + `<div class="tabla-cont">${tabla(true)}</div><div class="dos" style="margin-top:20px"><div></div><section class="panel">${cierreHTML(p, t, area)}</section></div>`;
   return { html, montar: () => {
     montarBarra(ctx, d, 'presupuesto', cuerpo);
@@ -390,7 +391,7 @@ async function gantt(ctx) {
     <div class="kpi"><div class="et">Avance real</div><div class="va">${pct(g.realTotal)}</div><div class="barra"><i style="width:${g.realTotal * 100}%"></i></div></div>
     <div class="kpi"><div class="et">Estado de la obra</div><div class="va" style="font-size:20px">${g.realTotal + 0.005 >= g.esperadoTotal ? 'A tiempo' : 'Con retraso'}</div><div class="su">${pct(g.realTotal - g.esperadoTotal)} frente a lo esperado</div></div></div>`;
   const cuerpoXls = () => `<h1>Cronograma ${esc(ctx.e.nombre)}</h1>${tabla.replace(/<input[^>]*value="([^"]*)"[^>]*>%?/g, '$1')}`;
-  return { html: kp + `<div class="barra-doc"><div class="sub">${editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.'}</div><div class="barra-acc">${ctx.esCliente ? '' : '<button class="btn sec mini" id="xls-g">Excel</button>'}</div></div>` + grafico + tabla,
+  return { html: kp + `<div class="barra-doc"><div class="sub">${editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.'}</div><div class="barra-acc">${ctx.esCliente ? '' : btnIco('excel', 'Descargar Excel', 'id="xls-g"')}</div></div>` + grafico + tabla,
     montar: () => {
       const b = $('#xls-g'); if (b) b.onclick = () => descargar(nombreArchivo(ctx.e, 'gantt', { fecha: iso(new Date()) }, 'xls'), cuerpoXls(), 'xls');
       document.querySelectorAll('[data-t]').forEach(inp => inp.onchange = async () => {

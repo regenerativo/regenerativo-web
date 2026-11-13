@@ -1,6 +1,7 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=31';
-import { cop, fecha, iso } from './formato.js?v=31';
+import * as D from './datos.js?v=32';
+import { cop, fecha, iso } from './formato.js?v=32';
+import { btnIco } from './iconos.js?v=32';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -67,7 +68,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
           <select data-f="categoria_id">${opsCat(cats, x.tipo, x.categoria_id)}</select>
           <select data-f="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === x.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select>
         </div>
-        <div class="pend-acc"><button class="btn mini" data-ok>✓</button><button class="btn sec mini" data-no title="Descartar (no es un movimiento real)">✕</button></div>
+        <div class="pend-acc">${btnIco('check', 'Confirmar', 'data-ok', '')}${btnIco('x', 'Descartar (no es un movimiento real)', 'data-no')}</div>
       </div>`).join('')}
       ${pend.length > 4 ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 4} restantes</button>` : ''}
     </section>` : ''}
@@ -194,7 +195,7 @@ function modalMov(m, cats, encargos, recargar) {
   if (m.id) {
     const pintar = async () => {
       const l = await D.finSoportes(m.id);
-      $('#sop-lista', fondo).innerHTML = l.length ? l.map(x => `<div class="sop-item"><a href="#" data-ver="${x.id}">${esc(x.nombre)}</a><button type="button" class="btn sec mini" data-quitar="${x.id}">Quitar</button></div>`).join('') : 'Sin soportes todavía.';
+      $('#sop-lista', fondo).innerHTML = l.length ? l.map(x => `<div class="sop-item"><a href="#" data-ver="${x.id}">${esc(x.nombre)}</a>${btnIco('borrar', 'Quitar soporte', `data-quitar="${x.id}"`, 'sec peligro')}</div>`).join('') : 'Sin soportes todavía.';
       fondo.querySelectorAll('[data-ver]').forEach(a => a.onclick = async ev => { ev.preventDefault(); window.open(await D.finUrlSoporte(l.find(x => x.id === a.dataset.ver).ruta), '_blank'); });
       fondo.querySelectorAll('[data-quitar]').forEach(b2 => b2.onclick = async () => { await D.finBorrarSoporte(l.find(x => x.id === b2.dataset.quitar)); pintar(); });
     };

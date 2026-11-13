@@ -161,8 +161,16 @@ a.inicio-fila:hover b{text-decoration:underline}
 }
 /* Contenidos del portal: más ancho útil y letra 20 % más pequeña que la web (los encabezados y menús quedan igual) */
 .cont{max-width:2100px}
-@media (min-width:601px){.cont{zoom:.8}}
-@media (max-width:600px){.cont{zoom:.9}}
+@media (min-width:601px){.cont{zoom:.72}}
+@media (max-width:600px){.cont{zoom:.85}}
 table.t-prop td:nth-child(2){min-width:240px}
 table.t-prop td:nth-child(2) b{white-space:nowrap}
 @media (max-width:1100px){table.t-prop th.col-opc:nth-child(1),table.t-prop td.col-opc:nth-child(1){display:none}}
+/* Botones de solo ícono (acciones) */
+.btn.mini.ico{padding:0!important;width:34px;height:34px;justify-content:center;gap:0;flex:none}
+.btn.mini.ico svg{display:block}
+.acciones-fila,.od-acc,.barra-acc,.pend-acc{gap:6px}
+.acciones-fila .btn.ico{margin-left:6px}
+/* Título de página 30 % más pequeño y barra lateral 10 % más angosta */
+.titulo-pag h1{font-size:clamp(24px,2.98vw,38px)!important}
+:root{--lado:223px}

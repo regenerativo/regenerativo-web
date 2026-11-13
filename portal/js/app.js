@@ -1,7 +1,8 @@
-import * as D from './datos.js?v=31';
-import * as M from './modulos.js?v=31';
-import { vistaFinanzas } from './finanzas.js?v=31';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=31';
+import * as D from './datos.js?v=32';
+import * as M from './modulos.js?v=32';
+import { vistaFinanzas } from './finanzas.js?v=32';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=32';
+import { ico, btnIco, enlaceIco } from './iconos.js?v=32';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -602,7 +603,7 @@ const tipoDoc = n => /\.pdf$/i.test(n) ? 'PDF' : /\.xlsx?$/i.test(n) ? 'Excel' :
 
 // Lista los documentos de la carpeta del módulo en OneDrive: abrir (en OneDrive) y descargar (Word, PDF, Excel)
 async function documentosOneDrive(el, e, carpeta) {
-  const cab = web => `<div class="od-cab"><h3>Documentos en OneDrive</h3>${web ? `<a class="btn sec mini" href="${esc(web)}" target="_blank" rel="noopener">Abrir carpeta</a>` : ''}</div><p class="sub od-ruta">${esc(e.nombre)} / ${esc(carpeta)}</p>`;
+  const cab = web => `<div class="od-cab"><h3>Documentos en OneDrive</h3>${web ? enlaceIco('carpeta', 'Abrir carpeta en OneDrive', esc(web)) : ''}</div><p class="sub od-ruta">${esc(e.nombre)} / ${esc(carpeta)}</p>`;
   if (D.MODO_DEMO) { el.innerHTML = cab('') + '<p class="sub">En el portal real aquí aparecen los documentos de esta carpeta de OneDrive, con Abrir y Descargar.</p>'; return; }
   el.innerHTML = cab('') + '<p class="sub">Buscando documentos…</p>';
   try {
@@ -610,12 +611,12 @@ async function documentosOneDrive(el, e, carpeta) {
     if (!r.web) { el.innerHTML = cab('') + '<p class="sub">Esta carpeta todavía no existe en OneDrive.</p>'; return; }
     el.innerHTML = cab(r.web) + (r.archivos.length ? `<div class="od-lista">${r.archivos.map((a, i) => `
       <div class="od-fila"><div class="od-nom"><b>${esc(a.nombre)}</b><span class="sub">${tipoDoc(a.nombre)}${a.carpeta ? ' · ' + esc(a.carpeta) : ''}${a.fecha ? ' · ' + fecha(a.fecha.slice(0, 10)) : ''}</span></div>
-        <div class="od-acc"><a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir</a><button type="button" class="btn sec mini" data-od="${i}">Descargar ${tipoDoc(a.nombre)}</button></div></div>`).join('')}</div>`
+        <div class="od-acc">${enlaceIco('abrir', 'Abrir en OneDrive', esc(a.web))}${btnIco('descargar', 'Descargar ' + tipoDoc(a.nombre), `data-od="${i}"`)}</div></div>`).join('')}</div>`
       : '<p class="sub">La carpeta está vacía.</p>');
     const bajar = async (b, pdf) => {
-      const a = r.archivos[b.dataset.od ?? b.dataset.odpdf]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+      const a = r.archivos[b.dataset.od ?? b.dataset.odpdf]; const t = b.innerHTML; b.disabled = true; b.textContent = '…';
       try { const x = await D.onedrive('archivo_encargo', { encargo_id: e.id, carpeta, ruta: a.ruta, pdf }); bajarBase64(x.base64, x.nombre); }
-      catch (err) { alert(msg(err)); } finally { b.disabled = false; b.textContent = t; }
+      catch (err) { alert(msg(err)); } finally { b.disabled = false; b.innerHTML = t; }
     };
     el.querySelectorAll('[data-od]').forEach(b => b.onclick = () => bajar(b, false));
     el.querySelectorAll('[data-odpdf]').forEach(b => b.onclick = () => bajar(b, true));
@@ -732,13 +733,13 @@ function quedan(fechaEnvio) {
 }
 
 function accionesPropuesta(p) {
-  const b = (acc, txt, cls = 'sec') => `<button class="btn ${cls} mini" data-acc="${acc}" data-id="${p.id}">${txt}</button>`;
-  const ed = b('editar', 'Detalles');
-  const del = b('eliminar', 'Eliminar', 'sec peligro');
-  if (p.estado === 'borrador') return ed + b('enviar', 'Marcar enviada') + del;
-  if (p.estado === 'en_espera') return ed + b('despego', '✓ Despegó', 'ok') + b('no', 'No despegó') + del;
-  if (p.estado === 'despego') return ed + b('ver', 'Ver encargo');
-  return b('reabrir', 'Reabrir') + del;
+  const b = (acc, icono, txt, cls = 'sec') => btnIco(icono, txt, `data-acc="${acc}" data-id="${p.id}"`, cls);
+  const ed = b('editar', 'detalles', 'Detalles');
+  const del = b('eliminar', 'borrar', 'Eliminar', 'sec peligro');
+  if (p.estado === 'borrador') return ed + b('enviar', 'enviar', 'Marcar enviada') + del;
+  if (p.estado === 'en_espera') return ed + b('despego', 'check', 'Despegó', 'ok') + b('no', 'x', 'No despegó') + del;
+  if (p.estado === 'despego') return ed + b('ver', 'ver', 'Ver encargo');
+  return b('reabrir', 'reabrir', 'Reabrir') + del;
 }
 
 // Campos de "Detalles técnicos del encargo" y "Proyecto" (igual que en el Word SCREG_2XXXX_PROPUESTA)
@@ -862,14 +863,14 @@ async function modalPropuesta(p = null) {
     const pintarDocs = lista => {
       docs.innerHTML = `<h3 style="margin:8px 0 6px">Documentos de la propuesta</h3>
         <div class="od-lista">${lista.map((a, i) => `<div class="od-fila"><div class="od-nom"><b>${esc(a.nombre)}</b><span class="sub">${tipo(a.nombre)}</span></div>
-          <div class="od-acc">${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir</a>` : ''}<button type="button" class="btn sec mini" data-bajar="${i}">Descargar ${tipo(a.nombre)}</button></div></div>`).join('')}</div>
+          <div class="od-acc">${a.web ? enlaceIco('abrir', 'Abrir en OneDrive', esc(a.web)) : ''}${btnIco('descargar', 'Descargar ' + tipo(a.nombre), `data-bajar="${i}"`)}</div></div>`).join('')}</div>
         <p class="sub" id="sinc" style="margin-top:8px"></p>`;
       const bajar = async (b, pdf) => {
-        const a = lista[b.dataset.bajar ?? b.dataset.pdf]; const t = b.textContent; b.disabled = true; b.textContent = 'Descargando…';
+        const a = lista[b.dataset.bajar ?? b.dataset.pdf]; const t = b.innerHTML; b.disabled = true; b.textContent = '…';
         try {
           if (D.MODO_DEMO) throw new Error('En modo demostración no hay OneDrive: la descarga funciona en el portal real.');
           const r = await D.onedrive('archivo_propuesta', { propuesta_id: p.id, nombre: a.nombre, pdf }); bajarBase64(r.base64, r.nombre);
-        } catch (err) { alert(msg(err)); } finally { b.disabled = false; b.textContent = t; }
+        } catch (err) { alert(msg(err)); } finally { b.disabled = false; b.innerHTML = t; }
       };
       docs.querySelectorAll('[data-bajar]').forEach(b => b.onclick = () => bajar(b, false));
       docs.querySelectorAll('[data-pdf]').forEach(b => b.onclick = () => bajar(b, true));
