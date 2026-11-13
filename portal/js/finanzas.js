@@ -1,7 +1,7 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=32';
-import { cop, fecha, iso } from './formato.js?v=32';
-import { btnIco } from './iconos.js?v=32';
+import * as D from './datos.js?v=33';
+import { cop, fecha, iso } from './formato.js?v=33';
+import { btnIco } from './iconos.js?v=33';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -13,7 +13,7 @@ const compacto = n => n >= 1e6 ? (n / 1e6).toLocaleString('es-CO', { maximumFrac
 const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.icono || '')} ${esc(c.nombre)}</option>`).join('');
 
 export async function vistaFinanzas(mesSel, listaSel) {
-  const [cats, todos, encargos, docs] = await Promise.all([D.finCategorias(), D.finMovimientos(), D.encargos(), D.finDocumentosCobro()]);
+  const [cats, todos, encargos, docs, props] = await Promise.all([D.finCategorias(), D.finMovimientos(), D.encargos(), D.finDocumentosCobro(), D.finPropuestasEncargos().catch(() => [])]);
   const movs = todos.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const pend = todos.filter(x => x.estado === 'por_confirmar').sort((a, b) => a.fecha < b.fecha ? 1 : -1);
   const hoy = new Date();
@@ -28,41 +28,77 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const esSal = x => x.categoria_id === SALARIO;
   const ing = suma(delMes, 'ingreso'), gas = suma(delMes.filter(x => !esSal(x)), 'gasto'), sal = suma(delMes.filter(esSal), 'gasto');
 
-  // Por cobrar: plan de pagos de la propuesta + adendas aprobadas, menos ingresos registrados por encargo
+  // Valor de cada encargo: honorarios de la propuesta (o del documento web) + adendas aprobadas; menos lo recibido
+  const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
   const porEnc = encargos.map(e => {
-    const prop = docs.filter(d => d.encargo_id === e.id && d.tipo === 'propuesta' && ['aprobado', 'firmado'].includes(d.estado)).at(-1);
-    const adds = docs.filter(d => d.encargo_id === e.id && d.tipo === 'adenda' && ['aprobado', 'firmado'].includes(d.estado));
-    const esperado = (prop?.contenido?.honorarios || 0) + adds.reduce((s, d) => s + (d.contenido.valor || 0), 0);
+    const hon = Number(props.find(p => p.encargo_id === e.id)?.honorarios) || Number(docs.filter(d => d.encargo_id === e.id && d.tipo === 'propuesta' && aprob(d)).at(-1)?.contenido?.honorarios) || 0;
+    const adic = docs.filter(d => d.encargo_id === e.id && d.tipo === 'adenda' && aprob(d)).reduce((s, d) => s + (Number(d.contenido.valor) || 0), 0);
+    const esperado = hon + adic;
     const recibido = suma(movs.filter(x => x.encargo_id === e.id), 'ingreso');
     const gastos = suma(movs.filter(x => x.encargo_id === e.id), 'gasto');
-    return { e, esperado, recibido, gastos, porCobrar: Math.max(0, esperado - recibido), neto: recibido - gastos };
-  });   // todos los encargos, aunque aún no tengan movimientos
+    return { e, esperado, adic, recibido, gastos, porCobrar: Math.max(0, esperado - recibido) };
+  });
   const porCobrar = porEnc.reduce((s, r) => s + r.porCobrar, 0);
 
   // Últimos 6 meses
   const meses = Array.from({ length: 6 }, (_, i) => { const d = new Date(a, m - 1 - (5 - i), 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; });
-  const serie = meses.map(k => ({ k, ing: suma(movs.filter(x => mesDe(x.fecha) === k), 'ingreso'), gas: suma(movs.filter(x => mesDe(x.fecha) === k && !esSal(x)), 'gasto') }));
+  const serie = meses.map(k => ({ k, ing: suma(movs.filter(x => mesDe(x.fecha) === k && enLista(x)), 'ingreso'), gas: suma(movs.filter(x => mesDe(x.fecha) === k && !esSal(x) && enLista(x)), 'gasto') }));
 
-  // Presupuesto por categoría (gastos del mes)
-  const catsGasto = cats.filter(c => c.tipo === 'gasto' && c.id !== SALARIO).map(c => ({ ...c, gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }));
+  const catsGasto = cats.filter(c => c.tipo === 'gasto' && c.id !== SALARIO).map(c => ({ ...c, gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
+    .sort((x, y) => y.gastado - x.gastado);
   const presTotal = catsGasto.reduce((s, c) => s + Number(c.presupuesto_mensual || 0), 0);
   const ejemplos = movs.some(x => x.ejemplo);
   const prev = new Date(a, m - 2, 1), next = new Date(a, m, 1);
   const k = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-  const balance = ing - gas;   // operación: sin tu salario
-  const queda = balance - sal;
+  const balance = ing - gas;
   const listas = [['todo', 'Todo regenerativo'], ['general', 'Gastos generales'], ...encargos.map(e => [e.id, e.nombre])];
-  const maxCol = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))));
-  const H = 190;
-  const porDia = [...new Set(delMes.map(x => x.fecha))];
+  const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))));
+  const signo = x => x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : '';
   const html = `
-    ${ejemplos ? `<div class="aviso-ej">Hay movimientos de ejemplo para que veas cómo funciona. <button class="btn sec mini" id="borrar-ej">Borrar ejemplos</button></div>` : ''}
-    ${pend.length ? `<section class="pend">
+    ${ejemplos ? `<div class="aviso-ej">Hay movimientos de ejemplo. <button class="btn sec mini" id="borrar-ej">Borrar ejemplos</button></div>` : ''}
+    <div class="fin-barra">
+      <div class="mes-sel"><a href="#/finanzas/${k(prev)}/${lista}" aria-label="Mes anterior">‹</a><b>${mesTxt}</b><a href="#/finanzas/${k(next)}/${lista}" aria-label="Mes siguiente">›</a></div>
+      <select id="lista">${listas.map(([v, n]) => `<option value="${v}" ${v === lista ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+      <span class="fin-esp"></span>
+      ${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}
+      <button class="btn sec mini" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini" data-nuevo="gasto">+ Gasto</button>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="et">Ingresos</div><div class="va ing">${cop(ing)}</div><div class="su">${mesTxt}</div></div>
+      <div class="kpi"><div class="et">Gastos de operación</div><div class="va">${cop(gas)}</div><div class="su">${presTotal ? Math.round(gas / presTotal * 100) + ' % del presupuesto' : 'Sin presupuesto'}</div>${presTotal ? `<div class="barra"><i style="width:${Math.min(100, gas / presTotal * 100)}%"></i></div>` : ''}</div>
+      <div class="kpi"><div class="et">Balance</div><div class="va ${balance < 0 ? 'neg' : ''}">${balance < 0 ? '−' : ''}${cop(Math.abs(balance))}</div><div class="su">Tu salario ${cop(sal)} · queda ${cop(balance - sal)}</div></div>
+      <div class="kpi"><div class="et">Por cobrar</div><div class="va">${cop(porCobrar)}</div><div class="su">${porEnc.filter(r => r.porCobrar > 0).length} encargos con saldo</div></div>
+    </div>
+    <div class="fin-grid">
+      <section class="panel"><h3>Ingresos y gastos · 6 meses</h3>${barras(serie)}</section>
+      <section class="panel"><div class="od-cab"><h3>Gastos por categoría</h3><a href="#" id="editar-pres" class="sub">Editar topes</a></div>
+        <table class="t-cat"><tbody>${catsGasto.map(c => {
+          const p = Number(c.presupuesto_mensual || 0), exc = p && c.gastado > p;
+          return `<tr class="clic" data-cat="${c.id}" title="Agregar gasto en ${esc(c.nombre)}"><td><span class="cat-ico">${esc(c.icono || '•')}</span>${esc(c.nombre)}
+            <span class="cat-barra">${p ? `<i class="tope" style="width:${p / maxCat * 100}%"></i>` : ''}<i class="${exc ? 'exc' : ''}" style="width:${c.gastado / maxCat * 100}%"></i></span></td>
+            <td class="num">${compacto(c.gastado)}<div class="sub ${exc ? 'xxx' : ''}">${p ? Math.round(c.gastado / p * 100) + ' %' : '—'}</div></td></tr>`;
+        }).join('')}</tbody></table>
+      </section>
+    </div>
+    <section class="panel"><h3>Movimientos de ${mesTxt}</h3>
+      ${delMes.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Fecha</th><th>Concepto</th><th class="col-opc">Categoría</th><th class="col-opc">Encargo</th><th class="num">Valor</th></tr></thead><tbody>
+        ${delMes.map(x => `<tr class="clic" data-editar="${x.id}"><td>${fecha(x.fecha)}</td><td>${esc(x.descripcion || '')}</td><td class="col-opc sub">${esc(x.tipo === 'socio' ? 'Personal / socio' : (x.categoria?.icono || '') + ' ' + (x.categoria?.nombre || ''))}</td>
+          <td class="col-opc sub">${esc(x.encargo?.nombre || 'General')}</td><td class="num ${x.tipo}">${signo(x)} ${cop(x.valor)}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="sub">No hay movimientos este mes en esta lista.</p>'}
+    </section>
+    <section class="panel"><h3>Encargos</h3>
+      ${porEnc.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Encargo</th><th class="num">Valor</th><th class="num">Recibido</th><th class="col-opc">Avance de cobro</th><th class="num">Por cobrar</th><th class="num col-opc">Gastos</th></tr></thead><tbody>
+      ${porEnc.map(r => `<tr class="clic" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b>${r.adic ? `<div class="sub">Incluye ${cop(r.adic)} en adicionales</div>` : ''}</td><td class="num">${r.esperado ? cop(r.esperado) : '—'}</td><td class="num">${cop(r.recibido)}</td>
+        <td class="col-opc" style="min-width:110px"><span class="barra"><i style="width:${r.esperado ? Math.min(100, r.recibido / r.esperado * 100) : 0}%"></i></span></td>
+        <td class="num">${cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td></tr>`).join('')}
+      <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="col-opc"></td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td></tr>
+      </tbody></table></div>` : '<p class="sub">Sin encargos.</p>'}
+    </section>
+    ${pend.length ? `<section class="pend" id="por-confirmar">
       <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Llegaron al correo. No cuentan en los totales hasta que les des ✓.</span></div>
-      ${pend.map((x, i) => `<div class="pend-fila ${i >= 4 ? 'pend-oculta' : ''}" data-pend="${x.id}">
+      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 ? 'pend-oculta' : ''}" data-pend="${x.id}">
         <div class="pend-txt"><span class="sub">${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
-        <div class="pend-val ${x.tipo}">${x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : ''} ${cop(x.valor)}</div>
+        <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
         <div class="pend-sel">
           <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
           <select data-f="categoria_id">${opsCat(cats, x.tipo, x.categoria_id)}</select>
@@ -70,62 +106,14 @@ export async function vistaFinanzas(mesSel, listaSel) {
         </div>
         <div class="pend-acc">${btnIco('check', 'Confirmar', 'data-ok', '')}${btnIco('x', 'Descartar (no es un movimiento real)', 'data-no')}</div>
       </div>`).join('')}
-      ${pend.length > 4 ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 4} restantes</button>` : ''}
-    </section>` : ''}
-    <section class="mon">
-      <div class="mon-total">
-        <div class="mon-et">Balance de la operación</div>
-        <div class="mon-cifra">${balance < 0 ? '−' : '+'}${cop(Math.abs(balance)).replace(' COP', '')}<span>COP</span></div>
-        <div class="mon-pills"><span class="pill-gas">− ${cop(gas)}</span><span class="pill-ing">+ ${cop(ing)}</span></div>
-        <div class="mon-sal"><span>Tu salario <b>${cop(sal)}</b></span><span>Queda en regenerativo <b class="${queda < 0 ? 'xxx' : ''}">${queda < 0 ? '−' : ''}${cop(Math.abs(queda))}</b></span></div>
-        <div class="mon-filtros">
-          <a href="#/finanzas/${k(prev)}/${lista}" class="mon-flecha">‹</a><b>${mesTxt}</b><a href="#/finanzas/${k(next)}/${lista}" class="mon-flecha">›</a>
-          <span class="sub">en</span>
-          <select id="lista">${listas.map(([v, n]) => `<option value="${v}" ${v === lista ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
-        </div>
-      </div>
-      <div class="mon-cols">${catsGasto.map(c => {
-        const p = Number(c.presupuesto_mensual || 0), exc = p && c.gastado > p;
-        const hP = p / maxCol * H, hG = Math.max(c.gastado ? 6 : 0, c.gastado / maxCol * H);
-        return `<button class="mon-col" data-cat="${c.id}" title="${esc(c.nombre)}">
-          <div class="mon-barra" style="height:${H}px">
-            ${p ? `<div class="mon-pres" style="height:${hP}px"></div>` : ''}
-            <div class="mon-gasto ${exc ? 'exc' : ''}" style="height:${hG}px"></div>
-          </div>
-          <div class="mon-ico">${esc(c.icono || '•')}</div>
-          <div class="mon-val">${compacto(c.gastado)}</div>
-          <div class="mon-pct ${exc ? 'xxx' : ''}">${p ? Math.round(c.gastado / p * 100) + '%' : '—'}</div>
-          <div class="mon-nom">${esc(c.nombre)}</div></button>`;
-      }).join('')}</div>
-      <p class="sub mon-ley"><span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <a href="#" id="editar-pres">Editar presupuesto</a></p>
-      <div class="mon-lista">
-        ${porDia.length ? porDia.map(d => `<div class="mon-dia">${fecha(d)}</div>` + delMes.filter(x => x.fecha === d).map(x => `
-          <button class="mon-mov" data-editar="${x.id}">
-            <span class="mon-mico">${esc(x.tipo === 'socio' ? '👤' : x.categoria?.icono || '•')}</span>
-            <span class="mon-mtxt"><span class="sub">${esc(x.tipo === 'socio' ? 'Personal / socio' : x.categoria?.nombre || '')}${x.encargo ? ' · ' + esc(x.encargo.nombre) : ''}</span>${esc(x.descripcion || '')}</span>
-            <span class="mon-mval ${x.tipo}">${x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : ''} ${cop(x.valor)}${x.tipo === 'socio' ? '<small>no cuenta</small>' : ''}</span>
-          </button>`).join('')).join('') : '<div class="vacio">No hay movimientos este mes en esta lista.</div>'}
-      </div>
-      <div class="mon-mas"><button class="btn mini" data-nuevo="ingreso">+ Ingreso</button><button class="mon-fab" data-nuevo="gasto" title="Agregar gasto">+</button></div>
-    </section>
-    <div class="kpis kpis-3" style="margin-top:24px">
-      <div class="kpi"><div class="et">Gastos vs. presupuesto</div><div class="va">${presTotal ? Math.round(gas / presTotal * 100) + '%' : '—'}</div><div class="su">${cop(gas)} de ${cop(presTotal)}</div></div>
-      <div class="kpi"><div class="et">Por cobrar</div><div class="va">${cop(porCobrar)}</div><div class="su">Propuestas y adendas aprobadas, menos lo recibido</div></div>
-      <div class="kpi"><div class="et">Encargos con saldo</div><div class="va">${porEnc.filter(r => r.porCobrar > 0).length}</div><div class="su">de ${porEnc.length} con movimientos</div></div>
-    </div>
-    <div class="dos">
-      <section class="panel"><h3>Ingresos y gastos de la operación · últimos 6 meses</h3>${barras(serie)}</section>
-      <section class="panel"><h3>Encargos</h3><p class="sub">Toca un encargo para ver solo sus movimientos.</p>
-      ${porEnc.length ? `<div class="tabla-cont"><table><thead><tr><th>Encargo</th><th class="num">Acordado</th><th class="num">Recibido</th><th class="num">Por cobrar</th><th class="num col-opc">Gastos</th><th class="num col-opc">Neto</th></tr></thead><tbody>
-      ${porEnc.map(r => `<tr class="fila-enc" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b></td><td class="num">${cop(r.esperado)}</td><td class="num">${cop(r.recibido)}</td><td class="num">${cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td><td class="num col-opc">${cop(r.neto)}</td></tr>`).join('')}
-      <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.neto, 0))}</td></tr>
-      </tbody></table></div>` : '<div class="vacio">Sin movimientos por encargo.</div>'}</section>
-    </div>`;
+      ${pend.length > 6 ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
+    </section>` : ''}`;
 
   return { html, montar: recargar => {
-    document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()) }, cats, encargos, recargar));
+    document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
     const pm = $('#pend-mas'); if (pm) pm.onclick = () => { document.querySelectorAll('.pend-oculta').forEach(f => f.classList.remove('pend-oculta')); pm.remove(); };
+    const pa = $('.pend-aviso'); if (pa) pa.onclick = ev => { ev.preventDefault(); $('#por-confirmar').scrollIntoView({ behavior: 'smooth' }); };
     document.querySelectorAll('[data-pend]').forEach(fila => {
       const sel = n => fila.querySelector(`[data-f="${n}"]`);
       sel('tipo').onchange = () => { sel('categoria_id').innerHTML = opsCat(cats, sel('tipo').value); sel('categoria_id').disabled = sel('tipo').value === 'socio'; };
@@ -138,8 +126,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); recargar(); };
     });
     const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
-    const ep = () => modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar);
-    $('#editar-pres').onclick = ev => { ev.preventDefault(); ep(); };
+    $('#editar-pres').onclick = ev => { ev.preventDefault(); modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar); };
     document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => modalMov({ tipo: 'gasto', fecha: iso(new Date()), categoria_id: x.dataset.cat, encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${mes}/${f.dataset.lista}`; scrollTo(0, 0); });
     $('#lista').onchange = ev => { location.hash = `#/finanzas/${mes}/${ev.target.value}`; };
@@ -153,7 +140,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
 
 function barras(serie) {
   const max = Math.max(1, ...serie.flatMap(s => [s.ing, s.gas]));
-  const H = 180;
+  const H = 220;
   return `<div class="graf">
     <div class="leyenda-fin"><span><i style="background:${C_ING}"></i>Ingresos</span><span><i style="background:${C_GAS}"></i>Gastos</span></div>
     <div class="graf-area" style="height:${H + 26}px">
@@ -168,7 +155,7 @@ function barras(serie) {
     </div></div>`;
 }
 
-function modalMov(m, cats, encargos, recargar) {
+export function modalMov(m, cats, encargos, recargar) {
   const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
   const opsCat = t => cats.filter(c => c.tipo === t).map(c => `<option value="${c.id}" ${c.id === m.categoria_id ? 'selected' : ''}>${esc(c.icono || '')} ${esc(c.nombre)}</option>`).join('');
   fondo.innerHTML = `<form class="modal" id="fm">

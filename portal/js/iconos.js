@@ -13,6 +13,10 @@ const P = {
   reabrir: '<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5"/>',
   excel: '<path d="M4 5h16v14H4zM4 10h16M4 15h16M10 5v14"/>',
   subir: '<path d="M12 20V9M7 14l5-5 5 5M5 4h14"/>',
+  archivo: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  atras: '<path d="M15 18l-6-6 6-6"/>',
+  editar: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  mas: '<path d="M12 5v14M5 12h14"/>',
   conectar: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
 };
 export const ico = n => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;

@@ -11,7 +11,9 @@
 //   'archivos_propuesta' → {propuesta_id}: lista Word/PDF/Excel de la carpeta de la propuesta
 //   'archivo_propuesta'  → {propuesta_id, nombre, pdf?}: descarga uno (pdf=true convierte el Word a PDF)
 //   'eliminar_propuesta' → {propuesta_id}: borra la propuesta del portal y manda su carpeta de ZL_REG_PROPUESTAS a la papelera de OneDrive
-//   'archivos_encargo' → {encargo_id, carpeta}: lista los documentos de esa carpeta del encargo (y sus subcarpetas)
+//   'archivos_encargo' → {encargo_id, fuentes}: documentos de las carpetas del módulo (plantilla nueva o nombres viejos)
+//   'conteos_encargo'  → {encargo_id, modulos}: cuántos documentos tiene cada módulo
+//   'explorar'         → {encargo_id, ruta}: carpetas y archivos de una carpeta del encargo
 //   'archivo_encargo'  → {encargo_id, carpeta, ruta, pdf?}: descarga uno
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -21,11 +23,13 @@ const ALCANCE = "offline_access Files.ReadWrite Mail.Read User.Read";
 const PORTAL = "https://regenerativo.co/portal/";
 const RAIZ = "REG";
 const PROPUESTAS = "REG/REG  I  GESTION INTEGRAL/ZL_REG_PROPUESTAS";
+// Plantilla de gestión documental de regenerativo (REG  I  GESTION INTEGRAL/ZL_REG_LIBRERIAS/REG_TEM DOCUMENTAL)
 const ESTRUCTURA = [
-  "COORDINACION _ ADMINISTRATIVA", "COORDINACION _ OBRA", "COORDINACION _ PERSONAL", "COORDINACION _ TECNICA",
-  "DOC _ ENVIADOS", "DOC _ RECIBIDOS", "IMAGEN _ VISUAL", "LEGALES", "LEGALES/CUENTAS DE COBRO", "LEGALES/OPS CONTRATOS",
-  "LEGALES/PROP _ ECONOMICAS", "PRESUPUESTO", "ZL_OBSOLETOS",
+  "COOR _ ADMIN", "COOR _ OBRA", "COOR _ OBRA/COOR _ PERSONAL", "COOR _ TÉCNICA", "DOC _ ENV", "DOC _ REC", "IMAGEN _ VISUAL",
+  "LEGALES", "LEGALES/00 PROPUESTA", "LEGALES/01 CONTRATOS", "LEGALES/02 ADENDAS", "LEGALES/03 OTRO SI",
+  "LEGALES/04 ACTAS DE ENTREGA", "LEGALES/05 CUENTAS DE COBRO", "PRESUPUESTO", "PROGRAMACIÓN", "ZL_OBSOLETOS",
 ];
+const CARPETA_PROPUESTA = "LEGALES/00 PROPUESTA";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -81,12 +85,17 @@ async function despegar(at: string, encargoId: string) {
   let movidos: string[] = [];
   try {
     const hijos = await graph(at, `/me/drive/root:/${enc(PROPUESTAS)}:/children?$top=200&$select=id,name`);
-    const destino = await graph(at, `/me/drive/root:/${enc(base + "/LEGALES/PROP _ ECONOMICAS")}`);
+    const destino = await graph(at, `/me/drive/root:/${enc(base + "/" + CARPETA_PROPUESTA)}`);
     for (const h of hijos.value.filter((x: any) => x.name.toUpperCase().startsWith(e.codigo.toUpperCase()))) {
       await graph(at, `/me/drive/items/${h.id}`, { method: "PATCH", body: JSON.stringify({ parentReference: { id: destino.id } }) });
       movidos.push(h.name);
     }
   } catch (_) { /* si no hay propuesta en ZL, no es error */ }
+  // La ruta del Word de la propuesta cambia: queda dentro de LEGALES/00 PROPUESTA del encargo
+  const { data: p } = await admin.from("propuestas").select("id,archivo_ruta").eq("encargo_id", e.id).maybeSingle();
+  if (p?.archivo_ruta?.startsWith(PROPUESTAS + "/")) {
+    await admin.from("propuestas").update({ archivo_ruta: `${base}/${CARPETA_PROPUESTA}/${p.archivo_ruta.slice(PROPUESTAS.length + 1)}`, archivo_web: null }).eq("id", p.id);
+  }
   await admin.from("encargos").update({ onedrive_carpeta: base }).eq("id", e.id);
   return { carpeta: base, movidos };
 }
@@ -174,26 +183,66 @@ async function baseEncargo(encargoId: string) {
 }
 const rutaSegura = (r: string) => { if (!r || r.split("/").some((x) => x === ".." || x === "")) throw new Error("Ruta no válida."); return r; };
 
-async function archivosEncargo(at: string, encargoId: string, carpeta: string) {
-  const base = `${await baseEncargo(encargoId)}/${rutaSegura(carpeta)}`;
-  let raiz;
-  try { raiz = await graph(at, `/me/drive/root:/${enc(base)}?$select=webUrl`); } catch (_) { return { web: null, archivos: [] }; }
+// Fuentes de un módulo: lista de grupos; de cada grupo se usa la primera carpeta que exista (plantilla nueva o nombres viejos).
+// "RUTA#0" = solo los archivos sueltos de esa carpeta (sin subcarpetas).
+type Fuente = string[];
+async function hijos(at: string, ruta: string) {
   const sel = "$top=200&$select=name,file,folder,webUrl,size,lastModifiedDateTime";
-  const hijos = (await graph(at, `/me/drive/root:/${enc(base)}:/children?${sel}`))?.value || [];
-  const archivos: any[] = [];
-  for (const h of hijos) {
-    if (h.file) archivos.push({ nombre: h.name, ruta: h.name, web: h.webUrl, fecha: h.lastModifiedDateTime });
-    else if (h.folder) {
-      const sub = (await graph(at, `/me/drive/root:/${enc(`${base}/${h.name}`)}:/children?${sel}`))?.value || [];
-      for (const x of sub) if (x.file) archivos.push({ nombre: x.name, ruta: `${h.name}/${x.name}`, carpeta: h.name, web: x.webUrl, fecha: x.lastModifiedDateTime });
+  return (await graph(at, `/me/drive/root:/${enc(ruta)}:/children?${sel}`))?.value || [];
+}
+async function recorrer(at: string, base: string, rel: string, prof: number, out: any[]) {
+  for (const h of await hijos(at, `${base}/${rel}`)) {
+    const r = `${rel}/${h.name}`;
+    if (h.file) out.push({ nombre: h.name, carpeta: rel, ruta: r, web: h.webUrl, fecha: h.lastModifiedDateTime });
+    else if (h.folder && prof > 0) await recorrer(at, base, r, prof - 1, out);
+  }
+}
+async function archivosEncargo(at: string, encargoId: string, fuentes: Fuente[] | string) {
+  const base = await baseEncargo(encargoId);
+  const grupos: Fuente[] = typeof fuentes === "string" ? [[fuentes]] : fuentes;
+  const archivos: any[] = []; let web: string | null = null;
+  for (const g of grupos) {
+    for (const cand of g) {
+      const [ruta, p] = cand.split("#"); rutaSegura(ruta);
+      let it; try { it = await graph(at, `/me/drive/root:/${enc(`${base}/${ruta}`)}?$select=webUrl,folder`); } catch (_) { continue; }
+      web = web || it.webUrl;
+      await recorrer(at, base, ruta, p === "0" ? 0 : 3, archivos);
+      break;
     }
   }
   archivos.sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""));
-  return { web: raiz.webUrl, archivos };
+  return { web, archivos };
+}
+
+// Cuántos archivos tiene cada módulo (para mostrar solo los módulos con datos)
+async function conteosEncargo(at: string, encargoId: string, modulos: Record<string, Fuente[]>) {
+  const base = await baseEncargo(encargoId);
+  const contarGrupo = async (g: Fuente) => {
+    for (const cand of g) {
+      const [ruta, p] = cand.split("#");
+      let it; try { it = await graph(at, `/me/drive/root:/${enc(`${base}/${ruta}`)}?$select=folder`); } catch (_) { continue; }
+      return p === "0" ? (await hijos(at, `${base}/${ruta}`)).filter((x: any) => x.file).length : (it.folder?.childCount || 0);
+    }
+    return 0;
+  };
+  const pares = await Promise.all(Object.entries(modulos).map(async ([m, grupos]) => [m, (await Promise.all(grupos.map(contarGrupo))).reduce((a, b) => a + b, 0)] as const));
+  return Object.fromEntries(pares);
+}
+
+// Explorador de carpetas del encargo
+async function explorar(at: string, encargoId: string, ruta = "") {
+  const base = await baseEncargo(encargoId);
+  if (ruta) rutaSegura(ruta);
+  const raiz = await graph(at, `/me/drive/root:/${enc(ruta ? `${base}/${ruta}` : base)}?$select=webUrl`);
+  const sel = "$top=200&$select=name,file,folder,webUrl,size,lastModifiedDateTime";
+  const l = (await graph(at, `/me/drive/root:/${enc(ruta ? `${base}/${ruta}` : base)}:/children?${sel}`))?.value || [];
+  const items = l.map((x: any) => ({ nombre: x.name, carpeta: !!x.folder, n: x.folder?.childCount ?? null, web: x.webUrl, fecha: x.lastModifiedDateTime, tamano: x.size }))
+    .sort((a: any, b: any) => (Number(b.carpeta) - Number(a.carpeta)) || a.nombre.localeCompare(b.nombre));
+  return { web: raiz.webUrl, base, items };
 }
 
 async function archivoEncargo(at: string, encargoId: string, carpeta: string, ruta: string, pdf = false) {
-  const base = `${await baseEncargo(encargoId)}/${rutaSegura(carpeta)}/${rutaSegura(ruta)}`;
+  const base = `${await baseEncargo(encargoId)}/${carpeta ? rutaSegura(carpeta) + "/" : ""}${rutaSegura(ruta)}`;
   const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(base)}:/content${pdf ? "?format=pdf" : ""}`, { headers: { Authorization: `Bearer ${at}` } });
   if (!r.ok) throw new Error(pdf ? "No se pudo convertir a PDF." : "No se pudo descargar el archivo.");
   const nombre = ruta.split("/").pop()!;
@@ -255,7 +304,9 @@ Deno.serve(async (req) => {
     if (b.accion === "archivos_propuesta") return json(await archivosPropuesta(at, b.propuesta_id));
     if (b.accion === "archivo_propuesta") return json(await archivoPropuesta(at, b.propuesta_id, b.nombre, !!b.pdf));
     if (b.accion === "eliminar_propuesta") return json(await eliminarPropuesta(at, b.propuesta_id));
-    if (b.accion === "archivos_encargo") return json(await archivosEncargo(at, b.encargo_id, b.carpeta));
+    if (b.accion === "archivos_encargo") return json(await archivosEncargo(at, b.encargo_id, b.fuentes || b.carpeta));
+    if (b.accion === "conteos_encargo") return json(await conteosEncargo(at, b.encargo_id, b.modulos || {}));
+    if (b.accion === "explorar") return json(await explorar(at, b.encargo_id, b.ruta || ""));
     if (b.accion === "archivo_encargo") return json(await archivoEncargo(at, b.encargo_id, b.carpeta, b.ruta, !!b.pdf));
     if (b.accion === "propuesta") return json(await carpetaPropuesta(at, b.propuesta_id));
     if (b.accion === "subir") return json(await subir(at, b.encargo_id, b.carpeta, b.nombre, b.base64));

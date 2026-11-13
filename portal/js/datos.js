@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=32';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=33';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -180,6 +180,27 @@ export async function crearCliente(c) {
   if (error) throw error; return data;
 }
 
+export async function actualizarCliente(id, cambios) {
+  if (MODO_DEMO) { const d = leer(); const c = d.clientes.find(x => x.id === id); Object.assign(c, cambios); guardar(d); return c; }
+  const { data, error } = await (await cliente()).from('clientes').update(cambios).eq('id', id).select().single();
+  if (error) throw error; return data;
+}
+/** Usuarios del portal: perfil, rol general y encargos donde participa (solo administración). */
+export async function usuarios() {
+  if (MODO_DEMO) return [{ id: 'u1', nombre: 'Administración', email: 'apardo@regenerativo.co', telefono: '', roles: ['admin'], encargos: [] }];
+  const c = await cliente();
+  const [p, r, m] = await Promise.all([
+    c.from('perfiles').select('*').order('email'), c.from('roles_usuario').select('*'),
+    c.from('miembros_encargo').select('usuario_id, rol, encargo:encargos(nombre)')]);
+  for (const x of [p, r, m]) if (x.error) throw x.error;
+  return p.data.map(u => ({ ...u, roles: r.data.filter(x => x.usuario_id === u.id).map(x => x.rol),
+    encargos: m.data.filter(x => x.usuario_id === u.id).map(x => ({ nombre: x.encargo?.nombre || '', rol: x.rol })) }));
+}
+export async function actualizarPerfil(id, cambios) {
+  const { data, error } = await (await cliente()).from('perfiles').update(cambios).eq('id', id).select().single();
+  if (error) throw error; return data;
+}
+
 // ---------------- Encargos ----------------
 export async function encargos() {
   if (MODO_DEMO) {
@@ -314,6 +335,8 @@ async function q(fn) { if (MODO_DEMO) throw new Error('Este módulo funciona con
 const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
 
 export const documentos = (encargoId, tipo) => q(c => c.from('documentos').select('*').eq('encargo_id', encargoId).eq('tipo', tipo).order('numero').order('version')).then(ok);
+export const hayPresupuesto = encargoId => q(c => c.from('presupuestos').select('id', { count: 'exact', head: true }).eq('encargo_id', encargoId)).then(r => { if (r.error) throw r.error; return r.count || 0; });
+export const docsEncargo = encargoId => q(c => c.from('documentos').select('id, tipo, estado, numero, version, contenido').eq('encargo_id', encargoId)).then(ok);
 export const actualizarDocumento = (id, cambios) => q(c => c.from('documentos').update(cambios).eq('id', id).select().single()).then(ok);
 export const crearDocumento = doc => q(c => c.from('documentos').insert(doc).select().single()).then(ok);
 export const aprobarDocumento = (id, nombre, cedula) => q(c => c.rpc('aprobar_documento', { p_doc: id, p_nombre: nombre, p_cedula: cedula })).then(ok);
@@ -362,6 +385,8 @@ export const finGuardarMovimiento = m => q(c => m.id ? c.from('fin_movimientos')
 export const finBorrarMovimiento = id => q(c => c.from('fin_movimientos').delete().eq('id', id)).then(ok);
 export const finBorrarEjemplos = () => q(c => c.from('fin_movimientos').delete().eq('ejemplo', true)).then(ok);
 export const finActualizarCategoria = (id, cambios) => q(c => c.from('fin_categorias').update(cambios).eq('id', id)).then(ok);
+export const finMovimientosEncargo = encargoId => q(c => c.from('fin_movimientos').select('*, categoria:fin_categorias(nombre,icono)').eq('encargo_id', encargoId).order('fecha', { ascending: false })).then(ok);
+export const finPropuestasEncargos = () => q(c => c.from('propuestas').select('encargo_id, honorarios').not('encargo_id', 'is', null)).then(ok);
 export const finDocumentosCobro = () => q(c => c.from('documentos').select('encargo_id, tipo, estado, contenido').in('tipo', ['propuesta', 'adenda'])).then(ok);
 
 // Soportes contables (PDF, XML, fotos) por movimiento — bucket privado "soportes"
