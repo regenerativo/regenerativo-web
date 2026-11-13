@@ -306,7 +306,7 @@ async function vistaEncargos(s) {
             <td class="col-opc">${fecha(e.inicio)}</td><td class="col-opc">${fecha(e.fin)}</td>
             <td style="min-width:90px">${pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
             <td><span class="etiqueta ${e.estado}">${ESTADOS_ENCARGO[e.estado] || e.estado}</span></td>
-            ${admin ? `<td class="acciones-fila">${webCarpeta(e) ? enlaceIco('carpeta', 'Abrir carpeta en OneDrive', esc(webCarpeta(e))) : ''}</td>` : ''}
+            ${admin ? `<td class="acciones-fila">${webCarpeta(e) ? enlaceIco('carpeta', 'Abrir folder en OneDrive', esc(webCarpeta(e))) : ''}</td>` : ''}
           </tr>`).join('')}</tbody></table></div>`
       : `<div class="vacio">${lista.length ? 'Ningún encargo coincide con la búsqueda.' : 'Todavía no hay encargos.'}</div>`;
     document.querySelectorAll('tr.clic').forEach(tr => tr.onclick = ev => { if (!ev.target.closest('a')) location.hash = `#/${tr.dataset.c}`; });
@@ -444,7 +444,7 @@ async function modalEncargo(e = null) {
 // ---------------- Expediente del encargo ----------------
 // Módulos del encargo. Cada módulo junta lo del portal (web) y su carpeta de OneDrive.
 const MODULOS = [
-  ['resumen', 'Resumen'], ['carpetas', 'Carpetas'],
+  ['resumen', 'Resumen'], ['carpetas', 'Folders'],
   ['propuesta', 'Propuesta'], ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
   ['informes', 'Actas e informes'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
@@ -599,7 +599,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
 
   if (seccion === 'carpetas' && admin) {
     pintar('<section class="panel od" id="od"></section>');
-    return panelOneDrive($('#od'), e, [['']], { titulo: 'Carpeta del encargo' });
+    return panelOneDrive($('#od'), e, [['']], { titulo: 'Folders del encargo' });
   }
   if (seccion === 'enviados' || seccion === 'recibidos') {
     if (!admin) { location.hash = base; return; }
@@ -654,7 +654,7 @@ const fechaNombre = n => { const m = n.match(/^(\d{4})\s(\d{2})\s(\d{2})\s*[-_]?
 const MAX_DESCARGA = 25e6;
 
 async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = false } = {}) {
-  const cab = (extra = '', abrir = '') => `<div class="od-cab"><h3>${titulo}</h3><span class="sub">${extra}</span>${abrir ? enlaceIco('abrir', 'Abrir carpeta en OneDrive', esc(abrir)) : ''}</div>`;
+  const cab = (extra = '', abrir = '') => `<div class="od-cab"><h3>${titulo}</h3><span class="sub">${extra}</span>${abrir ? enlaceIco('abrir', 'Abrir folder en OneDrive', esc(abrir)) : ''}</div>`;
   if (D.MODO_DEMO) { el.innerHTML = cab() + '<p class="sub">En el portal real aquí aparecen los archivos de esta carpeta de OneDrive.</p>'; return; }
   el.innerHTML = cab('Leyendo OneDrive…');
   const leer = async g => { for (const cand of g) { const [ruta, p] = cand.split('#'); try { return { ruta, soloArchivos: p === '0', ...(await D.onedrive('explorar', { encargo_id: e.id, ruta })) }; } catch (_) {} } return null; };
@@ -680,7 +680,7 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
   const totalN = bloques.reduce((a, b) => a + items(b).length, 0);
   const uno = bloques.length === 1;
   el.innerHTML = cab(`${totalN} elemento${totalN === 1 ? '' : 's'}${uno && bloques[0].ruta ? ' · ' + esc(bloques[0].ruta.split('/').pop()) : ''}`, uno ? bloques[0].web : '') +
-    bloques.map(b => (uno ? '' : `<div class="od-grupo">${esc(b.ruta.split('/').pop())}${enlaceIco('abrir', 'Abrir carpeta en OneDrive', esc(b.web))}</div>`) +
+    bloques.map(b => (uno ? '' : `<div class="od-grupo">${esc(b.ruta.split('/').pop())}${enlaceIco('abrir', 'Abrir folder en OneDrive', esc(b.web))}</div>`) +
       (items(b).length ? `<div class="od-lista">${filas(items(b), b.ruta, 0)}</div>` : '<p class="sub od-vacia">Carpeta vacía.</p>')).join('');
   el.onclick = async ev => {
     if (ev.target.closest('a')) return;
@@ -889,11 +889,11 @@ async function vistaPropuestas(s) {
         <tbody>${f.map(p => `
           <tr>
             <td class="sub col-opc">${esc(p.codigo)}</td>
-            <td><span class="prop-nom"><span class="doc-ok ${p.archivo_nombre ? 'si' : 'no'}" title="${p.archivo_nombre ? 'Propuesta económica cargada: ' + esc(p.archivo_nombre) : 'Sin propuesta económica cargada'}">${ico(p.archivo_nombre ? 'check' : 'x')}</span><b>${esc(p.nombre)}</b></span><div class="sub">${esc(p.servicio?.nombre || 'Sin servicio')}<span class="solo-movil"> · ${esc(p.codigo)}</span></div></td>
+            <td><b>${esc(p.nombre)}</b><div class="sub">${esc(p.servicio?.nombre || 'Sin servicio')}<span class="solo-movil"> · ${esc(p.codigo)}</span></div></td>
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
             <td class="num col-opc">${p.honorarios ? cop(p.honorarios) : '—'}</td>
             <td class="col-opc">${p.estado === 'borrador' ? '—' : `<input type="date" class="fecha-fila" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" title="Fecha de envío (clic para cambiar)">${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
-            <td><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
+            <td><span class="estado-prop"><span class="doc-ok ${p.archivo_nombre ? 'si' : 'no'}" title="${p.archivo_nombre ? 'Propuesta económica cargada: ' + esc(p.archivo_nombre) : 'Sin propuesta económica cargada'}">${ico(p.archivo_nombre ? 'check' : 'x')}</span><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span></span>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
             <td class="acciones-fila">${accionesPropuesta(p)}</td>
           </tr>`).join('')}</tbody></table></div>`
       : `<div class="vacio">${lista.length ? 'Ninguna propuesta coincide.' : 'Todavía no hay propuestas preliminares.'}</div>`;

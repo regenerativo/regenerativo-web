@@ -240,3 +240,51 @@
 :root body .barra.sem-amarillo i{background:#B89B3E}
 :root body .barra.sem-rojo i{background:#B4552D}
 @media (max-width:600px){:root body .kpi .va{font-size:22px!important}:root body .titulo-pag h1{font-size:30px!important}}
+
+/* ===== Línea regenerativo: esquinas redondeadas como la barra de la web; barras en píldora como el Gantt ===== */
+:root{--radio:18px;--radio-s:12px}
+:root body .kpi,:root body .panel,:root body .mon,:root body .pend,:root body .estado-od,:root body .tarjeta-doc,:root body .hoja,:root body .modal{border-radius:var(--radio)!important}
+:root body .tile,:root body .tarjeta-cli,:root body .mes-sel,:root body .nota-valor,:root body .aviso-ej,:root body .tc-ico{border-radius:var(--radio-s)!important}
+:root body .kpi{padding:16px 18px!important}
+:root body .panel{padding:18px 20px!important}
+:root body .tabla-cont{border-radius:var(--radio-s);overflow:hidden}
+:root body th:first-child{border-top-left-radius:var(--radio-s)}
+:root body th:last-child{border-top-right-radius:var(--radio-s)}
+:root body .barra,:root body .barra i,:root body .barra-apilada,:root body .cat-barra,:root body .cat-barra i{border-radius:99px!important}
+:root body .barra{height:6px}
+:root body .barra-apilada{height:16px;gap:3px;background:transparent}
+:root body .barra-apilada i{border-radius:99px}
+:root body .barra-apilada i+i{box-shadow:none}
+:root body .barra-apilada:empty,:root body .barra-apilada:has(i:only-child){background:#EFEFEF}
+:root body .leyenda-valor li i{border-radius:99px}
+:root body .g-par span{border-radius:99px 99px 99px 99px!important;width:14px}
+:root body .od-fila{border-radius:10px}
+:root body .btn.mini.ico{border-radius:10px!important}
+:root body .etiqueta{border-radius:99px}
+/* Propuestas: ✓/✕ junto al estado */
+:root body .estado-prop{display:inline-flex;align-items:center;gap:6px}
+/* Finanzas estilo Monai: el balance y las columnas redondeadas son lo principal; movimientos al lado */
+:root body .fin-mon{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:16px;align-items:stretch;margin-bottom:16px}
+:root body .fin-mon .panel{margin:0}
+@media (max-width:1100px){:root body .fin-mon{grid-template-columns:1fr}}
+:root body .mon{border:1px solid var(--linea);padding:26px 22px 20px}
+:root body .mon-cifra{font-weight:300!important;font-size:clamp(36px,4vw,54px)!important}
+:root body .mon-cifra span{font-size:15px;margin-left:6px;color:#999}
+:root body .mon-et{font-size:12px!important}
+:root body .mon-filtros b{font-size:15px}
+:root body .mon-val{font-size:14px!important}
+:root body .mon-nom,:root body .mon-pct{font-size:12px!important}
+:root body .fin-lado{display:flex;flex-direction:column;max-height:640px}
+:root body .fin-lado .lista-filas{overflow:auto;flex:1}
+:root body .mov-fila{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-bottom:1px dotted #C9C9C9;padding:9px 4px;text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:10px}
+:root body .mov-fila:hover{background:#F7F7F5}
+:root body .mov-ico{width:34px;height:34px;border-radius:50%;background:var(--crema);display:grid;place-items:center;flex:none;font-size:15px}
+:root body .mov-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+:root body .mov-txt b{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root body .mov-val{white-space:nowrap;font-size:14px}
+:root body .mov-val.ingreso{color:var(--ing)}
+:root body .cifra-grande{font-size:32px;font-weight:300;letter-spacing:-.02em;margin:2px 0 4px}
+:root body .fin-grid{grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr)}
+:root body .mon{border:1px solid var(--linea)!important;background:#fff}
+:root body .mon-cols{justify-content:flex-start;gap:14px}
+:root body .pend{border:1.5px dashed #C0603A!important}
