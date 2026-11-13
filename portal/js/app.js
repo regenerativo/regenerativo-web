@@ -234,9 +234,9 @@ function vistaRecuperar() {
 
 // ---------------- Lista de encargos ----------------
 // ---------------- Inicio del equipo: bienvenida, versículo y resumen ----------------
-const VERSICULOS = [   // los mismos de regenerativo.co/about
-  ['Y Dios creó al hombre a su imagen. Lo creó a imagen de Dios. Hombre y mujer los creó.', 'GÉNESIS 1.27 RVC'],
-  ['Dos son mejor que uno, porque sacan más provecho de sus esfuerzos. Si uno de ellos se tropieza, el otro lo levanta. ¡Pero ay del que cae y no tiene quien lo levante! Además, si dos duermen juntos, se calientan mutuamente; pero uno solo no puede calentarse. Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.', 'ECLESIASTÉS 4.9-12 RVC'],
+const VERSICULOS = [   // tal como están en regenerativo.co/about
+  ['Diseñamos desde la naturaleza, no como referencia sino como principio. Entendemos el todo como un sistema vivo y respondemos con precisión a cada contexto.', 'Génesis 1.27'],
+  ['Juntos es más. Creemos en lo colectivo: cada proyecto se hace con quienes lo habitan, con quienes lo materializan y con el lugar que lo recibe.', 'Eclesiastés 4.9-12'],
 ];
 async function vistaInicio(s) {
   const festLista = await D.festivos();
@@ -279,7 +279,7 @@ async function vistaInicio(s) {
   const html = `
     <section class="bienvenida">
       <p class="bv-saludo">${saludo}, equipo.</p>
-      <blockquote class="bv-verso">“${esc(texto)}” <cite>${esc(cita)}</cite></blockquote>
+      <blockquote class="bv-verso">${esc(texto)} <cite>${esc(cita)}</cite></blockquote>
     </section>
     <div class="inicio-grid">
       <section class="panel">
