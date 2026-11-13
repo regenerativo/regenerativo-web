@@ -191,3 +191,10 @@ html.mov body::before{background:
     radial-gradient(38vmax 32vmax at 18% 96%,rgba(0,117,143,.26),transparent 70%),
     radial-gradient(26vmax 22vmax at 55% 50%,rgba(255,222,200,.35),transparent 70%)!important;filter:blur(30px)}
 html.mov .lado{background:rgba(255,255,255,.45)!important}
+html.mov{background:#FAFAF8!important}html.mov body{background:transparent!important}
+html.mov body::before{inset:-6vmax!important;filter:blur(10px)!important;background:
+    radial-gradient(34vmax 28vmax at 8% 4%,rgba(0,163,203,.42),transparent 72%),
+    radial-gradient(30vmax 26vmax at 96% 8%,rgba(127,207,227,.60),transparent 72%),
+    radial-gradient(30vmax 26vmax at 88% 96%,rgba(128,0,0,.18),transparent 72%),
+    radial-gradient(34vmax 28vmax at 14% 98%,rgba(0,117,143,.30),transparent 72%),
+    radial-gradient(24vmax 20vmax at 55% 55%,rgba(255,214,190,.40),transparent 72%)!important}
