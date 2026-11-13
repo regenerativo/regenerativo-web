@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=43';
-import * as M from './modulos.js?v=43';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=43';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=43';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=43';
+import * as D from './datos.js?v=44';
+import * as M from './modulos.js?v=44';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=44';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=44';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=44';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -191,7 +191,7 @@ function armarTabs() {
   const prim = enl.slice(0, 4), resto = enl.slice(4);
   const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
   tabs.innerHTML = `<div class="lv-tabs-in">${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas')}</span></a>`).join('')}
-    <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2" stroke="#00A3CB"/><circle cx="18" cy="12" r="1.2"/></svg><span>Más</span></button></div>`;
+    <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
   const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
   $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
   velo.onclick = cerrar;

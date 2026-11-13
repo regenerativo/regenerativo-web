@@ -403,3 +403,19 @@ html body label.lv-check{display:inline-flex!important;align-items:center;gap:8p
   text-transform:none!important;letter-spacing:0!important;font-size:14px!important;color:var(--lv-tinta)!important;font-family:var(--t-texto)!important;transition:background-color .2s,border-color .2s}
 .lv-check input{width:auto!important;margin:0;accent-color:var(--lv-azul)}
 .lv-check:has(input:checked){background:rgba(0,163,203,.1);border-color:rgba(0,163,203,.4)}
+/* Íconos de una sola forma: el gesto es de todo el ícono */
+html.mov body .ico-menu{transition:transform .45s var(--lv-rebote),color .2s}
+@media (hover:hover){html.mov body .lv a:hover .ico-menu{transform:scale(1.12) rotate(-6deg)}}
+html body .lv a.activo .ico-menu,html body .lv-tabs-in>.activo .ico-menu{color:var(--lv-azul)}
+/* Íconos sólidos tipo Apple: gris cuando no está activo, azul cuando sí */
+html body .lv .ico-menu{color:rgba(30,34,29,.42);stroke:none!important}
+html body .lv a:hover .ico-menu{color:rgba(30,34,29,.7)}
+html body .lv a.activo .ico-menu,html body .lv-tabs-in>.activo .ico-menu{color:var(--lv-azul)!important}
+html body .lv .ico-menu *{stroke:none!important}
+@media (hover:hover){html.mov body .lv a:hover .ico-menu{transform:scale(1.1)}}
+.lv-tabs-in>a .ico-menu,.lv-tabs-in>button .ico-menu{width:25px;height:25px;color:rgba(30,34,29,.85)}
+/* Íconos solo en la barra inferior del celular; el menú lateral y la hoja quedan solo con texto */
+html body .lv .lv-nav .ico-menu{display:none!important}
+html body .lv .lv-nav a{gap:0}
+html body .lv .lv-tabs-in>a .ico-menu,html body .lv .lv-tabs-in>button .ico-menu{color:var(--lv-tinta)}
+html body .lv .lv-tabs-in>.activo .ico-menu{color:var(--lv-azul)!important}
