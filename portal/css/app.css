@@ -537,3 +537,7 @@ tr.clic:hover td,.fila-enc:hover td{background:#F8F8F8}
 .btn-envio:hover{background:#3A3F39}
 @media (max-width:480px){.btn-envio{padding:14px 20px}}
 .btn-envio{line-height:normal}
+
+/* Eliminar propuesta */
+.btn.sec.peligro{color:#b4552d;border-color:#e8c9bd}
+.btn.sec.peligro:hover{color:#fff;background:#b4552d;border-color:#b4552d}

@@ -1,7 +1,7 @@
-import * as D from './datos.js?v=29';
-import * as M from './modulos.js?v=29';
-import { vistaFinanzas } from './finanzas.js?v=29';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=29';
+import * as D from './datos.js?v=30';
+import * as M from './modulos.js?v=30';
+import { vistaFinanzas } from './finanzas.js?v=30';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=30';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -711,6 +711,12 @@ async function vistaPropuestas(s) {
         if (!confirm(`¿${p.nombre} despegó? Se crea el encargo con toda la información de la cotización.`)) return;
         await despegarYAbrir(p); return;
       }
+      if (acc === 'eliminar') {
+        if (!confirm(`¿Eliminar la propuesta ${p.codigo} · ${p.nombre}?\n\nSe borra del portal y su carpeta en OneDrive (ZL_REG_PROPUESTAS) pasa a la papelera, donde se puede recuperar durante 93 días.`)) return;
+        const r = await D.onedrive('eliminar_propuesta', { propuesta_id: p.id });
+        alert(r.carpeta ? `Propuesta eliminada.\nCarpeta enviada a la papelera de OneDrive: ${r.carpeta}` : 'Propuesta eliminada. No tenía carpeta en OneDrive.');
+        ir(); return;
+      }
       if (acc === 'editar') { modalPropuesta(p); return; }
       if (acc === 'ver') { const e3 = await D.encargo(p.codigo); location.hash = `#/${e3 ? D.slugEncargo(e3) : p.codigo}`; return; }
       ir();
@@ -728,10 +734,11 @@ function quedan(fechaEnvio) {
 function accionesPropuesta(p) {
   const b = (acc, txt, cls = 'sec') => `<button class="btn ${cls} mini" data-acc="${acc}" data-id="${p.id}">${txt}</button>`;
   const ed = b('editar', 'Detalles');
-  if (p.estado === 'borrador') return ed + b('enviar', 'Marcar enviada');
-  if (p.estado === 'en_espera') return ed + b('despego', '✓ Despegó', 'ok') + b('no', 'No despegó');
+  const del = b('eliminar', 'Eliminar', 'sec peligro');
+  if (p.estado === 'borrador') return ed + b('enviar', 'Marcar enviada') + del;
+  if (p.estado === 'en_espera') return ed + b('despego', '✓ Despegó', 'ok') + b('no', 'No despegó') + del;
   if (p.estado === 'despego') return ed + b('ver', 'Ver encargo');
-  return b('reabrir', 'Reabrir');
+  return b('reabrir', 'Reabrir') + del;
 }
 
 // Campos de "Detalles técnicos del encargo" y "Proyecto" (igual que en el Word SCREG_2XXXX_PROPUESTA)

@@ -10,6 +10,7 @@
 //   'descargar_propuesta' → {propuesta_id}: devuelve el Word de la propuesta en base64
 //   'archivos_propuesta' → {propuesta_id}: lista Word/PDF/Excel de la carpeta de la propuesta
 //   'archivo_propuesta'  → {propuesta_id, nombre, pdf?}: descarga uno (pdf=true convierte el Word a PDF)
+//   'eliminar_propuesta' → {propuesta_id}: borra la propuesta del portal y manda su carpeta de ZL_REG_PROPUESTAS a la papelera de OneDrive
 //   'archivos_encargo' → {encargo_id, carpeta}: lista los documentos de esa carpeta del encargo (y sus subcarpetas)
 //   'archivo_encargo'  → {encargo_id, carpeta, ruta, pdf?}: descarga uno
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -144,6 +145,27 @@ async function archivoPropuesta(at: string, propuestaId: string, nombre: string,
   return { base64: b64(await r.arrayBuffer()), nombre: pdf ? nombre.replace(/\.docx?$/i, ".pdf") : nombre };
 }
 
+// Elimina una propuesta que no ha despegado: su carpeta en ZL_REG_PROPUESTAS va a la papelera de OneDrive (recuperable) y se borra del portal
+async function eliminarPropuesta(at: string, propuestaId: string) {
+  const { data: p } = await admin.from("propuestas").select("id,codigo,nombre,encargo_id,archivo_ruta").eq("id", propuestaId).single();
+  if (!p) throw new Error("Propuesta no encontrada");
+  if (p.encargo_id) throw new Error("Esta propuesta ya despegó y tiene un encargo: no se puede eliminar desde aquí.");
+  const carpeta = p.archivo_ruta ? p.archivo_ruta.split("/").slice(0, -1).join("/") : `${PROPUESTAS}/${p.codigo.toUpperCase()}_${p.nombre.toUpperCase()}`;
+  const nombre = carpeta.split("/").pop() || "";
+  let borrada: string | null = null;
+  // Solo se borra una carpeta propia de la propuesta: dentro de ZL_REG_PROPUESTAS y con nombre que empieza por su código
+  if (carpeta.startsWith(PROPUESTAS + "/") && carpeta.split("/").length === PROPUESTAS.split("/").length + 1 && nombre.toUpperCase().startsWith(p.codigo.toUpperCase())) {
+    try {
+      const it = await graph(at, `/me/drive/root:/${enc(carpeta)}?$select=id`);
+      await graph(at, `/me/drive/items/${it.id}`, { method: "DELETE" });
+      borrada = carpeta;
+    } catch (e) { if ((e as any).status !== 404) throw e; }
+  }
+  const { error } = await admin.from("propuestas").delete().eq("id", p.id);
+  if (error) throw new Error(error.message);
+  return { carpeta: borrada };
+}
+
 // Documentos de una carpeta del encargo (incluye un nivel de subcarpetas), para verlos desde el portal
 async function baseEncargo(encargoId: string) {
   const { data: e } = await admin.from("encargos").select("nombre,onedrive_carpeta").eq("id", encargoId).single();
@@ -232,6 +254,7 @@ Deno.serve(async (req) => {
     if (b.accion === "descargar_propuesta") return json(await descargarPropuesta(at, b.propuesta_id));
     if (b.accion === "archivos_propuesta") return json(await archivosPropuesta(at, b.propuesta_id));
     if (b.accion === "archivo_propuesta") return json(await archivoPropuesta(at, b.propuesta_id, b.nombre, !!b.pdf));
+    if (b.accion === "eliminar_propuesta") return json(await eliminarPropuesta(at, b.propuesta_id));
     if (b.accion === "archivos_encargo") return json(await archivosEncargo(at, b.encargo_id, b.carpeta));
     if (b.accion === "archivo_encargo") return json(await archivoEncargo(at, b.encargo_id, b.carpeta, b.ruta, !!b.pdf));
     if (b.accion === "propuesta") return json(await carpetaPropuesta(at, b.propuesta_id));
