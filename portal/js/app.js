@@ -710,7 +710,7 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
     </div>${x.carpeta ? '<div class="od-hijos" hidden></div>' : ''}`;
   };
   const filas = (items, ruta, nivel) => ordenar(items).map(x => fila(x, ruta, nivel)).join('');
-  if (!bloques.length) { el.innerHTML = cab() + `<p class="sub">${errOd ? 'No se pudo leer OneDrive: ' + esc(msg(errOd)) : 'Esta carpeta todavía no existe en OneDrive.'}</p>`; return; }
+  if (!bloques.length) { el.innerHTML = cab() + `<p class="sub">${errOd ? (/desconocida/i.test(msg(errOd)) ? 'La conexión con OneDrive se está actualizando: en unos minutos aparecen aquí los documentos.' : 'No se pudo leer OneDrive: ' + esc(msg(errOd))) : 'Esta carpeta todavía no existe en OneDrive.'}</p>`; return; }
   const items = b => b.soloArchivos ? b.items.filter(x => !x.carpeta) : b.items;
   const totalN = bloques.reduce((a, b) => a + items(b).length, 0);
   const uno = bloques.length === 1;

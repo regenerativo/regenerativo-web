@@ -215,8 +215,10 @@ export function modalMov(m, cats, encargos, recargar) {
   f.onsubmit = async ev => {
     ev.preventDefault();
     const v = Object.fromEntries(new FormData(f));
-    const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, subcategoria: m.tipo === 'socio' ? null : (v.subcategoria || '').trim() || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
+    const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
     if (m.id) reg.id = m.id;
+    const sub = m.tipo === 'socio' ? '' : (v.subcategoria || '').trim();
+    if (sub || m.subcategoria) reg.subcategoria = sub || null;   // solo si hay subcategoría (columna nueva)
     try { await D.finGuardarMovimiento(reg); fondo.remove(); recargar(); } catch (err) { $('#aviso', fondo).textContent = err.message; }
   };
 }
