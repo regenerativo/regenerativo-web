@@ -331,3 +331,8 @@
 :root body .cal-lista li{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dotted #C9C9C9;font-size:14px}
 :root body .cal-lista li i{width:6px;height:6px;border-radius:50%;background:#800000;flex:none}
 :root body .cal-lista li b{font-weight:500;min-width:20px}
+/* Finanzas: barras verticales apenas redondeadas */
+:root body .mon-barra{border-radius:14px!important;width:52px}
+:root body .mon-pres{border-radius:14px!important}
+:root body .mon-gasto{border-radius:10px!important}
+:root body .g-par span{border-radius:5px 5px 2px 2px!important}
