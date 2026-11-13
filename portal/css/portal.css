@@ -316,3 +316,18 @@
 :root body .doc-estado.si{color:#00758F}
 :root body .doc-estado.no{color:#800000}
 :root body .pill-gas{color:#fff!important;padding:3px 10px;border-radius:99px}
+/* Calendario de festivos */
+:root body .cal{max-width:460px}
+:root body .cal-cab{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+:root body .cal-cab b{font-weight:500;font-size:16px}
+:root body .cal-flecha{background:none;border:1px solid var(--linea);border-radius:99px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#1E221D}
+:root body .cal-grilla{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+:root body .cal-dsem{font-size:12px;color:#999;padding:4px 0}
+:root body .cal-dia{position:relative;padding:8px 0 12px;border-radius:12px;font-size:14px}
+:root body .cal-dia.hoy{background:#F2F2F0;font-weight:500}
+:root body .cal-dia.festivo{color:#800000;font-weight:500;cursor:help}
+:root body .cal-dia i{position:absolute;left:50%;bottom:4px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#800000}
+:root body .cal-lista{list-style:none;margin:12px 0 0;padding:0}
+:root body .cal-lista li{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dotted #C9C9C9;font-size:14px}
+:root body .cal-lista li i{width:6px;height:6px;border-radius:50%;background:#800000;flex:none}
+:root body .cal-lista li b{font-weight:500;min-width:20px}

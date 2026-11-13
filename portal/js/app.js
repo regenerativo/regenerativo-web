@@ -802,13 +802,6 @@ async function vistaAjustes(s, qs) {
     <div class="estado-od ${od?.conectado ? 'ok' : 'no'}"><span class="punto"></span>${od?.conectado ? `OneDrive conectado · ${esc(od.cuenta || '')}` : 'OneDrive sin conectar'}
       <button class="btn sec mini" id="od-conectar">${od?.conectado ? 'Volver a conectar' : 'Conectar'}</button></div>
     <section class="panel">
-      <div class="od-cab"><h3>Clientes</h3><span class="sub">${cli.length}</span><button class="btn mini" id="cli-nuevo">+ Cliente</button></div>
-      <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Nombre</th><th class="col-opc">Documento</th><th class="col-opc">Correo</th><th class="col-opc">Teléfono</th><th class="num">Encargos</th><th></th></tr></thead>
-      <tbody>${cli.map(c => `<tr class="clic" data-cli="${c.id}"><td><b>${xxx(c.nombre)}</b><div class="sub">${c.tipo === 'empresa' ? 'Empresa' : 'Persona'}${c.ciudad ? ' · ' + esc(c.ciudad) : ''}</div></td>
-        <td class="col-opc">${c.documento ? esc((c.tipo_documento ? c.tipo_documento + ' ' : '') + c.documento) : xxx('')}</td><td class="col-opc">${esc(c.email || '')}</td><td class="col-opc">${esc(c.telefono || '')}</td>
-        <td class="num">${nEnc(c.id)}</td><td class="acciones-fila">${btnIco('editar', 'Editar cliente', `data-cli="${c.id}"`)}</td></tr>`).join('')}</tbody></table></div>
-    </section>
-    <section class="panel">
       <div class="od-cab"><h3>Usuarios</h3><span class="sub">${us.length} · las invitaciones se envían desde Ajustes de cada encargo</span></div>
       <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Usuario</th><th>Rol</th><th class="col-opc">Encargos</th><th></th></tr></thead>
       <tbody>${us.map(u => `<tr><td><b>${esc(u.nombre || u.email)}</b><div class="sub">${esc(u.email || '')}${u.telefono ? ' · ' + esc(u.telefono) : ''}</div></td>
@@ -816,17 +809,36 @@ async function vistaAjustes(s, qs) {
         <td class="col-opc sub">${u.encargos.map(x => esc(x.nombre)).join(', ') || '—'}</td>
         <td class="acciones-fila">${btnIco('editar', 'Editar usuario', `data-us="${u.id}"`)}</td></tr>`).join('') || '<tr><td colspan="4" class="sub">Sin usuarios.</td></tr>'}</tbody></table></div>
     </section>
-    <div class="dos">
-      <section class="panel"><h3>Servicios</h3><ul class="lista-simple">${svc.map(x => `<li>${esc(x.nombre)}</li>`).join('')}</ul></section>
-      <section class="panel"><h3>Festivos ${anio}</h3><ul class="lista-simple dos-col">${fest.filter(f => f.fecha.startsWith(anio)).map(f => `<li><span class="sub">${fecha(f.fecha)}</span> ${esc(f.nombre)}</li>`).join('')}</ul>
-        ${D.MODO_DEMO ? '<button class="btn sec mini" id="reiniciar" style="margin-top:12px">Reiniciar datos de ejemplo</button>' : ''}</section>
-    </div>`;
-  marco(s, { titulo: 'Ajustes generales', ruta: 'Ajustes generales', activo: 'ajustes', html, bajada: 'Clientes, usuarios y conexión con OneDrive.' });
+    <section class="panel"><div class="od-cab"><h3>Festivos</h3><span class="sub">Colombia · cuentan para los días de trabajo de los encargos</span></div>
+      <div id="calendario"></div>
+      ${D.MODO_DEMO ? '<button class="btn sec mini" id="reiniciar" style="margin-top:12px">Reiniciar datos de ejemplo</button>' : ''}</section>`;
+  marco(s, { titulo: 'Ajustes generales', ruta: 'Ajustes generales', activo: 'ajustes', html, bajada: 'Usuarios y acceso a las cuentas.' });
+  calendarioFestivos($('#calendario'), fest);
   const r = $('#reiniciar'); if (r) r.onclick = () => { D.reiniciarDemo(); location.hash = '#/'; ir(); };
   $('#od-conectar').onclick = async () => { try { location.href = (await D.onedrive('url')).url; } catch (e) { alert(msg(e)); } };
-  document.querySelectorAll('[data-cli]').forEach(x => x.onclick = ev => { ev.stopPropagation(); modalCliente(cli.find(c => c.id === x.dataset.cli)); });
-  $('#cli-nuevo').onclick = () => modalCliente(null);
   document.querySelectorAll('[data-us]').forEach(b => b.onclick = () => modalUsuario(us.find(u => u.id === b.dataset.us)));
+}
+
+// Calendario mensual de festivos: un punto en cada festivo, flechas para cambiar de mes
+function calendarioFestivos(el, fest) {
+  const MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const hoy = new Date().toISOString().slice(0, 10);
+  const porFecha = Object.fromEntries(fest.map(f => [f.fecha, f.nombre]));
+  let a = new Date().getFullYear(), m = new Date().getMonth();
+  const pintar = () => {
+    const pad = n => String(n).padStart(2, '0');
+    const primero = (new Date(a, m, 1).getDay() + 6) % 7, dias = new Date(a, m + 1, 0).getDate();
+    const celdas = [...Array(primero).fill(''), ...Array.from({ length: dias }, (_, i) => i + 1)];
+    const delMes = fest.filter(f => f.fecha.startsWith(`${a}-${pad(m + 1)}`));
+    el.innerHTML = `<div class="cal">
+      <div class="cal-cab"><button type="button" class="cal-flecha" data-d="-1" aria-label="Mes anterior">‹</button><b>${MES[m]} ${a}</b><button type="button" class="cal-flecha" data-d="1" aria-label="Mes siguiente">›</button></div>
+      <div class="cal-grilla">${['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => `<span class="cal-dsem">${d}</span>`).join('')}
+        ${celdas.map(d => { if (!d) return '<span></span>'; const f = `${a}-${pad(m + 1)}-${pad(d)}`, fe = porFecha[f];
+          return `<span class="cal-dia${fe ? ' festivo' : ''}${f === hoy ? ' hoy' : ''}" ${fe ? `title="${esc(fe)}"` : ''}>${d}${fe ? '<i></i>' : ''}</span>`; }).join('')}</div>
+      <ul class="cal-lista">${delMes.length ? delMes.map(f => `<li><i></i><b>${Number(f.fecha.slice(8))}</b> ${esc(f.nombre)}</li>`).join('') : '<li class="sub">Sin festivos este mes.</li>'}</ul></div>`;
+    el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { m += Number(b.dataset.d); if (m < 0) { m = 11; a--; } if (m > 11) { m = 0; a++; } pintar(); });
+  };
+  pintar();
 }
 
 function modalCliente(c) {
