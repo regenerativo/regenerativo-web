@@ -270,7 +270,7 @@ async function vistaInicio(s) {
     rec(d !== null && d <= 7 ? 'alto' : 'medio', `Hacer seguimiento a ${p.nombre}`, d !== null ? `${p.cliente?.nombre || 'Cliente'} · ${d > 0 ? d + ' días para decidir' : 'vence hoy'}` : `${p.cliente?.nombre || 'Cliente'} · falta la fecha de envío`, '#/propuestas'); });
   borrador.forEach(p => rec('medio', `Enviar la propuesta ${p.nombre}`, p.archivo_nombre ? 'Está en borrador' : 'Falta cargar el Word', '#/propuestas'));
   props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera').forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
-  activos.filter(e => !e.inicio || !e.fin).forEach(e => rec('bajo', `Completar fechas de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'Sin fecha de inicio o de fin no se calcula el tiempo', `#/${D.slugEncargo(e)}/ajustes`));
+  activos.filter(e => !e.fin).forEach(e => rec('bajo', `Agregar la fecha de entrega de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'El encargo está en curso; con la fecha de entrega se mide el tiempo', `#/${D.slugEncargo(e)}/ajustes`));
   activos.filter(e => e.fin && e.fin >= hoy && e.fin.slice(0, 7) === mes).forEach(e => rec('medio', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} termina el ${fecha(e.fin)}`, 'Fecha de fin este mes', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.fin && e.fin < hoy).forEach(e => rec('alto', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} pasó su fecha de fin`, `Terminaba el ${fecha(e.fin)}`, `#/${D.slugEncargo(e)}`));
   const prox = festLista.filter(f => f.fecha >= hoy).slice(0, 1)[0];
@@ -335,7 +335,7 @@ async function vistaEncargos(s) {
             <td><b>${esc(e.nombre)}</b><div class="sub">${esc(e.servicio?.nombre || '')}</div></td>
             <td class="col-opc">${xxx(e.cliente?.nombre)}</td>
             <td class="col-opc">${fecha(e.inicio)}</td><td class="col-opc">${fecha(e.fin)}</td>
-            <td style="min-width:90px">${pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
+            <td style="min-width:90px">${e.tiempo == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
             <td><span class="etiqueta ${e.estado}">${ESTADOS_ENCARGO[e.estado] || e.estado}</span></td>
             ${admin ? `<td class="acciones-fila">${webCarpeta(e) ? enlaceIco('carpeta', 'Abrir folder en OneDrive', esc(webCarpeta(e))) : ''}</td>` : ''}
           </tr>`).join('')}</tbody></table></div>`
@@ -573,7 +573,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
       const htmlCli = `
         <div class="kpis kpis-3">
           ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
-          ${kpi('Tiempo transcurrido', pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
+          ${kpi('Tiempo transcurrido', t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
           ${kpi('Avance de la obra', g?.filas.length ? pct(g.realTotal) : '—', g?.filas.length ? `Esperado al corte ${pct(g.esperadoTotal)}` : 'Aún sin cronograma', g?.filas.length ? g.realTotal : undefined)}
         </div>
         <section class="panel"><h3>Tus documentos</h3>
@@ -591,7 +591,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         ${kpi('Valor del encargo', V ? cop(V) : '—', V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
         ${s.facturacion ? kpi('Recibido', cop(rec), V ? `${pct(rec / V)} del valor` : 'Ingresos registrados', V ? Math.min(1, rec / V) : undefined) : ''}
         ${s.facturacion ? kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', V ? 'Valor menos lo recibido' : '') : ''}
-        ${kpi('Tiempo transcurrido', pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : 'Faltan fechas de inicio y fin', t || 0)}
+        ${kpi('Tiempo transcurrido', t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
       </div>
       <div class="dos">
         <section class="panel">
