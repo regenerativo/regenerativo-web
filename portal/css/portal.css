@@ -439,3 +439,11 @@
 :root body .cont{overflow-x:clip}
 :root body .mon,:root body .fin-lado,:root body .fin-grid>*,:root body .fin-mon>*{min-width:0}
 @media (max-width:600px){:root body .mon-fab{width:44px!important;height:44px!important;font-size:22px!important;padding:0!important}:root body .pend-aviso{white-space:nowrap}:root body .mon-mas{flex-wrap:wrap;gap:8px}}
+/* Íconos del menú (línea redondeada con acento azul regenerativo) */
+:root body .lado a{display:flex!important;align-items:center;gap:10px;justify-content:flex-start!important}
+:root body .lado a .cuenta{margin-left:auto}
+:root body .ico-menu{flex:none;color:#9A9E98;transition:color .2s}
+:root body .ico-menu .ac{stroke:#00A3CB}
+:root body .lado a.activo .ico-menu{color:#1E221D}
+:root body .lado a.mod-vacio .ico-menu{opacity:.55}
+:root body .lado a.enc-nom,:root body .lado .volver{gap:6px}

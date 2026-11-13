@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=37';
-import * as M from './modulos.js?v=37';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=37';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=37';
-import { ico, btnIco, enlaceIco } from './iconos.js?v=37';
+import * as D from './datos.js?v=38';
+import * as M from './modulos.js?v=38';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=38';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=38';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=38';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -104,13 +104,13 @@ async function irSeguro() {
 function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '' }) {
   const esCli = s.email.endsWith('@clientes.portal.regenerativo.co');
   const enlacesGen = esCli || enc ? '' : `
-    ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'inicio' ? 'activo' : ''}">Inicio</a>`}
-    ${s.admin ? `<a href="#/propuestas" class="${activo === 'propuestas' ? 'activo' : ''}">Propuestas</a>` : ''}
-    ${s.soloFinanzas ? '' : `<a href="#/encargos" class="${activo === 'encargos' ? 'activo' : ''}">Encargos</a>`}
-    ${s.facturacion ? `<a href="#/finanzas" class="${activo === 'finanzas' ? 'activo' : ''}">Finanzas</a>` : ''}
-    ${s.admin ? `<a href="#/folders" class="${activo === 'folders' ? 'activo' : ''}">Folders</a>` : ''}
-    ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">Base de precios</a>` : ''}
-    ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">Ajustes</a>` : ''}`;
+    ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'inicio' ? 'activo' : ''}">${icoMenu('inicio')}<span>Inicio</span></a>`}
+    ${s.admin ? `<a href="#/propuestas" class="${activo === 'propuestas' ? 'activo' : ''}">${icoMenu('propuestas')}<span>Propuestas</span></a>` : ''}
+    ${s.soloFinanzas ? '' : `<a href="#/encargos" class="${activo === 'encargos' ? 'activo' : ''}">${icoMenu('encargos')}<span>Encargos</span></a>`}
+    ${s.facturacion ? `<a href="#/finanzas" class="${activo === 'finanzas' ? 'activo' : ''}">${icoMenu('finanzas')}<span>Finanzas</span></a>` : ''}
+    ${s.admin ? `<a href="#/folders" class="${activo === 'folders' ? 'activo' : ''}">${icoMenu('folders')}<span>Folders</span></a>` : ''}
+    ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">${icoMenu('base')}<span>Base de precios</span></a>` : ''}
+    ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">${icoMenu('ajustes')}<span>Ajustes</span></a>` : ''}`;
   const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/encargos">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
   const tituloPag = h1 || (ruta.includes(' / ') ? ruta.split(' / ').pop() : titulo);
   const subPag = bajada;
@@ -538,7 +538,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   };
   const pintaMenu = () => MODULOS.filter(([k]) => visible(k)).map(([k, nom]) => {
     const c = SIN_CONTEO.includes(k) ? null : n(k);
-    return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${nom}${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
+    return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${icoMenu(k)}<span>${nom}</span>${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
   }).join('');
   const tiles = () => {
     const l = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && n(k) > 0);
