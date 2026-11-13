@@ -664,7 +664,9 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
   el.innerHTML = cab('Leyendo OneDrive…');
   const explorarOd = ruta => e ? D.onedrive('explorar', { encargo_id: e.id, ruta }) : D.onedrive('explorar_reg', { ruta });
   const bajarOd = ruta => e ? D.onedrive('archivo_encargo', { encargo_id: e.id, carpeta: '', ruta }) : D.onedrive('archivo_reg', { ruta });
-  const leer = async g => { for (const cand of g) { const [ruta, p] = cand.split('#'); try { return { ruta, soloArchivos: p === '0', ...(await explorarOd(ruta)) }; } catch (_) {} } return null; };
+  const NO_EXISTE = /not.?found|could not be found|itemNotFound|no existe/i;
+  let errOd = null;
+  const leer = async g => { for (const cand of g) { const [ruta, p] = cand.split('#'); try { return { ruta, soloArchivos: p === '0', ...(await explorarOd(ruta)) }; } catch (err) { if (!NO_EXISTE.test(msg(err))) errOd = err; } } return null; };
   let bloques;
   try { bloques = (await Promise.all(grupos.map(leer))).filter(Boolean); }
   catch (err) { el.innerHTML = cab() + `<p class="sub">No se pudo leer OneDrive: ${esc(msg(err))}</p>`; return; }
@@ -682,7 +684,7 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
     </div>${x.carpeta ? '<div class="od-hijos" hidden></div>' : ''}`;
   };
   const filas = (items, ruta, nivel) => ordenar(items).map(x => fila(x, ruta, nivel)).join('');
-  if (!bloques.length) { el.innerHTML = cab() + '<p class="sub">Esta carpeta todavía no existe en OneDrive.</p>'; return; }
+  if (!bloques.length) { el.innerHTML = cab() + `<p class="sub">${errOd ? 'No se pudo leer OneDrive: ' + esc(msg(errOd)) : 'Esta carpeta todavía no existe en OneDrive.'}</p>`; return; }
   const items = b => b.soloArchivos ? b.items.filter(x => !x.carpeta) : b.items;
   const totalN = bloques.reduce((a, b) => a + items(b).length, 0);
   const uno = bloques.length === 1;
