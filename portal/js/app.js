@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=40';
-import * as M from './modulos.js?v=40';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=40';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=40';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=40';
+import * as D from './datos.js?v=41';
+import * as M from './modulos.js?v=41';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=41';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=41';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=41';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -83,14 +83,14 @@ async function irSeguro() {
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
     if (p[0] === 'finanzas' && s.facturacion) {
       const v = await vistaFinanzas(p[1], p[2]);
-      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, bajada: 'Ingresos, gastos y lo que falta por cobrar.' });
+      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, eyebrow: new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase()) });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
     if (p[0] === 'ajustes' && s.admin) return await vistaAjustes(s, qs);
     if (p[0] === 'propuestas' && s.admin) return await vistaPropuestas(s);
     if (p[0] === 'folders' && s.admin) {
-      marco(s, { titulo: 'Folders', ruta: 'Folders', activo: 'folders', html: '<section class="panel od" id="od"></section>', bajada: 'Toda la carpeta REG de OneDrive: encargos, gestión integral y librerías.' });
+      marco(s, { titulo: 'Folders', ruta: 'Folders', activo: 'folders', html: '<section class="panel od" id="od"></section>', eyebrow: 'OneDrive · REG', bajada: 'Toda la carpeta REG de OneDrive: encargos, gestión integral y librerías.' });
       return panelOneDrive($('#od'), null, [['']], { titulo: 'REG' });
     }
     return marco(s, { titulo: 'Página no encontrada', html: `<div class="vacio">Esta página no existe. <a href="#/">Volver a los encargos</a></div>` });
@@ -101,7 +101,7 @@ async function irSeguro() {
 }
 
 // ---------------- Marco general ----------------
-function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '' }) {
+function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '', eyebrow = '' }) {
   const esCli = s.email.endsWith('@clientes.portal.regenerativo.co');
   const enlacesGen = esCli || enc ? '' : `
     ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'inicio' ? 'activo' : ''}">${icoMenu('inicio')}<span>Inicio</span></a>`}
@@ -113,25 +113,27 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">${icoMenu('ajustes')}<span>Ajustes</span></a>` : ''}`;
   const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/encargos">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
   const tituloPag = h1 || (ruta.includes(' / ') ? ruta.split(' / ').pop() : titulo);
-  const subPag = bajada;
+  const ceja = eyebrow || (enc ? 'Encargo' : '');
   raiz.innerHTML = `
-  <header class="barra-web">
-    <div class="barra-web-in">
-      <div class="barra-izq"><button class="menu-movil" id="abrir-menu" aria-label="Menú">☰</button><span class="barra-enc">${titulo}</span></div>
+  <div class="lv">
+    <header class="lv-top">
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a>
-    </div>
-  </header>
-  <div class="app">
-    <nav class="lado" id="lado">
-      ${cabEnc}
-      ${menu || ''}
-      ${enlacesGen}
-      <div class="pie"><span class="pie-correo" title="${esc(s.email)}">${s.email.endsWith('@clientes.portal.regenerativo.co') ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir">Cerrar sesión</button></div>
-    </nav>
+      <span class="lv-top-sub">${esc(enc ? enc.nombre : 'Portal de encargos')}</span>
+    </header>
+    <aside class="lado" id="lado"><div class="lv-lado">
+      <div class="lv-marca"><a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a><span>Portal de encargos</span></div>
+      <nav class="lv-nav" aria-label="Principal"><span class="lv-ind" aria-hidden="true"></span>
+        ${cabEnc}
+        ${menu || ''}
+        ${enlacesGen}
+      </nav>
+      <div class="lv-lema"><b>No intervenimos, regeneramos.</b><i>Génesis 1.27</i></div>
+      <div class="pie"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir">Cerrar sesión</button></div>
+    </div></aside>
     <div class="main">
       ${D.MODO_DEMO ? '<div class="demo">Modo demostración: los datos son de ejemplo y se guardan solo en este navegador.</div>' : ''}
       <div class="titulo-pag">
-        <div><h1>${tituloPag}</h1>${subPag ? `<p>${subPag}</p>` : ''}</div>
+        <div>${ceja ? `<span class="lv-ceja">${esc(ceja)}</span>` : ''}<h1>${tituloPag}</h1></div>
         <div class="acciones">${acciones}</div>
       </div>
       <main class="cont">${html}</main>
@@ -143,10 +145,42 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
         </div>
       </footer>
     </div>
+    <nav class="lv-tabs" id="lv-tabs" aria-label="Menú"></nav>
+    <div class="lv-velo" id="lv-velo"></div>
   </div>`;
   $('#salir').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
-  $('#abrir-menu').onclick = e => { e.stopPropagation(); $('#lado').classList.toggle('abierto'); };
-  document.body.onclick = e => { const l = $('#lado'); if (l && l.classList.contains('abierto') && !l.contains(e.target)) l.classList.remove('abierto'); };
+  armarTabs();
+  moverIndicador();
+}
+
+// Menú inferior del celular: los 4 primeros del menú + "Más" (abre el menú completo como hoja)
+function armarTabs() {
+  const tabs = $('#lv-tabs'), lado = $('#lado'), velo = $('#lv-velo');
+  const enl = [...document.querySelectorAll('.lv-nav a:not(.volver):not(.enc-nom)')];
+  const prim = enl.slice(0, 4), resto = enl.slice(4);
+  const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
+  tabs.innerHTML = `<div class="lv-tabs-in">${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas')}</span></a>`).join('')}
+    <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2" stroke="#00A3CB"/><circle cx="18" cy="12" r="1.2"/></svg><span>Más</span></button></div>`;
+  const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
+  $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
+  velo.onclick = cerrar;
+  lado.querySelectorAll('a').forEach(a => a.addEventListener('click', cerrar));
+}
+
+// Indicador del menú que se desliza de la opción anterior a la nueva
+let indAntes = null;
+function moverIndicador() {
+  const nav = document.querySelector('.lv-nav'), ind = nav?.querySelector('.lv-ind'), a = nav?.querySelector('a.activo');
+  if (!ind) return;
+  if (!a) { ind.style.opacity = 0; indAntes = null; return; }
+  const dest = { top: a.offsetTop, h: a.offsetHeight };
+  ind.style.transition = 'none';
+  const ini = indAntes || dest;
+  ind.style.transform = `translateY(${ini.top}px)`; ind.style.height = ini.h + 'px'; ind.style.opacity = 1;
+  void ind.offsetWidth;
+  ind.style.transition = '';
+  requestAnimationFrame(() => { ind.style.transform = `translateY(${dest.top}px)`; ind.style.height = dest.h + 'px'; });
+  indAntes = dest;
 }
 
 // ---------------- Acceso ----------------
@@ -276,32 +310,62 @@ async function vistaInicio(s) {
   const prox = festLista.filter(f => f.fecha >= hoy).slice(0, 1)[0];
   const orden = { alto: 0, medio: 1, bajo: 2 };
   R.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
-  const cifra = (et, va, su, href) => `<a class="cifra-emp" href="${href}"><span class="ce-et">${et}</span><span class="ce-va">${va}</span><span class="ce-su">${su}</span></a>`;
+  // Seis meses de ingresos y gastos confirmados
+  const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const seis = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 5 + i); const k = d.toISOString().slice(0, 7); const l = ok.filter(x => x.fecha.slice(0, 7) === k); return { mes: MESES[d.getMonth()], ing: suma(l, 'ingreso'), gas: suma(l, 'gasto') }; });
+  const ingM = suma(delMes, 'ingreso'), gasM = suma(delMes, 'gasto'), totM = ingM + gasM || 1;
+  const enCurso = activos.filter(e => e.inicio && e.inicio <= hoy).length;
+  const fechaLarga = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
   const html = `
-    <section class="about">
-      <span class="ab-eti">${saludo.toUpperCase()}, EQUIPO</span>
-      <h2 class="ab-tit">${V.titulo}${V.mas ? '<img src="/assets/reg-plus3.png" alt="+++">' : ''}</h2>
-      <div class="ab-txt"><p>${esc(V.lead)}</p><p class="gris">${esc(V.texto)}</p><p class="gris cita">${esc(V.cita)}</p></div>
-    </section>
-    <div class="inicio-grid">
-      <section class="panel">
-        <div class="od-cab"><h3>Recordatorios</h3><span class="sub">${R.length ? R.length + ' por atender' : ''}</span></div>
-        ${R.length ? `<div class="recordatorios">${R.map(r => `<a class="rec ${r.nivel}" href="${r.href}"><i></i><span class="rec-txt"><b>${esc(r.txt)}</b><span class="sub">${esc(r.sub)}</span></span><span class="rec-ir">›</span></a>`).join('')}</div>`
-          : '<p class="sub">Todo al día. No hay pendientes.</p>'}
-        ${prox ? `<p class="prox-fest"><i></i>Próximo festivo: <b>${fecha(prox.fecha)}</b> · ${esc(prox.nombre)}</p>` : ''}
-      </section>
-      <section class="panel">
-        <h3>Así va regenerativo</h3>
-        <div class="cifras-emp">
-          ${s.facturacion ? cifra('Por cobrar', cop(porCobrar), 'Encargos, propuestas y adicionales', '#/finanzas') : ''}
-          ${s.facturacion ? cifra('Balance del mes', `${suma(delMes, 'ingreso') - suma(delMes, 'gasto') < 0 ? '−' : ''}${cop(Math.abs(suma(delMes, 'ingreso') - suma(delMes, 'gasto')))}`, `Ingresos ${cop(suma(delMes, 'ingreso'))}`, '#/finanzas') : ''}
-          ${s.admin ? cifra('Propuestas en espera', espera.length ? cop(enEspera) : '0', `${espera.length} enviada${espera.length === 1 ? '' : 's'} · ${borrador.length} en borrador`, '#/propuestas') : ''}
-          ${cifra('Encargos activos', activos.length, `${lista.length} en total`, '#/encargos')}
+    <div class="bento-hero">
+      <section class="lv-card hero-about">
+        ${anillos()}
+        <div class="ha-in">
+          <span class="lv-ceja">Sobre regenerativo</span>
+          <h2 class="ha-tit">${V.titulo}${V.mas ? '<img src="/assets/reg-plus3.png" alt="+++">' : ''}</h2>
+          <p class="ha-lead">${esc(V.lead)}</p>
+          <p class="ha-txt">${esc(V.texto)}</p>
+          <p class="ha-cita">${esc(V.cita)}</p>
         </div>
       </section>
-    </div>`;
-  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, bajada: 'La visión general de regenerativo y lo que necesita tu atención.' });
+      <section class="lv-card lv-recs">
+        <div class="lv-card-cab"><h3>Recordatorios</h3><span class="lv-cuenta">${R.length} pendiente${R.length === 1 ? '' : 's'}</span></div>
+        <ul>${R.map(r => `<li><a class="lv-rec ${r.nivel}" href="${r.href}"><span class="lv-circ"></span><span class="lv-rec-t">${esc(r.txt)}</span><span class="lv-flecha">${ico('ver')}</span></a></li>`).join('')}
+          ${prox ? `<li><span class="lv-rec festivo"><span class="lv-punto lima"></span><span class="lv-rec-t">Próximo festivo: ${fecha(prox.fecha)} — ${esc(prox.nombre)}</span></span></li>` : ''}
+          ${!R.length && !prox ? '<li class="lv-vacio">Todo al día.</li>' : ''}</ul>
+      </section>
+    </div>
+    <div class="bento-kpis">
+      <a class="lv-card lv-kpi" href="#/encargos"><span class="lv-ceja">Encargos</span><b class="lv-num">${activos.length}</b><span class="lv-kpi-su">${enCurso} en curso · ${activos.length - enCurso} por iniciar</span></a>
+      ${s.admin ? `<a class="lv-card lv-kpi" href="#/propuestas"><span class="lv-ceja">Propuestas</span><b class="lv-num">${espera.length}</b><span class="lv-kpi-su">en espera${enEspera ? ' · ' + cop(enEspera) : ''}</span></a>` : ''}
+      ${s.facturacion ? `<a class="lv-card lv-kpi" href="#/finanzas"><span class="lv-ceja"><i class="lv-punto ing"></i>Ingresos del mes</span><b class="lv-num med ing">${cop(ingM)}</b><span class="lv-pill"><i style="width:${Math.round(ingM / totM * 100)}%"></i></span></a>
+      <a class="lv-card lv-kpi" href="#/finanzas"><span class="lv-ceja"><i class="lv-punto gas"></i>Gastos del mes</span><b class="lv-num med gas">${cop(gasM)}</b><span class="lv-pill vino"><i style="width:${Math.round(gasM / totM * 100)}%"></i></span></a>` : ''}
+    </div>
+    ${s.facturacion ? `<section class="lv-card lv-pulso">
+      <div><span class="lv-ceja">Pulso del estudio</span><h2>Seis meses, en una mirada.</h2>
+        <p class="lv-pulso-dato">Por cobrar <b>${cop(porCobrar)}</b></p>
+        <a class="lv-link" href="#/finanzas">Ver finanzas ${ico('ver')}</a></div>
+      ${columnas(seis)}
+    </section>` : ''}`;
+  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, h1: `${saludo}, equipo.`, eyebrow: fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1) });
 }
+
+// Anillos que se dibujan (detalle gráfico del bloque About)
+function anillos() {
+  return `<svg class="anillos" viewBox="0 0 320 320" aria-hidden="true">${[44, 70, 96, 122, 148].map((r, i) => `<circle cx="160" cy="160" r="${r}" pathLength="1" class="an an${i}" style="--i:${i};transform:rotate(${-90 + i * 12}deg)"/>`).join('')}<circle cx="160" cy="160" r="5" class="an-centro"/></svg>`;
+}
+// Columnas pareadas de ingresos (azul) y gastos (vino) que crecen desde la base
+function columnas(datos, alto = 150) {
+  const max = Math.max(1, ...datos.flatMap(d => [d.ing, d.gas]));
+  const ult = datos.length - 1;
+  return `<div class="lv-cols-c"><div class="lv-cols-ley"><span class="lv-cols-info" data-info>${datos[ult].mes} · <b class="ing">+ ${cop(datos[ult].ing)}</b> <b class="gas">− ${cop(datos[ult].gas)}</b></span><span class="lv-ley"><i class="ing"></i>Ingresos</span><span class="lv-ley"><i class="gas"></i>Gastos</span></div>
+    <div class="lv-cols" style="height:${alto}px">${datos.map((d, i) => `<button type="button" class="lv-col ${i === ult ? 'sel' : ''}" data-mes="${d.mes}" data-ing="${d.ing}" data-gas="${d.gas}" aria-label="${d.mes}: ingresos ${cop(d.ing)}, gastos ${cop(d.gas)}"><span class="lv-col-b"><i class="ing" style="height:${d.ing / max * 100}%;--i:${i}"></i><i class="gas" style="height:${d.gas / max * 100}%;--i:${i}"></i></span><span class="lv-col-m">${d.mes}</span></button>`).join('')}</div></div>`;
+}
+document.addEventListener('pointerover', ev => {
+  const c = ev.target.closest?.('.lv-col'); if (!c) return;
+  const caja = c.closest('.lv-cols-c'); caja.querySelectorAll('.lv-col').forEach(x => x.classList.toggle('sel', x === c));
+  caja.querySelector('[data-info]').innerHTML = `${c.dataset.mes} · <b class="ing">+ ${cop(+c.dataset.ing)}</b> <b class="gas">− ${cop(+c.dataset.gas)}</b>`;
+});
 
 async function vistaEncargos(s) {
   const lista = await D.encargos();
@@ -309,41 +373,40 @@ async function vistaEncargos(s) {
   if (!admin && lista.length === 1) { location.replace(`#/${D.slugEncargo(lista[0])}`); return; }
   const fest = new Set((await D.festivos()).map(f => f.fecha));
   const conTiempo = lista.map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
-  const activos = conTiempo.filter(e => e.estado === 'activo');
+  const hoyE = new Date().toISOString().slice(0, 10);
+  const fase = e => e.estado !== 'activo' ? e.estado : (!e.inicio || e.inicio > hoyE) ? 'por-iniciar' : 'en-curso';
+  const F = [['todos', 'Todos'], ['en-curso', 'En curso'], ['por-iniciar', 'Por iniciar'], ['pausado', 'Pausados'], ['cerrado', 'Cerrados']]
+    .map(([k, l]) => [k, l, k === 'todos' ? lista.length : conTiempo.filter(e => fase(e) === k).length]).filter(([k, , n]) => k === 'todos' || n);
+  let filtro = 'todos';
   const html = `
-    <div class="kpis">
-      ${kpi('Encargos activos', activos.length, `${lista.length} en total`)}
-      ${kpi('Pausados', lista.filter(e => e.estado === 'pausado').length, 'En espera')}
-      ${kpi('Cerrados', lista.filter(e => e.estado === 'cerrado').length, 'Terminados')}
-      ${kpi('Por terminar este mes', activos.filter(e => e.fin && e.fin.slice(0, 7) === new Date().toISOString().slice(0, 7)).length, 'Fecha de fin en el mes')}
-    </div>
-    <div class="filtros">
-      <input id="buscar" placeholder="Buscar por nombre, código o cliente">
-      <select id="festado"><option value="">Todos los estados</option>${Object.entries(ESTADOS_ENCARGO).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
-    </div>
+    <div class="lv-filtros"><div class="lv-seg" id="seg">${F.map(([k, l, n]) => `<button type="button" data-f="${k}" class="${k === filtro ? 'activo' : ''}">${l}<i>${n}</i></button>`).join('')}</div>
+      <label class="lv-buscar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="buscar" placeholder="Buscar" aria-label="Buscar encargo"></label></div>
     <div id="tabla"></div>`;
-  marco(s, { titulo: 'Encargos', ruta: 'Portal', activo: 'encargos', html, bajada: 'Cada encargo con su tiempo, su estado y su carpeta.',
+  marco(s, { titulo: 'Encargos', ruta: 'Portal', activo: 'encargos', html, eyebrow: `${lista.length} encargo${lista.length === 1 ? '' : 's'}`,
     acciones: admin ? '<button class="btn" id="nuevo">+ Nuevo encargo</button>' : '' });
+  const ini = n => (n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  const chip = e => { const f = fase(e); return `<span class="lv-chip ${f}"><i></i>${f === 'en-curso' ? 'En curso' : f === 'por-iniciar' ? 'Por iniciar' : ESTADOS_ENCARGO[e.estado]}</span>`; };
   const pintar = () => {
-    const q = $('#buscar').value.toLowerCase(), est = $('#festado').value;
-    const f = conTiempo.filter(e => (!est || e.estado === est) &&
+    const q = $('#buscar').value.toLowerCase();
+    const f = conTiempo.filter(e => (filtro === 'todos' || fase(e) === filtro) &&
       (!q || [e.nombre, e.codigo, e.cliente?.nombre].join(' ').toLowerCase().includes(q)));
-    $('#tabla').innerHTML = f.length ? `
-      <div class="tabla-cont"><table>
-        <thead><tr><th>Encargo</th><th class="col-opc">Cliente</th><th class="col-opc">Inicio</th><th class="col-opc">Fin</th><th>Tiempo</th><th>Estado</th>${admin ? '<th></th>' : ''}</tr></thead>
-        <tbody>${f.map(e => `
-          <tr class="clic" data-c="${D.slugEncargo(e)}">
-            <td><b>${esc(e.nombre)}</b><div class="sub">${esc(e.servicio?.nombre || '')}</div></td>
-            <td class="col-opc">${xxx(e.cliente?.nombre)}</td>
-            <td class="col-opc">${fecha(e.inicio)}</td><td class="col-opc">${fecha(e.fin)}</td>
-            <td style="min-width:90px">${!e.inicio || e.inicio > new Date().toISOString().slice(0, 10) ? 'Por iniciar' : e.tiempo == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
-            <td><span class="etiqueta ${e.estado}">${ESTADOS_ENCARGO[e.estado] || e.estado}</span></td>
-            ${admin ? `<td class="acciones-fila">${webCarpeta(e) ? enlaceIco('carpeta', 'Abrir folder en OneDrive', esc(webCarpeta(e))) : ''}</td>` : ''}
-          </tr>`).join('')}</tbody></table></div>`
-      : `<div class="vacio">${lista.length ? 'Ningún encargo coincide con la búsqueda.' : 'Todavía no hay encargos.'}</div>`;
-    document.querySelectorAll('tr.clic').forEach(tr => tr.onclick = ev => { if (!ev.target.closest('a')) location.hash = `#/${tr.dataset.c}`; });
+    $('#tabla').innerHTML = f.length ? `<div class="lv-enc-grid">${f.map((e, i) => {
+      const t = Math.round((e.tiempo || 0) * 100), lugar = e.cliente?.ciudad || e.ciudad || '';
+      return `<a class="lv-card lv-enc ${semaforo(e)}" href="#/${D.slugEncargo(e)}" style="--i:${i}">
+        <div class="lv-enc-cab">${chip(e)}<span class="lv-flecha">${ico('ver')}</span></div>
+        <h2>${esc(e.nombre)}</h2>
+        <p class="lv-enc-sub">${[lugar, e.inicio ? 'desde ' + fecha(e.inicio) : 'Inicio por definir'].filter(Boolean).map(esc).join(' · ')}</p>
+        <div class="lv-enc-av"><span>${esc(e.servicio?.nombre || 'Tiempo')}</span><b>${fase(e) === 'por-iniciar' ? '—' : e.tiempo == null ? '' : t + '%'}</b></div>
+        <span class="lv-pill grande"><i style="width:${fase(e) === 'por-iniciar' ? 0 : e.tiempo == null ? 8 : t}%"></i></span>
+        <div class="lv-enc-pie"><span class="lv-ava" title="${esc(e.cliente?.nombre || '')}">${ini(e.cliente?.nombre) || '·'}</span><span class="lv-enc-cli">${esc(e.cliente?.nombre || 'Sin cliente')}</span>
+          ${e.fin ? `<span class="lv-enc-fin"><small>Entrega</small>${fecha(e.fin)}</span>` : `<span class="lv-enc-fin falta">Sin fecha de entrega</span>`}
+          ${admin && webCarpeta(e) ? `<span class="lv-od" data-od="${esc(webCarpeta(e))}" title="Abrir folder en OneDrive">${ico('carpeta')}</span>` : ''}</div>
+      </a>`; }).join('')}</div>`
+      : `<div class="vacio">${lista.length ? 'Ningún encargo coincide.' : 'Todavía no hay encargos.'}</div>`;
+    document.querySelectorAll('[data-od]').forEach(x => x.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); window.open(x.dataset.od, '_blank', 'noopener'); });
   };
-  $('#buscar').oninput = pintar; $('#festado').onchange = pintar; pintar();
+  document.querySelectorAll('#seg button').forEach(b => b.onclick = () => { filtro = b.dataset.f; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('activo', x === b)); pintar(); });
+  $('#buscar').oninput = pintar; pintar();
   if (admin) $('#nuevo').onclick = () => modalDesdeCotizacion();
 }
 
@@ -547,7 +610,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const nombreSec = (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
   const pintar = (html, acciones = '') => {
-    marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
+    marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, eyebrow: seccion === 'resumen' ? ([e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).join(' · ') || 'Encargo') : e.nombre, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
     if (admin && !D.MODO_DEMO && !conteoGuardado(e.id)) {
       D.onedrive('conteos_encargo', { encargo_id: e.id, modulos: FUENTES }).then(c => {
         guardarConteo(e.id, c);
@@ -839,7 +902,7 @@ async function vistaAjustes(s, qs) {
     <section class="panel"><div class="od-cab"><h3>Festivos</h3><span class="sub">Colombia · cuentan para los días de trabajo de los encargos</span></div>
       <div id="calendario"></div>
       ${D.MODO_DEMO ? '<button class="btn sec mini" id="reiniciar" style="margin-top:12px">Reiniciar datos de ejemplo</button>' : ''}</section>`;
-  marco(s, { titulo: 'Ajustes generales', ruta: 'Ajustes generales', activo: 'ajustes', html, bajada: 'Usuarios y acceso a las cuentas.' });
+  marco(s, { titulo: 'Ajustes', h1: 'Ajustes', eyebrow: 'Usuarios y acceso', ruta: 'Ajustes generales', activo: 'ajustes', html, bajada: 'Usuarios y acceso a las cuentas.' });
   calendarioFestivos($('#calendario'), fest);
   const r = $('#reiniciar'); if (r) r.onclick = () => { D.reiniciarDemo(); location.hash = '#/'; ir(); };
   $('#od-conectar').onclick = async () => { try { location.href = (await D.onedrive('url')).url; } catch (e) { alert(msg(e)); } };
@@ -915,21 +978,14 @@ async function vistaPropuestas(s) {
   const lista = await D.propuestas();
   const n = k => lista.filter(p => p.estado === k).length;
   const html = `
-    <div class="kpis">
-      ${kpi('En borrador', n('borrador'), 'Sin enviar')}
-      ${kpi('En espera', n('en_espera'), 'Enviadas · 30 días para decidir')}
-      ${kpi('Despegaron', n('despego'), 'Ya son encargos')}
-      ${kpi('No despegaron', n('no_despego'), 'Archivadas')}
-    </div>
-    <div class="filtros">
-      <input id="buscar" placeholder="Buscar por nombre, código o cliente">
-      <select id="festado"><option value="">Todas</option>${Object.entries(D.ESTADOS_PROPUESTA).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
-    </div>
+    <div class="lv-filtros"><div class="lv-seg" id="seg"><button type="button" data-f="" class="activo">Todas<i>${lista.length}</i></button>${Object.entries(D.ESTADOS_PROPUESTA).filter(([k]) => n(k)).map(([k, v]) => `<button type="button" data-f="${k}">${v}<i>${n(k)}</i></button>`).join('')}</div>
+      <label class="lv-buscar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="buscar" placeholder="Buscar" aria-label="Buscar propuesta"></label></div>
     <div id="tabla"></div>`;
-  marco(s, { titulo: 'Propuestas preliminares', ruta: 'Portal', activo: 'propuestas', html, bajada: 'Propuestas económicas antes de que el encargo despegue.',
+  let est = '';
+  marco(s, { titulo: 'Propuestas', ruta: 'Portal', activo: 'propuestas', html, eyebrow: 'Propuestas preliminares',
     acciones: '<button class="btn" id="nueva">+ Nueva propuesta</button>' });
   const pintar = () => {
-    const q = $('#buscar').value.toLowerCase(), est = $('#festado').value;
+    const q = $('#buscar').value.toLowerCase();
     const f = lista.filter(p => (!est || p.estado === est) && (!q || [p.nombre, p.codigo, p.cliente?.nombre].join(' ').toLowerCase().includes(q)));
     $('#tabla').innerHTML = f.length ? `
       <div class="tabla-cont"><table class="t-prop">
@@ -990,7 +1046,8 @@ async function vistaPropuestas(s) {
       ir();
     } catch (err) { alert(msg(err)); }
   };
-  $('#buscar').oninput = pintar; $('#festado').onchange = pintar; pintar();
+  document.querySelectorAll('#seg button').forEach(b => b.onclick = () => { est = b.dataset.f; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('activo', x === b)); pintar(); });
+  $('#buscar').oninput = pintar; pintar();
   $('#nueva').onclick = () => modalPropuesta();
 }
 
@@ -1234,6 +1291,6 @@ async function modalPropuesta(p = null) {
 // ---------------- Base de precios ----------------
 async function vistaBasePrecios(s, pestana) {
   const v = await M.vistaBase(s.admin, pestana === 'insumos' ? 'insumos' : 'apu');
-  marco(s, { titulo: 'Base de precios', ruta: 'Portal · común a todos los encargos', activo: 'base', html: v.html });
+  marco(s, { titulo: 'Base de precios', eyebrow: 'Común a todos los encargos', ruta: 'Portal · común a todos los encargos', activo: 'base', html: v.html });
   if (v.montar) v.montar(ir);
 }
