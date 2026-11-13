@@ -304,7 +304,7 @@ async function vistaEncargos(s) {
             <td><b>${esc(e.nombre)}</b><div class="sub">${esc(e.servicio?.nombre || '')}</div></td>
             <td class="col-opc">${xxx(e.cliente?.nombre)}</td>
             <td class="col-opc">${fecha(e.inicio)}</td><td class="col-opc">${fecha(e.fin)}</td>
-            <td style="min-width:90px">${pct(e.tiempo)}<div class="barra"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
+            <td style="min-width:90px">${pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
             <td><span class="etiqueta ${e.estado}">${ESTADOS_ENCARGO[e.estado] || e.estado}</span></td>
             ${admin ? `<td class="acciones-fila">${webCarpeta(e) ? enlaceIco('carpeta', 'Abrir carpeta en OneDrive', esc(webCarpeta(e))) : ''}</td>` : ''}
           </tr>`).join('')}</tbody></table></div>`
@@ -315,6 +315,12 @@ async function vistaEncargos(s) {
   if (admin) $('#nuevo').onclick = () => modalDesdeCotizacion();
 }
 
+// Semáforo del tiempo: rojo si ya pasó la fecha de fin y sigue activo, amarillo al pasar el 85 %
+function semaforo(e) {
+  if (e.estado !== 'activo' || !e.fin) return '';
+  if (e.fin < new Date().toISOString().slice(0, 10)) return 'sem-rojo';
+  return (e.tiempo || 0) >= 0.85 ? 'sem-amarillo' : 'sem-verde';
+}
 function kpi(et, va, su, barra) {
   return `<div class="kpi"><div class="et">${et}</div><div class="va">${va}</div><div class="su">${su || ''}</div>${barra !== undefined ? `<div class="barra"><i style="width:${Math.round(barra * 100)}%"></i></div>` : ''}</div>`;
 }
@@ -530,6 +536,25 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const V = valor.total;
     const seg = (v, c, tip) => v > 0 && V > 0 ? `<i style="width:${v / V * 100}%;background:${c}" title="${esc(tip)}"></i>` : '';
     const COL_AD = ['#7FC4D6', '#B9DDE7', '#5AA9BE', '#D4ECF2'];
+    if (esCliente) {
+      const DESC = { propuesta: 'Propuesta económica', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
+      const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && n(k) > 0);
+      const htmlCli = `
+        <div class="kpis kpis-3">
+          ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
+          ${kpi('Tiempo transcurrido', pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
+          ${kpi('Avance de la obra', g?.filas.length ? pct(g.realTotal) : '—', g?.filas.length ? `Esperado al corte ${pct(g.esperadoTotal)}` : 'Aún sin cronograma', g?.filas.length ? g.realTotal : undefined)}
+        </div>
+        <section class="panel"><h3>Tus documentos</h3>
+          ${mods.length ? `<div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}</div>`
+            : '<p class="sub">Aquí aparecerán los documentos de tu encargo a medida que te los enviemos.</p>'}
+        </section>
+        <section class="panel"><h3>Tu encargo</h3>
+          <dl class="datos datos-2c"><dt>Encargo</dt><dd>${esc(e.nombre)}</dd><dt>Servicio</dt><dd>${xxx(e.servicio?.nombre)}</dd>
+          <dt>Inicio · fin</dt><dd>${fecha(e.inicio)} · ${fecha(e.fin)}</dd><dt>Equipo</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : 'Regenerativo'}</dd></dl>
+        </section>`;
+      return pintar(htmlCli);
+    }
     const html = `
       <div class="kpis">
         ${kpi('Valor del encargo', V ? cop(V) : '—', V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
