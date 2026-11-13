@@ -1,0 +1,7 @@
+-- Categorías y subcategorías iguales a Monai (REGENERATIVO.csv). Los movimientos de Monai ya estaban cargados: solo se reorganizan.
+-- Herramientas y equipos + Suscripciones y servicios -> Herramientas (Herramientas, Suscripciones, Otros)
+-- Impuestos y bancos + Deudas -> Deudas (Banco, Impuestos, Crédito)
+-- Ingresos de encargos + Otros ingresos -> Ingresos (Honorarios, Otros ingresos)
+-- Nómina y honorarios (Recursos), Transporte (Transporte), Viáticos (Alimentación y otros, Ahorros)
+-- Se eliminó "Otros gastos" (sin movimientos). Los ingresos de Reforma 102 / Trevener quedan ligados al encargo SCREG_26010.
+-- (Aplicada en Supabase el 13/11/2026 con los id de cada categoría.)
