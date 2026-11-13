@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=41';
-import * as M from './modulos.js?v=41';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=41';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=41';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=41';
+import * as D from './datos.js?v=42';
+import * as M from './modulos.js?v=42';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=42';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=42';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=42';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -121,7 +121,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
       <span class="lv-top-sub">${esc(enc ? enc.nombre : 'Portal de encargos')}</span>
     </header>
     <aside class="lado" id="lado"><div class="lv-lado">
-      <div class="lv-marca"><a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a><span>Portal de encargos</span></div>
+      <div class="lv-marca"><div class="lv-marca-f"><a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a><button type="button" class="lv-cambia" data-menu="arriba" title="Llevar el menú arriba" aria-label="Llevar el menú arriba"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button></div><span>Portal de encargos</span></div>
       <nav class="lv-nav" aria-label="Principal"><span class="lv-ind" aria-hidden="true"></span>
         ${cabEnc}
         ${menu || ''}
@@ -130,6 +130,12 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
       <div class="lv-lema"><b>No intervenimos, regeneramos.</b><i>Génesis 1.27</i></div>
       <div class="pie"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir">Cerrar sesión</button></div>
     </div></aside>
+    <header class="lv-arriba" id="lv-arriba">
+      <a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a>
+      <nav class="lv-isla" aria-label="Menú"><button type="button" class="lv-cambia" data-menu="lado" title="Llevar el menú al lado" aria-label="Llevar el menú al lado"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button><div class="lv-isla-in" id="lv-isla"><span class="lv-ind-h" aria-hidden="true"></span></div></nav>
+      <div class="lv-cuenta-c"><button type="button" class="lv-circulo" id="lv-cuenta" aria-label="Cuenta"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg></button>
+        <div class="lv-pop" id="lv-pop" hidden><b>No intervenimos, regeneramos.</b><i>Génesis 1.27</i><span>${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button type="button" id="salir2">Cerrar sesión</button></div></div>
+    </header>
     <div class="main">
       ${D.MODO_DEMO ? '<div class="demo">Modo demostración: los datos son de ejemplo y se guardan solo en este navegador.</div>' : ''}
       <div class="titulo-pag">
@@ -150,7 +156,32 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   </div>`;
   $('#salir').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
+  armarIsla();
+  $('#salir2').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
   moverIndicador();
+}
+
+// Menú arriba (isla en píldora, como Apple Music en iPad/Mac) o al lado; se recuerda en este navegador
+const menuArriba = () => { try { return localStorage.getItem('reg-menu') === 'arriba'; } catch (_) { return false; } };
+document.documentElement.classList.toggle('menu-arriba', menuArriba());
+function armarIsla() {
+  const isla = $('#lv-isla');
+  const enl = [...document.querySelectorAll('.lv-nav a:not(.volver):not(.enc-nom)')];
+  const volver = document.querySelector('.lv-nav a.volver');
+  isla.insertAdjacentHTML('beforeend', (volver ? `<a href="${volver.getAttribute('href')}" class="lv-isla-volver" title="Volver al portal">${ico('atras')}</a>` : '') +
+    enl.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim()}</a>`).join(''));
+  document.querySelectorAll('.lv-cambia').forEach(b => b.onclick = () => {
+    const arriba = b.dataset.menu === 'arriba';
+    try { localStorage.setItem('reg-menu', arriba ? 'arriba' : 'lado'); } catch (_) {}
+    document.documentElement.classList.add('menu-cambiando');
+    document.documentElement.classList.toggle('menu-arriba', arriba);
+    indAntes = null; moverIndicador();
+    setTimeout(() => document.documentElement.classList.remove('menu-cambiando'), 700);
+  });
+  const pop = $('#lv-pop');
+  $('#lv-cuenta').onclick = e => { e.stopPropagation(); pop.hidden = !pop.hidden; };
+  document.addEventListener('click', e => { if (!pop.hidden && !pop.contains(e.target)) pop.hidden = true; });
+  const act = isla.querySelector('a.activo'); if (act) act.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 // Menú inferior del celular: los 4 primeros del menú + "Más" (abre el menú completo como hoja)
@@ -181,7 +212,15 @@ function moverIndicador() {
   ind.style.transition = '';
   requestAnimationFrame(() => { ind.style.transform = `translateY(${dest.top}px)`; ind.style.height = dest.h + 'px'; });
   indAntes = dest;
+  const isla = document.querySelector('.lv-isla-in'), h = isla?.querySelector('.lv-ind-h'), b = isla?.querySelector('a.activo');
+  if (h && b) {
+    const d = { x: b.offsetLeft, w: b.offsetWidth }, i0 = islaAntes || d;
+    h.style.transition = 'none'; h.style.transform = `translateX(${i0.x}px)`; h.style.width = i0.w + 'px'; h.style.opacity = 1; void h.offsetWidth; h.style.transition = '';
+    requestAnimationFrame(() => { h.style.transform = `translateX(${d.x}px)`; h.style.width = d.w + 'px'; });
+    islaAntes = d;
+  } else if (h) { h.style.opacity = 0; islaAntes = null; }
 }
+let islaAntes = null;
 
 // ---------------- Acceso ----------------
 function vistaAcceso() {
@@ -303,8 +342,8 @@ async function vistaInicio(s) {
     rec(d !== null && d <= 7 ? 'alto' : 'medio', `Hacer seguimiento a ${p.nombre}`, d !== null ? `${p.cliente?.nombre || 'Cliente'} · ${d > 0 ? d + ' días para decidir' : 'vence hoy'}` : `${p.cliente?.nombre || 'Cliente'} · falta la fecha de envío`, '#/propuestas'); });
   borrador.forEach(p => rec('medio', `Enviar la propuesta ${p.nombre}`, p.archivo_nombre ? 'Está en borrador' : 'Falta cargar el Word', '#/propuestas'));
   props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera').forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
-  activos.filter(e => !e.inicio).forEach(e => rec('medio', `Definir el inicio de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'Propuesta aprobada; el encargo aún no ha iniciado', `#/${D.slugEncargo(e)}/ajustes`));
-  activos.filter(e => e.inicio && !e.fin).forEach(e => rec('bajo', `Agregar la fecha de entrega de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'El encargo está en curso; con la fecha de entrega se mide el tiempo', `#/${D.slugEncargo(e)}/ajustes`));
+  activos.filter(e => !e.inicio).forEach(e => rec('medio', `Definir el inicio de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'Propuesta aprobada; el encargo aún no ha iniciado', `#/${D.slugEncargo(e)}`));
+  activos.filter(e => e.inicio && !e.fin).forEach(e => rec('bajo', `Agregar la fecha de entrega de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'El encargo está en curso; con la fecha de entrega se mide el tiempo', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.fin && e.fin >= hoy && e.fin.slice(0, 7) === mes).forEach(e => rec('medio', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} termina el ${fecha(e.fin)}`, 'Fecha de fin este mes', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.fin && e.fin < hoy).forEach(e => rec('alto', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} pasó su fecha de fin`, `Terminaba el ${fecha(e.fin)}`, `#/${D.slugEncargo(e)}`));
   const prox = festLista.filter(f => f.fecha >= hoy).slice(0, 1)[0];
@@ -349,6 +388,24 @@ async function vistaInicio(s) {
     </section>` : ''}`;
   marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, h1: `${saludo}, equipo.`, eyebrow: fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1) });
 }
+
+// Fecha del encargo que se cambia en el sitio: clic → calendario → se guarda en el encargo (no en la propuesta)
+function fechaEnc(e, campo, vacio, editable) {
+  const v = e[campo];
+  if (!editable) return v ? fecha(v) : vacio;
+  return `<label class="lv-fecha ${v ? '' : 'falta'}" title="${campo === 'inicio' ? 'Fecha de inicio del encargo' : 'Fecha de entrega del encargo'} · clic para cambiarla" onclick="event.stopPropagation()">${v ? fecha(v) : vacio}${ico('editar')}<input type="date" data-efecha="${e.id}" data-campo="${campo}" data-otra="${(campo === 'inicio' ? e.fin : e.inicio) || ''}" value="${v || ''}" aria-label="${campo === 'inicio' ? 'Fecha de inicio' : 'Fecha de entrega'}"></label>`;
+}
+document.addEventListener('click', ev => {
+  const l = ev.target.closest?.('.lv-fecha'); if (!l) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const i = l.querySelector('input'); try { i.showPicker(); } catch (_) { i.focus(); i.click(); }
+}, true);
+document.addEventListener('change', async ev => {
+  const i = ev.target; if (!i.matches?.('[data-efecha]')) return;
+  const campo = i.dataset.campo, v = i.value || null, otra = i.dataset.otra;
+  if (v && otra && (campo === 'inicio' ? v > otra : v < otra)) { alert('La fecha de entrega no puede ser anterior al inicio.'); i.value = ''; return; }
+  try { await D.actualizarEncargo(i.dataset.efecha, { [campo]: v }); ir(); } catch (err) { alert(msg(err)); }
+});
 
 // Anillos que se dibujan (detalle gráfico del bloque About)
 function anillos() {
@@ -395,11 +452,11 @@ async function vistaEncargos(s) {
       return `<a class="lv-card lv-enc ${semaforo(e)}" href="#/${D.slugEncargo(e)}" style="--i:${i}">
         <div class="lv-enc-cab">${chip(e)}<span class="lv-flecha">${ico('ver')}</span></div>
         <h2>${esc(e.nombre)}</h2>
-        <p class="lv-enc-sub">${[lugar, e.inicio ? 'desde ' + fecha(e.inicio) : 'Inicio por definir'].filter(Boolean).map(esc).join(' · ')}</p>
+        <p class="lv-enc-sub">${lugar ? esc(lugar) + ' · ' : ''}<span class="lv-fe-et">Inicio</span> ${fechaEnc(e, 'inicio', 'Por definir', admin)}</p>
         <div class="lv-enc-av"><span>${esc(e.servicio?.nombre || 'Tiempo')}</span><b>${fase(e) === 'por-iniciar' ? '—' : e.tiempo == null ? '' : t + '%'}</b></div>
         <span class="lv-pill grande"><i style="width:${fase(e) === 'por-iniciar' ? 0 : e.tiempo == null ? 8 : t}%"></i></span>
         <div class="lv-enc-pie"><span class="lv-ava" title="${esc(e.cliente?.nombre || '')}">${ini(e.cliente?.nombre) || '·'}</span><span class="lv-enc-cli">${esc(e.cliente?.nombre || 'Sin cliente')}</span>
-          ${e.fin ? `<span class="lv-enc-fin"><small>Entrega</small>${fecha(e.fin)}</span>` : `<span class="lv-enc-fin falta">Sin fecha de entrega</span>`}
+          <span class="lv-enc-fin ${e.fin ? '' : 'falta'}"><small>Entrega</small>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</span>
           ${admin && webCarpeta(e) ? `<span class="lv-od" data-od="${esc(webCarpeta(e))}" title="Abrir folder en OneDrive">${ico('carpeta')}</span>` : ''}</div>
       </a>`; }).join('')}</div>`
       : `<div class="vacio">${lista.length ? 'Ningún encargo coincide.' : 'Todavía no hay encargos.'}</div>`;
@@ -682,7 +739,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           <dt>Servicio</dt><dd>${xxx(e.servicio?.nombre)}</dd>
           ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
           ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
-          <dt>Inicio · fin</dt><dd>${fecha(e.inicio)} · ${fecha(e.fin)}</dd>
+          <dt>Inicio</dt><dd>${fechaEnc(e, 'inicio', 'Por definir', admin)}</dd>
+          <dt>Entrega</dt><dd>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</dd>
           ${prop && admin ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
           <dt>Responsables</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : xxx('')}</dd>
         </dl>
