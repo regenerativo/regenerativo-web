@@ -55,6 +55,11 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))));
   const signo = x => x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : '';
   const H = 190;
+  const subDe = x => x.subcategoria && x.subcategoria !== x.categoria?.nombre ? x.subcategoria : '';
+  const desglose = catsGasto.filter(c => c.gastado).map(c => {
+    const m = {}; delMes.filter(x => x.categoria_id === c.id).forEach(x => { const k = x.subcategoria || 'Sin subcategoría'; m[k] = (m[k] || 0) + Number(x.valor); });
+    return { ...c, subs: Object.entries(m).sort((a, b) => b[1] - a[1]) };
+  }).filter(d => d.subs.length > 1 || d.subs[0][0] !== d.nombre);
   const html = `
     ${ejemplos ? `<div class="aviso-ej">Hay movimientos de ejemplo. <button class="btn sec mini" id="borrar-ej">Borrar ejemplos</button></div>` : ''}
     <div class="fin-mon">
@@ -79,6 +84,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
             <div class="mon-pct ${exc ? 'xxx' : ''}">${p ? Math.round(c.gastado / p * 100) + ' %' : '—'}</div>
             <div class="mon-nom">${esc(c.nombre)}</div></button>`;
         }).join('')}</div>
+        ${desglose.length ? `<div class="mon-sub">${desglose.map(d => `<div class="ms-fila"><span class="ms-cat">${esc(d.icono || '')} ${esc(d.nombre)}</span><span class="ms-chips">${d.subs.map(([n, v]) => `<span class="ms-chip">${esc(n)} <b>${compacto(v)}</b></span>`).join('')}</span></div>`).join('')}</div>` : ''}
         <p class="sub mon-ley"><span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <a href="#" id="editar-pres">Editar presupuesto</a>${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
         <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" data-nuevo="ingreso">+ Ingreso</button><button class="mon-fab" data-nuevo="gasto" title="Agregar gasto">+</button></div>
       </section>
@@ -86,7 +92,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         <div class="od-cab"><h3>Movimientos del mes</h3><span class="sub">${delMes.length}</span></div>
         ${delMes.length ? `<div class="lista-filas">${delMes.map(x => `<button class="mov-fila" data-editar="${x.id}">
           <span class="mov-ico">${esc(x.tipo === 'socio' ? '👤' : x.categoria?.icono || '•')}</span>
-          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${fecha(x.fecha)} · ${esc(x.encargo?.nombre || 'General')}</span></span>
+          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''} · ${esc(x.encargo?.nombre || 'General')}</span></span>
           <span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span></button>`).join('')}</div>`
         : '<p class="sub">No hay movimientos este mes en esta lista.</p>'}
       </section>
@@ -172,7 +178,8 @@ export function modalMov(m, cats, encargos, recargar) {
     <div class="grilla-form">
       <div><label>Valor (COP)</label><input name="valor" inputmode="numeric" required value="${m.valor ? Number(m.valor).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></div>
       <div><label>Fecha</label><input name="fecha" type="date" required value="${m.fecha || ''}"></div>
-      ${m.tipo === 'socio' ? '' : `<div><label>Categoría</label><select name="categoria_id">${opsCat(m.tipo)}</select></div>`}
+      ${m.tipo === 'socio' ? '' : `<div><label>Categoría</label><select name="categoria_id">${opsCat(m.tipo)}</select></div>
+      <div><label>Subcategoría</label><input name="subcategoria" list="subcats" value="${esc(m.subcategoria || '')}" placeholder="Suscripciones, Banco, Transporte…"><datalist id="subcats"></datalist></div>`}
       <div><label>Encargo</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select></div>
       <div class="ancho"><label>Concepto</label><input name="descripcion" value="${esc(m.descripcion || '')}" placeholder="${m.tipo === 'ingreso' ? 'Pago 50% al iniciar' : 'Taxi visita de obra'}"></div>
       <div><label>Medio</label><input name="medio" value="${esc(m.medio || '')}" placeholder="Transferencia, efectivo, tarjeta…"></div>
@@ -186,6 +193,8 @@ export function modalMov(m, cats, encargos, recargar) {
   </form>`;
   document.body.appendChild(fondo);
   const f = $('#fm', fondo);
+  const pintarSubs = () => { const dl = $('#subcats', fondo); if (!dl) return; const c = cats.find(x => x.id === f.categoria_id.value); dl.innerHTML = (c?.subcategorias || []).map(n => `<option value="${esc(n)}">`).join(''); };
+  if (f.categoria_id) { f.categoria_id.onchange = pintarSubs; pintarSubs(); }
   f.valor.oninput = () => { const n = f.valor.value.replace(/\D/g, ''); f.valor.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
   $('#cancelar', fondo).onclick = () => fondo.remove();
   if (m.id) {
@@ -205,7 +214,7 @@ export function modalMov(m, cats, encargos, recargar) {
   f.onsubmit = async ev => {
     ev.preventDefault();
     const v = Object.fromEntries(new FormData(f));
-    const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
+    const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, subcategoria: m.tipo === 'socio' ? null : (v.subcategoria || '').trim() || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
     if (m.id) reg.id = m.id;
     try { await D.finGuardarMovimiento(reg); fondo.remove(); recargar(); } catch (err) { $('#aviso', fondo).textContent = err.message; }
   };

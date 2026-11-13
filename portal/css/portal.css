@@ -336,3 +336,10 @@
 :root body .mon-pres{border-radius:14px!important}
 :root body .mon-gasto{border-radius:10px!important}
 :root body .g-par span{border-radius:5px 5px 2px 2px!important}
+/* Finanzas: detalle por subcategoría (etiquetas de Monai) */
+:root body .mon-sub{margin:14px 0 4px;display:flex;flex-direction:column;gap:6px}
+:root body .ms-fila{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+:root body .ms-cat{min-width:150px;color:#5C625A}
+:root body .ms-chips{display:flex;gap:6px;flex-wrap:wrap}
+:root body .ms-chip{background:#EEF7FA;color:#00758F;border-radius:99px;padding:2px 10px;font-size:12px}
+:root body .ms-chip b{font-weight:500;margin-left:2px}
