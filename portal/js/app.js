@@ -269,7 +269,8 @@ async function vistaInicio(s) {
     rec(d !== null && d <= 7 ? 'alto' : 'medio', `Hacer seguimiento a ${p.nombre}`, d !== null ? `${p.cliente?.nombre || 'Cliente'} · ${d > 0 ? d + ' días para decidir' : 'vence hoy'}` : `${p.cliente?.nombre || 'Cliente'} · falta la fecha de envío`, '#/propuestas'); });
   borrador.forEach(p => rec('medio', `Enviar la propuesta ${p.nombre}`, p.archivo_nombre ? 'Está en borrador' : 'Falta cargar el Word', '#/propuestas'));
   props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera').forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
-  activos.filter(e => !e.fin).forEach(e => rec('bajo', `Agregar la fecha de entrega de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'El encargo está en curso; con la fecha de entrega se mide el tiempo', `#/${D.slugEncargo(e)}/ajustes`));
+  activos.filter(e => !e.inicio).forEach(e => rec('medio', `Definir el inicio de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'Propuesta aprobada; el encargo aún no ha iniciado', `#/${D.slugEncargo(e)}/ajustes`));
+  activos.filter(e => e.inicio && !e.fin).forEach(e => rec('bajo', `Agregar la fecha de entrega de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'El encargo está en curso; con la fecha de entrega se mide el tiempo', `#/${D.slugEncargo(e)}/ajustes`));
   activos.filter(e => e.fin && e.fin >= hoy && e.fin.slice(0, 7) === mes).forEach(e => rec('medio', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} termina el ${fecha(e.fin)}`, 'Fecha de fin este mes', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.fin && e.fin < hoy).forEach(e => rec('alto', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} pasó su fecha de fin`, `Terminaba el ${fecha(e.fin)}`, `#/${D.slugEncargo(e)}`));
   const prox = festLista.filter(f => f.fecha >= hoy).slice(0, 1)[0];
@@ -335,7 +336,7 @@ async function vistaEncargos(s) {
             <td><b>${esc(e.nombre)}</b><div class="sub">${esc(e.servicio?.nombre || '')}</div></td>
             <td class="col-opc">${xxx(e.cliente?.nombre)}</td>
             <td class="col-opc">${fecha(e.inicio)}</td><td class="col-opc">${fecha(e.fin)}</td>
-            <td style="min-width:90px">${e.tiempo == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
+            <td style="min-width:90px">${!e.inicio || e.inicio > new Date().toISOString().slice(0, 10) ? 'Por iniciar' : e.tiempo == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(e.tiempo)}<div class="barra ${semaforo(e)}"><i style="width:${Math.round((e.tiempo || 0) * 100)}%"></i></div></td>
             <td><span class="etiqueta ${e.estado}">${ESTADOS_ENCARGO[e.estado] || e.estado}</span></td>
             ${admin ? `<td class="acciones-fila">${webCarpeta(e) ? enlaceIco('carpeta', 'Abrir folder en OneDrive', esc(webCarpeta(e))) : ''}</td>` : ''}
           </tr>`).join('')}</tbody></table></div>`
@@ -573,7 +574,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
       const htmlCli = `
         <div class="kpis kpis-3">
           ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
-          ${kpi('Tiempo transcurrido', t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
+          ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
           ${kpi('Avance de la obra', g?.filas.length ? pct(g.realTotal) : '—', g?.filas.length ? `Esperado al corte ${pct(g.esperadoTotal)}` : 'Aún sin cronograma', g?.filas.length ? g.realTotal : undefined)}
         </div>
         <section class="panel"><h3>Tus documentos</h3>
@@ -591,7 +592,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         ${kpi('Valor del encargo', V ? cop(V) : '—', V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
         ${s.facturacion ? kpi('Recibido', cop(rec), V ? `${pct(rec / V)} del valor` : 'Ingresos registrados', V ? Math.min(1, rec / V) : undefined) : ''}
         ${s.facturacion ? kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', V ? 'Valor menos lo recibido' : '') : ''}
-        ${kpi('Tiempo transcurrido', t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
+        ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
       </div>
       <div class="dos">
         <section class="panel">
@@ -940,11 +941,25 @@ async function vistaPropuestas(s) {
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
             <td class="num col-opc">${p.honorarios ? cop(p.honorarios) : '—'}</td>
             <td class="col-opc">${p.estado === 'borrador' ? '—' : `<label class="fecha-envio" title="Fecha de envío · clic para cambiarla">${p.fecha_envio ? fecha(p.fecha_envio) : '<span class="xxx">Sin fecha</span>'}${ico('editar')}<input type="date" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" aria-label="Fecha de envío"></label>${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
-            <td><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span><div class="doc-estado ${p.archivo_nombre ? 'si' : 'no'}" title="${p.archivo_nombre ? esc(p.archivo_nombre) : 'Carga el Word de la propuesta económica en Detalles'}">${p.archivo_nombre ? 'Word cargado' : 'Falta el Word'}</div>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
+            <td><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span><div class="doc-estado revisando" data-docs="${p.id}">Revisando documentos…</div>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
             <td class="acciones-fila">${accionesPropuesta(p)}</td>
           </tr>`).join('')}</tbody></table></div>`
       : `<div class="vacio">${lista.length ? 'Ninguna propuesta coincide.' : 'Todavía no hay propuestas preliminares.'}</div>`;
     document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => accion(b.dataset.acc, lista.find(p => p.id === b.dataset.id)));
+    // Documentos de cada propuesta (Word y PDF) leídos de su carpeta en OneDrive
+    document.querySelectorAll('[data-docs]').forEach(async el => {
+      const pintarDocs = a => {
+        const w = a.some(x => /\.docx?$/i.test(x.nombre)), f = a.some(x => /\.pdf$/i.test(x.nombre));
+        el.className = 'doc-estado ' + (w && f ? 'si' : 'no');
+        el.textContent = w && f ? 'Documentos cargados' : w ? 'Falta el PDF' : f ? 'Falta el Word' : 'Sin documentos';
+        el.title = a.map(x => x.nombre).join(' · ') || 'No hay Word ni PDF en la carpeta de la propuesta';
+      };
+      const k = 'reg-docs-' + el.dataset.docs;
+      try { const c = JSON.parse(sessionStorage.getItem(k)); if (c && Date.now() - c.t < 600000) return pintarDocs(c.a); } catch (_) {}
+      if (D.MODO_DEMO) return pintarDocs([]);
+      try { const r = await D.onedrive('archivos_propuesta', { propuesta_id: el.dataset.docs }); try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), a: r.archivos })); } catch (_) {} pintarDocs(r.archivos); }
+      catch (_) { el.className = 'doc-estado'; el.textContent = 'Documentos sin revisar'; }
+    });
     document.querySelectorAll('.fecha-envio').forEach(l => l.onclick = () => { const i = l.querySelector('input'); try { i.showPicker(); } catch (_) { i.focus(); } });
     document.querySelectorAll('[data-fenvio]').forEach(inp => inp.onchange = async () => {
       try { await D.actualizarPropuesta(inp.dataset.fenvio, { fecha_envio: inp.value || null }); ir(); } catch (err) { alert(msg(err)); }

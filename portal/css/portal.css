@@ -380,3 +380,15 @@
 :root body .ab-txt p{margin:0;font-size:14.25px;line-height:1.65}
 :root body .ab-txt .gris{color:#999}
 :root body .ab-txt .cita{font-style:italic}
+:root body .doc-estado.revisando{color:#999}
+/* Celular: tarjetas de cifras compactas (2 x 2, una línea de texto) */
+@media (max-width:600px){
+  :root body .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin-bottom:14px}
+  :root body .kpi{padding:10px 12px!important;border-radius:12px!important;min-height:0!important}
+  :root body .kpi .et{font-size:10.5px!important;letter-spacing:.06em!important}
+  :root body .kpi .va{font-size:20px!important;margin-top:2px}
+  :root body .kpi .su{font-size:11.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  :root body .kpis.kpis-3{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  :root body .titulo-pag h1{font-size:28px!important}
+  :root body .titulo-pag p{font-size:14px}
+}
