@@ -1,0 +1,1 @@
+-- despegar_propuesta ya no pone la fecha de inicio (antes usaba el día del despegue); copia los servicios.

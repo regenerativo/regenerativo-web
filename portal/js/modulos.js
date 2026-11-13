@@ -1,8 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=42';
-import { descargarPDF } from './pdf.js?v=42';
-import { btnIco } from './iconos.js?v=42';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=42';
+import * as D from './datos.js?v=43';
+import { descargarPDF } from './pdf.js?v=43';
+import { btnIco } from './iconos.js?v=43';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=43';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -42,7 +42,7 @@ function imprimirNavegador(e, codigoFecha, cuerpo, documento) {
   let cont = $('#impresion');
   if (!cont) { cont = document.createElement('div'); cont.id = 'impresion'; document.body.appendChild(cont); }
   cont.innerHTML = `
-    <div class="imp-cabeza"><div><div class="imp-servicio">${esc((e.servicio?.nombre || 'XXX').toUpperCase())}</div><div class="imp-servicios">Servicios</div></div>
+    <div class="imp-cabeza"><div><div class="imp-servicio">${esc(((e.servicios?.length ? e.servicios.join(' · ') : e.servicio?.nombre) || 'XXX').toUpperCase())}</div><div class="imp-servicios">Servicios</div></div>
       <div style="text-align:right"><div class="imp-servicio">${esc(documento || '')}</div><div class="imp-servicios">${esc(codigoFecha)}</div></div></div>
     <div class="imp-banda"></div>
     <div class="imp-cuerpo">${cuerpo}</div>
