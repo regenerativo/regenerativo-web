@@ -413,3 +413,29 @@
   :root body .mon-cifra{font-size:30px!important}
   :root body .btn:not(.mini){min-height:38px;font-size:14px!important}
 }
+/* Finanzas en celular y tablet: una sola columna y "Por confirmar" ordenado */
+@media (max-width:1000px){
+  :root body .fin-grid,:root body .fin-mon{grid-template-columns:minmax(0,1fr)!important}
+}
+:root body .pend-sel select{font-size:13px!important;padding:6px 8px!important;min-width:0;max-width:100%}
+@media (max-width:760px){
+  :root body .pend-fila{grid-template-columns:minmax(0,1fr) auto!important;gap:8px 10px;padding:14px 0}
+  :root body .pend-txt{min-width:0}
+  :root body .pend-sel{grid-column:1/-1;display:grid!important;grid-template-columns:1fr 1fr;gap:6px}
+  :root body .pend-sel select{width:100%!important;flex:none}
+  :root body .pend-sel select[data-f="encargo_id"]{grid-column:1/-1}
+  :root body .pend-acc{grid-column:1/-1;justify-content:flex-end}
+}
+@media (max-width:600px){
+  :root body .mon-cols{overflow-x:auto;justify-content:flex-start;padding-bottom:6px}
+  :root body .graf{overflow:hidden}
+  :root body .mov-txt b{font-size:14px}
+}
+/* iPhone/iPad: Safari hace zoom al tocar un campo con letra menor a 16 px y la página queda corrida. */
+@media (pointer:coarse){
+  :root body input,:root body select,:root body textarea,:root body .pend-sel select{font-size:16px!important}
+}
+/* Nada se sale de la pantalla a los lados */
+:root body .cont{overflow-x:clip}
+:root body .mon,:root body .fin-lado,:root body .fin-grid>*,:root body .fin-mon>*{min-width:0}
+@media (max-width:600px){:root body .mon-fab{width:44px!important;height:44px!important;font-size:22px!important;padding:0!important}:root body .pend-aviso{white-space:nowrap}:root body .mon-mas{flex-wrap:wrap;gap:8px}}
