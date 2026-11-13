@@ -288,3 +288,31 @@
 :root body .mon{border:1px solid var(--linea)!important;background:#fff}
 :root body .mon-cols{justify-content:flex-start;gap:14px}
 :root body .pend{border:1.5px dashed #C0603A!important}
+
+/* ===== Colores regenerativo en finanzas: azul para ingresos y tonos, rojo vino para gastos ===== */
+:root{--ing:#00A3CB;--gas:#800000}
+:root body .pill-gas{background:#800000!important}
+:root body .pill-ing{background:#E0F3F8!important;color:#00758F}
+:root body .mon-fab{background:#800000!important;box-shadow:0 4px 14px rgba(128,0,0,.28)!important}
+:root body .mon-gasto{background:#7FCFE3!important}
+:root body .mon-gasto.exc{background:#800000!important;opacity:.75}
+:root body .mon-pres{border-color:#00A3CB!important}
+:root body .ley-gas{background:#7FCFE3!important}
+:root body .ley-pres{border-color:#00A3CB!important}
+:root body .pend{border-color:#800000!important;background:#FFFAFA}
+:root body .pend-n{background:#800000!important}
+:root body .pend-aviso{color:#800000;border-color:#800000}
+:root body .kpi .va.neg,:root body td.num.gasto{color:#800000}
+:root body .barra i,:root body .barra-apilada i:first-child{background:#00758F}
+/* Columnas verticales redondeadas en píldora */
+:root body .mon-col{flex:0 0 64px}
+:root body .mon-barra{border-radius:99px!important;width:52px;margin:0 auto;overflow:hidden}
+:root body .mon-pres{border-radius:99px!important}
+:root body .mon-gasto{border-radius:99px!important;left:5px;right:5px;bottom:5px}
+:root body .g-par{gap:4px}
+:root body .g-par span{width:16px;border-radius:99px!important}
+/* Propuestas: estado del Word en palabras */
+:root body .doc-estado{font-size:12px;margin-top:4px}
+:root body .doc-estado.si{color:#00758F}
+:root body .doc-estado.no{color:#800000}
+:root body .pill-gas{color:#fff!important;padding:3px 10px;border-radius:99px}

@@ -5,7 +5,7 @@ import { btnIco } from './iconos.js?v=33';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const C_ING = '#0090B0', C_GAS = '#C0603A';   // par validado (CVD y contraste)
+const C_ING = '#00A3CB', C_GAS = '#800000';   // azul y rojo vino regenerativo   // par validado (CVD y contraste)
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const mesDe = f => f.slice(0, 7);
 const compacto = n => n >= 1e6 ? (n / 1e6).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' mil' : String(Math.round(n));

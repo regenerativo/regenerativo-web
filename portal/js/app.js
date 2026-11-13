@@ -79,7 +79,7 @@ async function irSeguro() {
     if (p.length === 0) return esCliente ? await vistaEncargos(s) : await vistaInicio(s);
     if (p[0] === 'encargos' && !p[1]) return await vistaEncargos(s);
     if (p[0] === 'encargos' && p[1]) return await vistaExpediente(s, decodeURIComponent(p[1]), p[2] || 'resumen', p[3]);
-    const RESERVADAS = ['finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
+    const RESERVADAS = ['folders', 'finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
     if (p[0] === 'finanzas' && s.facturacion) {
       const v = await vistaFinanzas(p[1], p[2]);
@@ -89,6 +89,10 @@ async function irSeguro() {
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
     if (p[0] === 'ajustes' && s.admin) return await vistaAjustes(s, qs);
     if (p[0] === 'propuestas' && s.admin) return await vistaPropuestas(s);
+    if (p[0] === 'folders' && s.admin) {
+      marco(s, { titulo: 'Folders', ruta: 'Folders', activo: 'folders', html: '<section class="panel od" id="od"></section>', bajada: 'Toda la carpeta REG de OneDrive: encargos, gestión integral y librerías.' });
+      return panelOneDrive($('#od'), null, [['']], { titulo: 'REG' });
+    }
     return marco(s, { titulo: 'Página no encontrada', html: `<div class="vacio">Esta página no existe. <a href="#/">Volver a los encargos</a></div>` });
   } catch (err) {
     console.error(err);
@@ -104,6 +108,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     ${s.admin ? `<a href="#/propuestas" class="${activo === 'propuestas' ? 'activo' : ''}">Propuestas</a>` : ''}
     ${s.soloFinanzas ? '' : `<a href="#/encargos" class="${activo === 'encargos' ? 'activo' : ''}">Encargos</a>`}
     ${s.facturacion ? `<a href="#/finanzas" class="${activo === 'finanzas' ? 'activo' : ''}">Finanzas</a>` : ''}
+    ${s.admin ? `<a href="#/folders" class="${activo === 'folders' ? 'activo' : ''}">Folders</a>` : ''}
     ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">Base de precios</a>` : ''}
     ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">Ajustes</a>` : ''}`;
   const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/encargos">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
@@ -657,7 +662,9 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
   const cab = (extra = '', abrir = '') => `<div class="od-cab"><h3>${titulo}</h3><span class="sub">${extra}</span>${abrir ? enlaceIco('abrir', 'Abrir folder en OneDrive', esc(abrir)) : ''}</div>`;
   if (D.MODO_DEMO) { el.innerHTML = cab() + '<p class="sub">En el portal real aquí aparecen los archivos de esta carpeta de OneDrive.</p>'; return; }
   el.innerHTML = cab('Leyendo OneDrive…');
-  const leer = async g => { for (const cand of g) { const [ruta, p] = cand.split('#'); try { return { ruta, soloArchivos: p === '0', ...(await D.onedrive('explorar', { encargo_id: e.id, ruta })) }; } catch (_) {} } return null; };
+  const explorarOd = ruta => e ? D.onedrive('explorar', { encargo_id: e.id, ruta }) : D.onedrive('explorar_reg', { ruta });
+  const bajarOd = ruta => e ? D.onedrive('archivo_encargo', { encargo_id: e.id, carpeta: '', ruta }) : D.onedrive('archivo_reg', { ruta });
+  const leer = async g => { for (const cand of g) { const [ruta, p] = cand.split('#'); try { return { ruta, soloArchivos: p === '0', ...(await explorarOd(ruta)) }; } catch (_) {} } return null; };
   let bloques;
   try { bloques = (await Promise.all(grupos.map(leer))).filter(Boolean); }
   catch (err) { el.innerHTML = cab() + `<p class="sub">No se pudo leer OneDrive: ${esc(msg(err))}</p>`; return; }
@@ -687,7 +694,7 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
     const bj = ev.target.closest('[data-bajar]');
     if (bj) {
       const t = bj.innerHTML; bj.disabled = true; bj.textContent = '…';
-      try { const x = await D.onedrive('archivo_encargo', { encargo_id: e.id, carpeta: '', ruta: bj.dataset.bajar }); bajarBase64(x.base64, x.nombre); }
+      try { const x = await bajarOd(bj.dataset.bajar); bajarBase64(x.base64, x.nombre); }
       catch (err) { alert(msg(err)); } finally { bj.disabled = false; bj.innerHTML = t; }
       return;
     }
@@ -698,7 +705,7 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
     h.hidden = false;
     if (h.dataset.cargado) return;
     h.innerHTML = '<p class="sub od-cargando">Cargando…</p>';
-    try { const r = await D.onedrive('explorar', { encargo_id: e.id, ruta: f.dataset.abre }); h.dataset.cargado = '1'; h.innerHTML = r.items.length ? filas(r.items, f.dataset.abre, Number(f.dataset.nivel) + 1) : `<p class="sub od-vacia" style="--n:${Number(f.dataset.nivel) + 1}">Carpeta vacía.</p>`; }
+    try { const r = await explorarOd(f.dataset.abre); h.dataset.cargado = '1'; h.innerHTML = r.items.length ? filas(r.items, f.dataset.abre, Number(f.dataset.nivel) + 1) : `<p class="sub od-vacia" style="--n:${Number(f.dataset.nivel) + 1}">Carpeta vacía.</p>`; }
     catch (err) { h.innerHTML = `<p class="sub">${esc(msg(err))}</p>`; }
   };
 }
@@ -893,7 +900,7 @@ async function vistaPropuestas(s) {
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
             <td class="num col-opc">${p.honorarios ? cop(p.honorarios) : '—'}</td>
             <td class="col-opc">${p.estado === 'borrador' ? '—' : `<input type="date" class="fecha-fila" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" title="Fecha de envío (clic para cambiar)">${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
-            <td><span class="estado-prop"><span class="doc-ok ${p.archivo_nombre ? 'si' : 'no'}" title="${p.archivo_nombre ? 'Propuesta económica cargada: ' + esc(p.archivo_nombre) : 'Sin propuesta económica cargada'}">${ico(p.archivo_nombre ? 'check' : 'x')}</span><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span></span>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
+            <td><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span><div class="doc-estado ${p.archivo_nombre ? 'si' : 'no'}" title="${p.archivo_nombre ? esc(p.archivo_nombre) : 'Carga el Word de la propuesta económica en Detalles'}">${p.archivo_nombre ? 'Word cargado' : 'Falta el Word'}</div>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
             <td class="acciones-fila">${accionesPropuesta(p)}</td>
           </tr>`).join('')}</tbody></table></div>`
       : `<div class="vacio">${lista.length ? 'Ninguna propuesta coincide.' : 'Todavía no hay propuestas preliminares.'}</div>`;

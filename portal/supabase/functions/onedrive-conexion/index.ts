@@ -15,6 +15,7 @@
 //   'conteos_encargo'  → {encargo_id, modulos}: cuántos documentos tiene cada módulo
 //   'explorar'         → {encargo_id, ruta}: carpetas y archivos de una carpeta del encargo
 //   'archivo_encargo'  → {encargo_id, carpeta, ruta, pdf?}: descarga uno
+//   'explorar_reg' / 'archivo_reg' → {ruta}: folders de toda la carpeta REG (solo administración)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -229,9 +230,8 @@ async function conteosEncargo(at: string, encargoId: string, modulos: Record<str
   return Object.fromEntries(pares);
 }
 
-// Explorador de carpetas del encargo
-async function explorar(at: string, encargoId: string, ruta = "") {
-  const base = await baseEncargo(encargoId);
+// Explorador de carpetas (del encargo o de toda la carpeta REG)
+async function explorarEn(at: string, base: string, ruta = "") {
   if (ruta) rutaSegura(ruta);
   const raiz = await graph(at, `/me/drive/root:/${enc(ruta ? `${base}/${ruta}` : base)}?$select=webUrl`);
   const sel = "$top=200&$select=name,file,folder,webUrl,size,lastModifiedDateTime";
@@ -239,6 +239,13 @@ async function explorar(at: string, encargoId: string, ruta = "") {
   const items = l.map((x: any) => ({ nombre: x.name, carpeta: !!x.folder, n: x.folder?.childCount ?? null, web: x.webUrl, fecha: x.lastModifiedDateTime, tamano: x.size }))
     .sort((a: any, b: any) => (Number(b.carpeta) - Number(a.carpeta)) || a.nombre.localeCompare(b.nombre));
   return { web: raiz.webUrl, base, items };
+}
+const explorar = async (at: string, encargoId: string, ruta = "") => explorarEn(at, await baseEncargo(encargoId), ruta);
+async function descargarEn(at: string, ruta: string, pdf = false) {
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(ruta)}:/content${pdf ? "?format=pdf" : ""}`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!r.ok) throw new Error(pdf ? "No se pudo convertir a PDF." : "No se pudo descargar el archivo.");
+  const nombre = ruta.split("/").pop()!;
+  return { base64: b64(await r.arrayBuffer()), nombre: pdf ? nombre.replace(/\.[^.]+$/, ".pdf") : nombre };
 }
 
 async function archivoEncargo(at: string, encargoId: string, carpeta: string, ruta: string, pdf = false) {
@@ -307,6 +314,8 @@ Deno.serve(async (req) => {
     if (b.accion === "archivos_encargo") return json(await archivosEncargo(at, b.encargo_id, b.fuentes || b.carpeta));
     if (b.accion === "conteos_encargo") return json(await conteosEncargo(at, b.encargo_id, b.modulos || {}));
     if (b.accion === "explorar") return json(await explorar(at, b.encargo_id, b.ruta || ""));
+    if (b.accion === "explorar_reg") return json(await explorarEn(at, RAIZ, b.ruta || ""));
+    if (b.accion === "archivo_reg") return json(await descargarEn(at, `${RAIZ}/${rutaSegura(b.ruta)}`, !!b.pdf));
     if (b.accion === "archivo_encargo") return json(await archivoEncargo(at, b.encargo_id, b.carpeta, b.ruta, !!b.pdf));
     if (b.accion === "propuesta") return json(await carpetaPropuesta(at, b.propuesta_id));
     if (b.accion === "subir") return json(await subir(at, b.encargo_id, b.carpeta, b.nombre, b.base64));
