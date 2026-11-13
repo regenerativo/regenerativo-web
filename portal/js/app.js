@@ -913,12 +913,13 @@ async function vistaPropuestas(s) {
             <td><b>${esc(p.nombre)}</b><div class="sub">${esc(p.servicio?.nombre || 'Sin servicio')}<span class="solo-movil"> · ${esc(p.codigo)}</span></div></td>
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
             <td class="num col-opc">${p.honorarios ? cop(p.honorarios) : '—'}</td>
-            <td class="col-opc">${p.estado === 'borrador' ? '—' : `<input type="date" class="fecha-fila" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" title="Fecha de envío (clic para cambiar)">${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
+            <td class="col-opc">${p.estado === 'borrador' ? '—' : `<label class="fecha-envio" title="Fecha de envío · clic para cambiarla">${p.fecha_envio ? fecha(p.fecha_envio) : '<span class="xxx">Sin fecha</span>'}${ico('editar')}<input type="date" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" aria-label="Fecha de envío"></label>${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
             <td><span class="etiqueta ${p.estado}">${D.ESTADOS_PROPUESTA[p.estado]}</span><div class="doc-estado ${p.archivo_nombre ? 'si' : 'no'}" title="${p.archivo_nombre ? esc(p.archivo_nombre) : 'Carga el Word de la propuesta económica en Detalles'}">${p.archivo_nombre ? 'Word cargado' : 'Falta el Word'}</div>${p.estado === 'no_despego' && p.motivo ? `<div class="sub">${esc(p.motivo)}</div>` : ''}</td>
             <td class="acciones-fila">${accionesPropuesta(p)}</td>
           </tr>`).join('')}</tbody></table></div>`
       : `<div class="vacio">${lista.length ? 'Ninguna propuesta coincide.' : 'Todavía no hay propuestas preliminares.'}</div>`;
     document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => accion(b.dataset.acc, lista.find(p => p.id === b.dataset.id)));
+    document.querySelectorAll('.fecha-envio').forEach(l => l.onclick = () => { const i = l.querySelector('input'); try { i.showPicker(); } catch (_) { i.focus(); } });
     document.querySelectorAll('[data-fenvio]').forEach(inp => inp.onchange = async () => {
       try { await D.actualizarPropuesta(inp.dataset.fenvio, { fecha_envio: inp.value || null }); ir(); } catch (err) { alert(msg(err)); }
     });

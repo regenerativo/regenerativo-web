@@ -343,3 +343,10 @@
 :root body .ms-chips{display:flex;gap:6px;flex-wrap:wrap}
 :root body .ms-chip{background:#EEF7FA;color:#00758F;border-radius:99px;padding:2px 10px;font-size:12px}
 :root body .ms-chip b{font-weight:500;margin-left:2px}
+/* Propuestas: fecha de envío visible y editable con un clic */
+:root body .fecha-envio{position:relative;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:14px}
+:root body .fecha-envio svg{width:13px;height:13px;color:#999}
+:root body .fecha-envio:hover svg{color:#1E221D}
+:root body .fecha-envio input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer;border:0!important;padding:0!important}
+:root body label.fecha-envio{text-transform:none!important;letter-spacing:0!important;color:#1E221D!important;font-size:14px!important;font-weight:400!important;margin:0!important}
+:root body label.fecha-envio .xxx{font-size:13px;letter-spacing:0}
