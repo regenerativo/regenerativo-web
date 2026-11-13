@@ -159,3 +159,10 @@ a.inicio-fila:hover b{text-decoration:underline}
   table.t-prop td.acciones-fila .btn{margin:0!important}
   .btn.mini{padding:9px 14px}
 }
+/* Contenidos del portal: más ancho útil y letra 20 % más pequeña que la web (los encabezados y menús quedan igual) */
+.cont{max-width:2100px}
+@media (min-width:601px){.cont{zoom:.8}}
+@media (max-width:600px){.cont{zoom:.9}}
+table.t-prop td:nth-child(2){min-width:240px}
+table.t-prop td:nth-child(2) b{white-space:nowrap}
+@media (max-width:1100px){table.t-prop th.col-opc:nth-child(1),table.t-prop td.col-opc:nth-child(1){display:none}}
