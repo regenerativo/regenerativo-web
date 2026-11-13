@@ -419,3 +419,19 @@ html body .lv .lv-nav .ico-menu{display:none!important}
 html body .lv .lv-nav a{gap:0}
 html body .lv .lv-tabs-in>a .ico-menu,html body .lv .lv-tabs-in>button .ico-menu{color:var(--lv-tinta)}
 html body .lv .lv-tabs-in>.activo .ico-menu{color:var(--lv-azul)!important}
+/* Propuestas en el celular: tarjeta limpia con las acciones arriba a la derecha */
+@media (max-width:760px){
+  html body .lv table.t-prop tr{position:relative;padding:18px 4px!important;border-bottom:1px dotted var(--lv-gris)!important}
+  html body .lv table.t-prop tr:last-child{border-bottom:0!important}
+  html body .lv table.t-prop td{border:0!important;padding:2px 0!important}
+  html body .lv table.t-prop td:nth-child(2){min-width:0!important;padding-right:0!important}
+  html body .lv table.t-prop td:nth-child(2) b{white-space:normal;display:block;padding-right:var(--acc-w,96px)}
+  html body .lv table.t-prop td.acciones-fila{position:absolute;top:14px;right:4px;margin:0!important;display:flex!important;flex-wrap:nowrap;gap:6px;width:auto!important}
+  html body .lv table.t-prop td.acciones-fila .btn.mini.ico{width:34px;height:34px;padding:0!important;display:grid;place-items:center;margin:0!important}
+  html body .lv table.t-prop td.acciones-fila .btn svg{width:15px;height:15px}
+  html body .lv table.t-prop td:nth-child(6){margin-top:10px}
+}
+@media (max-width:760px){
+  html body .lv table.t-prop td:nth-child(2){padding-right:var(--acc-w,96px)!important;min-height:34px}
+  html body .lv table.t-prop td:nth-child(2) b{padding-right:0}
+}

@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=44';
-import * as M from './modulos.js?v=44';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=44';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=44';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=44';
+import * as D from './datos.js?v=45';
+import * as M from './modulos.js?v=45';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=45';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=45';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=45';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1058,7 +1058,7 @@ async function vistaPropuestas(s) {
       <div class="tabla-cont"><table class="t-prop">
         <thead><tr><th class="col-opc">Código</th><th>Propuesta</th><th class="col-opc">Cliente</th><th class="num col-opc">Honorarios</th><th class="col-opc">Enviada</th><th>Estado</th><th></th></tr></thead>
         <tbody>${f.map(p => `
-          <tr>
+          <tr style="--acc-w:${((accionesPropuesta(p).match(/<(button|a) /g) || []).length) * 40 + 8}px">
             <td class="sub col-opc">${esc(p.codigo)}</td>
             <td><b>${esc(p.nombre)}</b><div class="sub">${servs(p).map(esc).join(' · ') || 'Sin servicio'}<span class="solo-movil"> · ${esc(p.codigo)}</span></div></td>
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
