@@ -240,40 +240,66 @@ const VERSICULOS = [
   ['Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.', 'ECLESIASTÉS 4.12 RVC'],
 ];
 async function vistaInicio(s) {
-  const fest = new Set((await D.festivos()).map(f => f.fecha));
-  const [lista, props] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : []]);
+  const festLista = await D.festivos();
+  const fest = new Set(festLista.map(f => f.fecha));
+  const [lista, props, movs, honor, docs] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
+    s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : []]);
+  const hoy = new Date().toISOString().slice(0, 10), mes = hoy.slice(0, 7);
   const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
-  const espera = props.filter(p => p.estado === 'en_espera');
-  const borrador = props.filter(p => p.estado === 'borrador');
-  const mes = new Date().toISOString().slice(0, 7);
+  const espera = props.filter(p => p.estado === 'en_espera'), borrador = props.filter(p => p.estado === 'borrador');
   const dia = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   const [texto, cita] = VERSICULOS[dia % VERSICULOS.length];
   const h = new Date().getHours();
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-  const fila = (href, nom, sub, der, barra) => `<a class="fila-enlace" href="${href}"><span class="fe-nom"><b>${esc(nom)}</b><span class="sub">${sub}</span></span>
-    <span class="fe-der">${der}${barra !== undefined ? `<span class="barra"><i style="width:${Math.round((barra || 0) * 100)}%"></i></span>` : ''}</span></a>`;
+  // Cifras de la empresa
+  const ok = movs.filter(x => (x.estado || 'confirmado') === 'confirmado');
+  const pend = movs.filter(x => x.estado === 'por_confirmar');
+  const suma = (l, t) => l.filter(x => x.tipo === t).reduce((a, x) => a + Number(x.valor), 0);
+  const delMes = ok.filter(x => x.fecha.slice(0, 7) === mes);
+  const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
+  const porCobrar = lista.reduce((t, e) => {
+    const v = (Number(honor.find(p => p.encargo_id === e.id)?.honorarios) || 0) + docs.filter(d => d.encargo_id === e.id && d.tipo === 'adenda' && aprob(d)).reduce((a, d) => a + (Number(d.contenido?.valor) || 0), 0);
+    return t + Math.max(0, v - suma(ok.filter(x => x.encargo_id === e.id), 'ingreso'));
+  }, 0);
+  const enEspera = espera.reduce((a, p) => a + (Number(p.honorarios) || 0), 0);
+  // Recordatorios: lo que pide una acción
+  const R = [];
+  const rec = (nivel, txt, sub, href) => R.push({ nivel, txt, sub, href });
+  if (pend.length) rec('alto', `${pend.length} movimiento${pend.length > 1 ? 's' : ''} del correo por aprobar`, 'No cuentan en finanzas hasta que los apruebes', '#/finanzas#por-confirmar');
+  espera.forEach(p => { const d = p.fecha_envio ? 30 - Math.round((new Date(hoy) - new Date(p.fecha_envio)) / 86400000) : null;
+    rec(d !== null && d <= 7 ? 'alto' : 'medio', `Hacer seguimiento a ${p.nombre}`, d !== null ? `${p.cliente?.nombre || 'Cliente'} · ${d > 0 ? d + ' días para decidir' : 'vence hoy'}` : `${p.cliente?.nombre || 'Cliente'} · falta la fecha de envío`, '#/propuestas'); });
+  borrador.forEach(p => rec('medio', `Enviar la propuesta ${p.nombre}`, p.archivo_nombre ? 'Está en borrador' : 'Falta cargar el Word', '#/propuestas'));
+  props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera').forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
+  activos.filter(e => !e.inicio || !e.fin).forEach(e => rec('bajo', `Completar fechas de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'Sin fecha de inicio o de fin no se calcula el tiempo', `#/${D.slugEncargo(e)}/ajustes`));
+  activos.filter(e => e.fin && e.fin >= hoy && e.fin.slice(0, 7) === mes).forEach(e => rec('medio', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} termina el ${fecha(e.fin)}`, 'Fecha de fin este mes', `#/${D.slugEncargo(e)}`));
+  activos.filter(e => e.fin && e.fin < hoy).forEach(e => rec('alto', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} pasó su fecha de fin`, `Terminaba el ${fecha(e.fin)}`, `#/${D.slugEncargo(e)}`));
+  const prox = festLista.filter(f => f.fecha >= hoy).slice(0, 1)[0];
+  const orden = { alto: 0, medio: 1, bajo: 2 };
+  R.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
+  const cifra = (et, va, su, href) => `<a class="cifra-emp" href="${href}"><span class="ce-et">${et}</span><span class="ce-va">${va}</span><span class="ce-su">${su}</span></a>`;
   const html = `
     <section class="bienvenida">
       <p class="bv-saludo">${saludo}, equipo.</p>
       <blockquote class="bv-verso">“${esc(texto)}” <cite>${esc(cita)}</cite></blockquote>
     </section>
-    <div class="kpis">
-      ${kpi('Encargos activos', activos.length, `${lista.length} en total`)}
-      ${s.admin ? kpi('Propuestas en espera', espera.length, 'Enviadas, por decidir') : kpi('Pausados', lista.filter(e => e.estado === 'pausado').length, 'En espera')}
-      ${s.admin ? kpi('En borrador', borrador.length, 'Sin enviar') : kpi('Cerrados', lista.filter(e => e.estado === 'cerrado').length, 'Terminados')}
-      ${kpi('Por terminar este mes', activos.filter(e => e.fin && e.fin.slice(0, 7) === mes).length, 'Fecha de fin en el mes')}
-    </div>
-    <div class="dos">
+    <div class="inicio-grid">
       <section class="panel">
-        <div class="od-cab"><h3>Encargos en curso</h3><a class="sub" href="#/encargos">Ver todos</a></div>
-        ${activos.length ? `<div class="lista-filas">${activos.map(e => fila(`#/${D.slugEncargo(e)}`, e.nombre, `${esc(e.servicio?.nombre || '')}${e.fin ? ' · termina ' + fecha(e.fin) : ''}`, pct(e.tiempo), e.tiempo)).join('')}</div>` : '<p class="sub">No hay encargos activos.</p>'}
+        <div class="od-cab"><h3>Recordatorios</h3><span class="sub">${R.length ? R.length + ' por atender' : ''}</span></div>
+        ${R.length ? `<div class="recordatorios">${R.map(r => `<a class="rec ${r.nivel}" href="${r.href}"><i></i><span class="rec-txt"><b>${esc(r.txt)}</b><span class="sub">${esc(r.sub)}</span></span><span class="rec-ir">›</span></a>`).join('')}</div>`
+          : '<p class="sub">Todo al día. No hay pendientes.</p>'}
+        ${prox ? `<p class="prox-fest"><i></i>Próximo festivo: <b>${fecha(prox.fecha)}</b> · ${esc(prox.nombre)}</p>` : ''}
       </section>
-      ${s.admin ? `<section class="panel">
-        <div class="od-cab"><h3>Propuestas por decidir</h3><a class="sub" href="#/propuestas">Ver todas</a></div>
-        ${espera.length || borrador.length ? `<div class="lista-filas">${[...espera, ...borrador].map(p => fila('#/propuestas', p.nombre, `${esc(p.codigo)} · ${p.estado === 'en_espera' && p.fecha_envio ? quedan(p.fecha_envio) : 'Borrador'}`, p.honorarios ? cop(p.honorarios) : '')).join('')}</div>` : '<p class="sub">No hay propuestas pendientes.</p>'}
-      </section>` : ''}
+      <section class="panel">
+        <h3>Así va regenerativo</h3>
+        <div class="cifras-emp">
+          ${s.facturacion ? cifra('Por cobrar', cop(porCobrar), 'Encargos, propuestas y adicionales', '#/finanzas') : ''}
+          ${s.facturacion ? cifra('Balance del mes', `${suma(delMes, 'ingreso') - suma(delMes, 'gasto') < 0 ? '−' : ''}${cop(Math.abs(suma(delMes, 'ingreso') - suma(delMes, 'gasto')))}`, `Ingresos ${cop(suma(delMes, 'ingreso'))}`, '#/finanzas') : ''}
+          ${s.admin ? cifra('Propuestas en espera', espera.length ? cop(enEspera) : '0', `${espera.length} enviada${espera.length === 1 ? '' : 's'} · ${borrador.length} en borrador`, '#/propuestas') : ''}
+          ${cifra('Encargos activos', activos.length, `${lista.length} en total`, '#/encargos')}
+        </div>
+      </section>
     </div>`;
-  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, bajada: 'Lo que está en curso hoy en regenerativo.' });
+  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, bajada: 'La visión general de regenerativo y lo que necesita tu atención.' });
 }
 
 async function vistaEncargos(s) {
