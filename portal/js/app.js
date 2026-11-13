@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=46';
-import * as M from './modulos.js?v=46';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=46';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=46';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=46';
+import * as D from './datos.js?v=47';
+import * as M from './modulos.js?v=47';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=47';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=47';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=47';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -461,11 +461,11 @@ async function vistaEncargos(s) {
       return `<a class="lv-card lv-enc ${semaforo(e)}" href="#/${D.slugEncargo(e)}" style="--i:${i}">
         <div class="lv-enc-cab">${chip(e)}<span class="lv-flecha">${ico('ver')}</span></div>
         <h2>${esc(e.nombre)}</h2>
-        <p class="lv-enc-sub">${lugar ? esc(lugar) + ' · ' : ''}<span class="lv-fe-et">Inicio</span> ${fechaEnc(e, 'inicio', 'Por definir', admin)}</p>
+        <p class="lv-enc-sub">${lugar ? esc(lugar) + ' · ' : ''}<span class="lv-fe-et">Inicio</span> ${e.inicio ? fecha(e.inicio) : 'Sin fecha'}</p>
         <div class="lv-enc-av"><span>${servs(e).map(esc).join(' · ') || 'Tiempo'}</span><b>${fase(e) === 'por-iniciar' ? '—' : e.tiempo == null ? '' : t + '%'}</b></div>
         <span class="lv-pill grande"><i style="width:${fase(e) === 'por-iniciar' ? 0 : e.tiempo == null ? 8 : t}%"></i></span>
         <div class="lv-enc-pie"><span class="lv-ava" title="${esc(e.cliente?.nombre || '')}">${ini(e.cliente?.nombre) || '·'}</span><span class="lv-enc-cli">${esc(e.cliente?.nombre || 'Sin cliente')}</span>
-          <span class="lv-enc-fin ${e.fin ? '' : 'falta'}"><small>Entrega</small>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</span>
+          <span class="lv-enc-fin"><small>Entrega</small>${e.fin ? fecha(e.fin) : 'Sin fecha'}</span>
           ${admin && webCarpeta(e) ? `<span class="lv-od" data-od="${esc(webCarpeta(e))}" title="Abrir folder en OneDrive">${ico('carpeta')}</span>` : ''}</div>
       </a>`; }).join('')}</div>`
       : `<div class="vacio">${lista.length ? 'Ningún encargo coincide.' : 'Todavía no hay encargos.'}</div>`;
@@ -748,7 +748,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xxx('')}</dd>
           ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
           ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
-          <dt>Inicio</dt><dd>${fechaEnc(e, 'inicio', 'Por definir', admin)}</dd>
+          <dt>Inicio</dt><dd>${fechaEnc(e, 'inicio', 'Sin fecha', admin)}</dd>
           <dt>Entrega</dt><dd>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</dd>
           ${prop && admin ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
           <dt>Responsables</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : xxx('')}</dd>
