@@ -209,3 +209,34 @@
 @media (max-width:820px){:root body .kpis.kpis-3{grid-template-columns:1fr}}
 /* Tarjeta de descarga del cliente con la misma superficie */
 :root body .tarjeta-doc{border:1px solid var(--linea)!important;border-radius:8px!important;padding:16px!important;margin-bottom:10px}
+
+/* ===== Coherencia con regenerativo.co (no copia): Stolzl liviana, grises de marca, esquinas rectas, aire ===== */
+:root{--linea:#E4E4E2;--gris-reg:#D9D9D9}
+/* Títulos como la web: liviano y grande, con bajada gris */
+:root body .titulo-pag h1{font-size:clamp(32px,3.2vw,46px)!important;font-weight:300!important;letter-spacing:-.025em!important;line-height:1.05!important}
+:root body .titulo-pag p{font-size:15px;color:#999;margin:10px 0 0}
+:root body .titulo-pag{padding-top:clamp(28px,3vw,44px)}
+/* Menú lateral como el menú de la web: activo en negrilla, sin fondos */
+:root body .lado a,:root body .lado a:hover,:root body .lado a.activo{background:transparent!important}
+:root body .lado a{font-weight:300;padding:7px 10px}
+:root body .lado a:hover{color:#999}
+:root body .lado a.activo{font-weight:500;color:#1E221D}
+:root body .lado .cuenta{background:transparent;color:#999;padding:0;min-width:0;font-size:13px}
+:root body .lado .enc-nom{font-weight:500}
+/* Superficies: esquinas rectas, línea gris clara, sin sombras */
+:root body .kpi,:root body .panel,:root body .tile,:root body .tarjeta-cli,:root body .estado-od,:root body .mes-sel,:root body .tarjeta-doc,:root body .pend{border-radius:3px!important}
+:root body .kpi .va,:root body .tile b{font-weight:300!important;letter-spacing:-.02em}
+:root body .kpi .va{font-size:clamp(26px,2.3vw,32px)!important}
+:root body .barra-apilada{border-radius:0}
+:root body .nota-valor{border-radius:0;background:#F4F4F2}
+:root body .tc-ico{border-radius:3px;background:#F4F4F2;color:#1E221D}
+/* Tablas: encabezado en gris regenerativo y líneas punteadas grises delgadas */
+:root body th{background:var(--gris-reg)!important;color:#1E221D!important;border-bottom:0}
+:root body td{border-top:1px dotted #C9C9C9}
+:root body .od-fila,:root body .fila-enlace,:root body .leyenda-valor li,:root body .lista-simple li{border-bottom:1px dotted #C9C9C9}
+:root body .od-lista,:root body .lista-filas{border-top:1px dotted #C9C9C9}
+/* Semáforo en tonos sobrios */
+:root body .barra.sem-verde i{background:#5E8F6A}
+:root body .barra.sem-amarillo i{background:#B89B3E}
+:root body .barra.sem-rojo i{background:#B4552D}
+@media (max-width:600px){:root body .kpi .va{font-size:22px!important}:root body .titulo-pag h1{font-size:30px!important}}

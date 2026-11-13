@@ -83,7 +83,7 @@ async function irSeguro() {
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
     if (p[0] === 'finanzas' && s.facturacion) {
       const v = await vistaFinanzas(p[1], p[2]);
-      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html });
+      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, bajada: 'Ingresos, gastos y lo que falta por cobrar.' });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
@@ -97,7 +97,7 @@ async function irSeguro() {
 }
 
 // ---------------- Marco general ----------------
-function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '' }) {
+function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '' }) {
   const esCli = s.email.endsWith('@clientes.portal.regenerativo.co');
   const enlacesGen = esCli || enc ? '' : `
     ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'inicio' ? 'activo' : ''}">Inicio</a>`}
@@ -108,7 +108,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">Ajustes</a>` : ''}`;
   const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/encargos">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
   const tituloPag = h1 || (ruta.includes(' / ') ? ruta.split(' / ').pop() : titulo);
-  const subPag = '';
+  const subPag = bajada;
   raiz.innerHTML = `
   <header class="barra-web">
     <div class="barra-web-in">
@@ -268,7 +268,7 @@ async function vistaInicio(s) {
         ${espera.length || borrador.length ? `<div class="lista-filas">${[...espera, ...borrador].map(p => fila('#/propuestas', p.nombre, `${esc(p.codigo)} · ${p.estado === 'en_espera' && p.fecha_envio ? quedan(p.fecha_envio) : 'Borrador'}`, p.honorarios ? cop(p.honorarios) : '')).join('')}</div>` : '<p class="sub">No hay propuestas pendientes.</p>'}
       </section>` : ''}
     </div>`;
-  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html });
+  marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, bajada: 'Lo que está en curso hoy en regenerativo.' });
 }
 
 async function vistaEncargos(s) {
@@ -290,7 +290,7 @@ async function vistaEncargos(s) {
       <select id="festado"><option value="">Todos los estados</option>${Object.entries(ESTADOS_ENCARGO).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
     </div>
     <div id="tabla"></div>`;
-  marco(s, { titulo: 'Encargos', ruta: 'Portal', activo: 'encargos', html,
+  marco(s, { titulo: 'Encargos', ruta: 'Portal', activo: 'encargos', html, bajada: 'Cada encargo con su tiempo, su estado y su carpeta.',
     acciones: admin ? '<button class="btn" id="nuevo">+ Nuevo encargo</button>' : '' });
   const pintar = () => {
     const q = $('#buscar').value.toLowerCase(), est = $('#festado').value;
@@ -515,7 +515,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const nombreSec = (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
   const pintar = (html, acciones = '') => {
-    marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones });
+    marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
     if (admin && !D.MODO_DEMO && !conteoGuardado(e.id)) {
       D.onedrive('conteos_encargo', { encargo_id: e.id, modulos: FUENTES }).then(c => {
         guardarConteo(e.id, c);
@@ -812,7 +812,7 @@ async function vistaAjustes(s, qs) {
       <section class="panel"><h3>Festivos ${anio}</h3><ul class="lista-simple dos-col">${fest.filter(f => f.fecha.startsWith(anio)).map(f => `<li><span class="sub">${fecha(f.fecha)}</span> ${esc(f.nombre)}</li>`).join('')}</ul>
         ${D.MODO_DEMO ? '<button class="btn sec mini" id="reiniciar" style="margin-top:12px">Reiniciar datos de ejemplo</button>' : ''}</section>
     </div>`;
-  marco(s, { titulo: 'Ajustes generales', ruta: 'Ajustes generales', activo: 'ajustes', html });
+  marco(s, { titulo: 'Ajustes generales', ruta: 'Ajustes generales', activo: 'ajustes', html, bajada: 'Clientes, usuarios y conexión con OneDrive.' });
   const r = $('#reiniciar'); if (r) r.onclick = () => { D.reiniciarDemo(); location.hash = '#/'; ir(); };
   $('#od-conectar').onclick = async () => { try { location.href = (await D.onedrive('url')).url; } catch (e) { alert(msg(e)); } };
   document.querySelectorAll('[data-cli]').forEach(x => x.onclick = ev => { ev.stopPropagation(); modalCliente(cli.find(c => c.id === x.dataset.cli)); });
@@ -878,7 +878,7 @@ async function vistaPropuestas(s) {
       <select id="festado"><option value="">Todas</option>${Object.entries(D.ESTADOS_PROPUESTA).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
     </div>
     <div id="tabla"></div>`;
-  marco(s, { titulo: 'Propuestas preliminares', ruta: 'Portal', activo: 'propuestas', html,
+  marco(s, { titulo: 'Propuestas preliminares', ruta: 'Portal', activo: 'propuestas', html, bajada: 'Propuestas económicas antes de que el encargo despegue.',
     acciones: '<button class="btn" id="nueva">+ Nueva propuesta</button>' });
   const pintar = () => {
     const q = $('#buscar').value.toLowerCase(), est = $('#festado').value;
