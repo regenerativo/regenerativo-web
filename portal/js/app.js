@@ -235,8 +235,8 @@ function vistaRecuperar() {
 // ---------------- Lista de encargos ----------------
 // ---------------- Inicio del equipo: bienvenida, versículo y resumen ----------------
 const VERSICULOS = [   // tal como están en regenerativo.co/about
-  ['Diseñamos desde la naturaleza, no como referencia sino como principio. Entendemos el todo como un sistema vivo y respondemos con precisión a cada contexto.', 'Génesis 1.27'],
-  ['Juntos es más. Creemos en lo colectivo: cada proyecto se hace con quienes lo habitan, con quienes lo materializan y con el lugar que lo recibe.', 'Eclesiastés 4.9-12'],
+  { titulo: 'No intervenimos, regeneramos.', lead: 'regenerativo es una práctica creativa que diseña desde la naturaleza.', texto: 'Diseñamos desde la naturaleza, no como referencia sino como principio. Entendemos el todo como un sistema vivo y respondemos con precisión a cada contexto.', cita: 'Génesis 1.27' },
+  { titulo: 'Together<br>is more.', mas: true, lead: 'Juntos es más.', texto: 'Creemos en lo colectivo: cada proyecto se hace con quienes lo habitan, con quienes lo materializan y con el lugar que lo recibe.', cita: 'Eclesiastés 4.9-12' },
 ];
 async function vistaInicio(s) {
   const festLista = await D.festivos();
@@ -247,7 +247,7 @@ async function vistaInicio(s) {
   const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
   const espera = props.filter(p => p.estado === 'en_espera'), borrador = props.filter(p => p.estado === 'borrador');
   const dia = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  const [texto, cita] = VERSICULOS[dia % VERSICULOS.length];
+  const V = VERSICULOS[dia % VERSICULOS.length];
   const h = new Date().getHours();
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
   // Cifras de la empresa
@@ -277,9 +277,10 @@ async function vistaInicio(s) {
   R.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
   const cifra = (et, va, su, href) => `<a class="cifra-emp" href="${href}"><span class="ce-et">${et}</span><span class="ce-va">${va}</span><span class="ce-su">${su}</span></a>`;
   const html = `
-    <section class="bienvenida">
-      <p class="bv-saludo">${saludo}, equipo.</p>
-      <blockquote class="bv-verso">${esc(texto)} <cite>${esc(cita)}</cite></blockquote>
+    <section class="about">
+      <span class="ab-eti">${saludo.toUpperCase()}, EQUIPO</span>
+      <h2 class="ab-tit">${V.titulo}${V.mas ? '<img src="/assets/reg-plus3.png" alt="+++">' : ''}</h2>
+      <div class="ab-txt"><p>${esc(V.lead)}</p><p class="gris">${esc(V.texto)}</p><p class="gris cita">${esc(V.cita)}</p></div>
     </section>
     <div class="inicio-grid">
       <section class="panel">
