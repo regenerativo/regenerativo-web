@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=85';
-import * as M from './modulos.js?v=85';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=85';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=85';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=85';
+import * as D from './datos.js?v=86';
+import * as M from './modulos.js?v=86';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=86';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=86';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=86';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -478,10 +478,13 @@ function vistaComentarios(ctx, coms, pintar) {
 // Documentos del cliente: Enviados (DOC _ ENV) y Recibidos (DOC _ REC), cada uno con su explicación, agrupados por carpeta
 const listaDocsCli = (l, pref) => {
   if (!l.length) return '';
+  l.sort(porLlegada);  // se ordena la misma lista que usan los botones de descarga (los índices coinciden)
   const sub = a => (a.carpeta || '').split('/').slice(1).join(' / ');
-  const grupos = [...new Set(l.map(sub))];
+  // Cada carpeta (y cada documento) se ordena por su fecha de llegada: lo más reciente arriba
+  const fechaG = g => { const f = g ? fechaNombre(g.split(' / ')[0]) : null; return f ? f.fecha : l.filter(a => sub(a) === g).map(fechaLlegada).sort().pop() || ''; };
+  const grupos = [...new Set(l.map(sub))].sort((a, b) => fechaG(b).localeCompare(fechaG(a)) || a.localeCompare(b));
   if (grupos.length < 2) return listaPlanaCli(l, pref);
-  return grupos.map(g => { const idx = l.map((a, i) => [a, i]).filter(([a]) => sub(a) === g);
+  return grupos.map(g => { const idx = l.map((a, i) => [a, i]).filter(([a]) => sub(a) === g).sort(([a], [b]) => porLlegada(a, b));
     return `<details class="cli-carpeta" ${g ? '' : 'open'}><summary><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg><b>${esc(g || 'Documentos sueltos')}</b><span class="sub">${idx.length}</span></summary>${listaPlanaCli(idx.map(([a]) => a), pref).replace(new RegExp(`data-${pref}="(\\d+)"`, 'g'), (m, n) => `data-${pref}="${idx[+n][1]}"`)}</details>`; }).join('');
 };
 const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
@@ -1028,7 +1031,10 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
 // ---------------- Documentos de OneDrive: lista compacta, las carpetas se despliegan en el sitio ----------------
 const tipoDoc = n => /\.pdf$/i.test(n) ? 'PDF' : /\.xlsx?$/i.test(n) ? 'Excel' : /\.docx?$/i.test(n) ? 'Word' : /\.(png|jpe?g|webp)$/i.test(n) ? 'Imagen' : (n.includes('.') ? n.split('.').pop().toUpperCase() : '');
 const tamano = b => b == null ? '' : b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : b >= 1e6 ? Math.round(b / 1e6) + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB';
-const fechaNombre = n => { const m = n.match(/^(\d{4})\s(\d{2})\s(\d{2})\s*[-_]?\s*(.*)$/); return m ? { fecha: `${m[1]}-${m[2]}-${m[3]}`, resto: m[4] || n } : null; };
+const fechaNombre = n => { const m = n.match(/^(\d{4})[\s_](\d{2})[\s_](\d{2})\s*[-_]?\s*(.*)$/); return m ? { fecha: `${m[1]}-${m[2]}-${m[3]}`, resto: m[4] || n } : null; };
+// Fecha de llegada de un documento o carpeta: la fecha del nombre (AAAA MM DD _ …) o, si no tiene, la de OneDrive
+const fechaLlegada = x => /^X{4}/i.test(x.nombre || '') ? '' : fechaNombre(x.nombre || '')?.fecha || (x.fecha || '').slice(0, 10) || '';
+const porLlegada = (a, b) => fechaLlegada(b).localeCompare(fechaLlegada(a)) || (b.fecha || '').localeCompare(a.fecha || '') || a.nombre.localeCompare(b.nombre);
 const MAX_DESCARGA = 25e6;
 
 async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = false } = {}) {
@@ -1043,7 +1049,7 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
   let bloques;
   try { bloques = (await Promise.all(grupos.map(leer))).filter(Boolean); }
   catch (err) { el.innerHTML = cab() + `<p class="sub">No se pudo leer OneDrive: ${esc(msg(err))}</p>`; return; }
-  const ordenar = l => envios ? [...l].sort((a, b) => b.nombre.localeCompare(a.nombre)) : l;
+  const ordenar = l => envios ? [...l].sort(porLlegada) : l;  // Enviados y Recibidos: lo más reciente arriba, por fecha de llegada
   const fila = (x, ruta, nivel) => {
     const r = ruta ? `${ruta}/${x.nombre}` : x.nombre;
     const f = fechaNombre(x.nombre);
