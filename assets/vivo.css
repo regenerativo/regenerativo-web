@@ -5,7 +5,7 @@
 html.vivo .v-up{opacity:0;transform:translateY(28px);transition:opacity .9s var(--v-ease),transform 1.1s var(--v-ease);transition-delay:var(--vd,0ms)}
 html.vivo .v-up.v-in{opacity:1;transform:none}
 
-.v-w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.v-w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .02em .22em;margin:0 -.02em -.22em}
 .v-w>span{display:inline-block;transform:translateY(105%);transition:transform 1.1s var(--v-ease);transition-delay:var(--vd,0ms)}
 .v-in .v-w>span,.v-w.v-in>span{transform:none}
 
