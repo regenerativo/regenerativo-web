@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=77';
-import * as M from './modulos.js?v=77';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=77';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=77';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=77';
+import * as D from './datos.js?v=78';
+import * as M from './modulos.js?v=78';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=78';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=78';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=78';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -949,7 +949,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   if (seccion === 'ajustes' && admin) return ajustesEncargo(s, e, pintar);
   if ((seccion === 'obra' || seccion === 'tecnica') && admin) {
     pintar('<section class="panel od" id="od"></section>');
-    return panelOneDrive($('#od'), e, FUENTES[seccion], { titulo: seccion === 'obra' ? 'Coordinación de obra · 00 INFORMES OBRA y personal' : 'Coordinación técnica · 00 INFORMES TECNICOS, ARQ, MEP y STR' });
+    return panelOneDrive($('#od'), e, FUENTES[seccion], { titulo: seccion === 'obra' ? 'Coordinación de obra · 00 INFORMES OBRA y personal' : 'Coordinación técnica · 00 INFORMES TÉCNICOS, ARQ, MEP y STR' });
   }
   if (seccion === 'legales' && admin) {
     const enlaces = [['propuesta', 'Propuesta del portal'], ['contrato', 'Contrato del portal'], ['adendas', 'Adendas del portal']].filter(([k]) => web[k] > 0);
