@@ -169,3 +169,4 @@ a:has(>svg) svg *{transition:stroke .35s ease,fill .35s ease}
  a,button,[role=button],label,summary,[data-f]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Ccircle cx='13' cy='13' r='10.4' fill='%23999999' fill-opacity='.28' stroke='%23ffffff' stroke-opacity='.8' stroke-width='1'/%3E%3C/svg%3E") 13 13,pointer!important}
  input,textarea{cursor:text}
 }
+.postbody>p{overflow:hidden;text-overflow:ellipsis;max-width:100%}
