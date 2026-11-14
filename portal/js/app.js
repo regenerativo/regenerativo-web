@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=61';
-import * as M from './modulos.js?v=61';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=61';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=61';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=61';
+import * as D from './datos.js?v=63';
+import * as M from './modulos.js?v=63';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=63';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=63';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=63';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -331,8 +331,8 @@ function vistaRecuperar() {
 // ---------------- Lista de encargos ----------------
 // ---------------- Inicio del equipo: bienvenida, versículo y resumen ----------------
 const VERSICULOS = [   // tal como están en regenerativo.co/about
-  { titulo: 'No intervenimos, regeneramos.', lead: 'regenerativo es una práctica creativa que diseña desde la naturaleza.', texto: 'Diseñamos desde la naturaleza, no como referencia sino como principio. Entendemos el todo como un sistema vivo y respondemos con precisión a cada contexto.', cita: 'Génesis 1.27' },
-  { titulo: 'Together<br>is more.', mas: true, lead: 'Juntos es más.', texto: 'Creemos en lo colectivo: cada proyecto se hace con quienes lo habitan, con quienes lo materializan y con el lugar que lo recibe.', cita: 'Eclesiastés 4.9-12' },
+  { titulo: 'No intervenimos, regeneramos.', lead: 'regenerativo es una práctica creativa que diseña desde la naturaleza.', texto: 'Diseñamos desde la naturaleza, no como referencia sino como principio. Entendemos el todo como un sistema vivo y respondemos con precisión a cada contexto.', cita: 'Génesis 1.27 RVC', verso: 'Y Dios creó al hombre a su imagen. Lo creó a imagen de Dios. Hombre y mujer los creó.' },
+  { titulo: 'Together<br>is more.', mas: true, lead: 'Juntos es más.', texto: 'Creemos en lo colectivo: cada proyecto se hace con quienes lo habitan, con quienes lo materializan y con el lugar que lo recibe.', cita: 'Eclesiastés 4.9-12 RVC', verso: 'Dos son mejor que uno, porque sacan más provecho de sus esfuerzos. Si uno de ellos se tropieza, el otro lo levanta. ¡Pero ay de aquel que tropieza y no hay quien lo levante! Si dos se acuestan juntos, mutuamente se calientan; pero uno solo no puede calentarse. Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.' },
 ];
 async function vistaInicio(s) {
   const festLista = await D.festivos();
@@ -386,12 +386,13 @@ async function vistaInicio(s) {
     <div class="bento-hero">
       <section class="lv-card hero-about">
         ${anillos()}
-        <div class="ha-in">
+        <div class="ha-in ha-rota">${VERSICULOS.map((v, i) => `<div class="ha-frase${i ? '' : ' on'}"${i ? ' aria-hidden="true"' : ''}>
           <span class="lv-ceja">Sobre regenerativo</span>
-          <h2 class="ha-tit">${V.titulo}${V.mas ? '<img src="/assets/reg-plus3.png" alt="+++">' : ''}</h2>
-          <p class="ha-lead">${esc(V.lead)}</p>
-          <p class="ha-txt">${esc(V.texto)}</p>
-          <p class="ha-cita">${esc(V.cita)}</p>
+          <p class="ha-tit">${v.titulo}${v.mas ? '<img src="/assets/reg-plus3.png" alt="+++">' : ''}</p>
+          <p class="ha-lead">${esc(v.lead)}</p>
+          <p class="ha-txt">${esc(v.texto)}</p>
+          <blockquote class="ha-verso">${esc(v.verso)}</blockquote>
+          <p class="ha-cita">${esc(v.cita)}</p></div>`).join('')}
         </div>
       </section>
       <section class="lv-card lv-recs">
@@ -1513,3 +1514,12 @@ setInterval(() => {
   fr[i].classList.remove('on'); fr[i].setAttribute('aria-hidden', 'true');
   const n = fr[(i + 1) % fr.length]; n.classList.add('on'); n.removeAttribute('aria-hidden');
 }, 6500);
+
+// Inicio: "Sobre regenerativo" alterna sus dos frases con un desvanecido muy lento (cada 20 s)
+setInterval(() => {
+  const fr = document.querySelectorAll('.ha-frase');
+  if (fr.length < 2 || document.hidden) return;
+  const i = [...fr].findIndex(f => f.classList.contains('on'));
+  fr[i].classList.remove('on'); fr[i].setAttribute('aria-hidden', 'true');
+  const n = fr[(i + 1) % fr.length]; n.classList.add('on'); n.removeAttribute('aria-hidden');
+}, 20000);
