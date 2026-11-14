@@ -163,9 +163,9 @@ a:has(>svg) svg *{transition:stroke .35s ease,fill .35s ease}
  a:has(>svg):hover svg[stroke]:not([stroke="none"]),a:has(>svg):hover svg [stroke]:not([stroke="none"]){stroke:#999999}
  a:has(>svg):hover svg [fill]:not([fill="none"]){fill:#999999}
 }
-/* cursor gris translúcido, como el puntero nuevo del iPad */
+/* cursor: círculo gris translúcido */
 @media (hover:hover) and (pointer:fine){
- html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cpath d='M5.5 3.2c-.6-.3-1.2.2-1.1.8l2.6 17.4c.1.7 1 .9 1.4.3l3.6-5.2 6.3-.6c.7-.1.9-.9.4-1.4L5.5 3.2z' fill='%23999999' fill-opacity='.62' stroke='%23ffffff' stroke-opacity='.85' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") 5 4,auto}
- a,button,[role=button],label,summary,[data-f]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Cpath d='M5.5 3.2c-.6-.3-1.2.2-1.1.8l2.6 17.4c.1.7 1 .9 1.4.3l3.6-5.2 6.3-.6c.7-.1.9-.9.4-1.4L5.5 3.2z' fill='%23999999' fill-opacity='.38' stroke='%23ffffff' stroke-opacity='.85' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") 5 4,pointer!important}
+ html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='7.2' fill='%23999999' fill-opacity='.42' stroke='%23ffffff' stroke-opacity='.7' stroke-width='1'/%3E%3C/svg%3E") 10 10,auto}
+ a,button,[role=button],label,summary,[data-f]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Ccircle cx='13' cy='13' r='10.4' fill='%23999999' fill-opacity='.28' stroke='%23ffffff' stroke-opacity='.8' stroke-width='1'/%3E%3C/svg%3E") 13 13,pointer!important}
  input,textarea{cursor:text}
 }
