@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=82';
-import * as M from './modulos.js?v=82';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=82';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=82';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=82';
+import * as D from './datos.js?v=83';
+import * as M from './modulos.js?v=83';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=83';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=83';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=83';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1592,6 +1592,17 @@ async function vistaBasePrecios(s, pestana) {
   marco(s, { titulo: 'Base de precios', eyebrow: 'Común a todos los encargos', ruta: 'Portal · común a todos los encargos', activo: 'base', html: v.html });
   if (v.montar) v.montar(ir);
 }
+
+// Nombres como "26  I  REFORMA 102": el HTML junta los espacios dobles en uno; se fijan con espacio duro para que se vean dos
+(() => {
+  const fijar = raizN => {
+    const w = document.createTreeWalker(raizN, NodeFilter.SHOW_TEXT, { acceptNode: t => /\S {2,}\S/.test(t.data) && !t.parentElement?.closest('script,style,textarea,pre,code') ? 1 : 3 });
+    const l = []; while (w.nextNode()) l.push(w.currentNode);
+    l.forEach(t => { t.data = t.data.replace(/(\S) {2}(?=\S)/g, '$1\u00a0 ').replace(/(\S) {3,}(?=\S)/g, (m, a) => a + '\u00a0 '.repeat(Math.floor((m.length - 1) / 2)) + ((m.length - 1) % 2 ? ' ' : '')); });
+  };
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) fijar(n); else if (n.nodeType === 3 && n.parentElement) fijar(n.parentElement); }))).observe(document.body, { childList: true, subtree: true });
+  fijar(document.body);
+})();
 
 // Títulos que aparecen palabra por palabra (mismo gesto de regenerativo.co)
 (() => {
