@@ -901,3 +901,12 @@ html body .lv .estrella.on{color:#DFDF3F}
 html body .lv .resena-item{padding:12px 0;border-bottom:1px dotted rgba(153,153,153,.55)}
 html body .lv .resena-item p{margin:6px 0}
 html body .lv .estrellas.mini{color:#C9C93A;letter-spacing:2px;font-size:14px}html body .lv .estrellas.mini i{font-style:normal;color:#E3DFD3}
+/* Acceso directo al chat con Claude: flota a la derecha mientras te desplazas */
+.lv-claude{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:calc(24px + env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;gap:0;height:52px;padding:0 15px;border-radius:99px;color:#1E221D;text-decoration:none;font-size:14.25px;
+  background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.8);box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 14px 34px -14px rgba(30,34,29,.35);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1),gap .45s ease,color .35s ease,box-shadow .35s ease}
+.lv-claude svg{flex:none;transition:transform .9s cubic-bezier(.34,1.56,.64,1)}
+.lv-claude span{max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .5s cubic-bezier(.16,1,.3,1),opacity .35s ease}
+@media (hover:hover){.lv-claude:hover{transform:translateY(-3px);gap:8px;color:#999999;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 20px 40px -16px rgba(30,34,29,.4)}.lv-claude:hover span{max-width:80px;opacity:1}.lv-claude:hover svg{transform:rotate(90deg)}}
+@media (max-width:880px){.lv-claude{bottom:calc(104px + env(safe-area-inset-bottom));height:46px;padding:0 12px}}
+body.ingreso .lv-claude{display:none}

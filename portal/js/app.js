@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=71';
-import * as M from './modulos.js?v=71';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=71';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=71';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=71';
+import * as D from './datos.js?v=72';
+import * as M from './modulos.js?v=72';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=72';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=72';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=72';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -151,6 +151,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     </div>
     <nav class="lv-tabs" id="lv-tabs" aria-label="Menú"></nav>
     <div class="lv-velo" id="lv-velo"></div>
+    ${s.admin ? `<a class="lv-claude" href="https://claude.ai/project/01a07ee0-6e6e-76ae-8f6f-875a422348d9" target="_blank" rel="noopener" title="Abrir el chat de regenerativo con Claude" aria-label="Abrir el chat de regenerativo con Claude"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg><span>Claude</span></a>` : ''}
   </div>`;
   $('#salir').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
