@@ -917,3 +917,6 @@ html body .lv .cli-carpeta summary b{font-weight:400;flex:1}
 @media (hover:hover){html body .lv .cli-carpeta summary:hover{color:#999999}}
 html body .lv .cli-carpeta[open] summary svg{color:#00A3CB}
 html body .lv label.cli-subir{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:500}
+/* Menú lateral: nada se aplasta cuando la pantalla es baja; si no cabe, el menú hace scroll y el correo se ve completo */
+html body .lv .lv-lado > .lv-marca, html body .lv .lv-lado > .lv-nav, html body .lv .lv-lado > .lv-web, html body .lv .lv-lado > .lv-pie-lado{flex-shrink:0}
+html body .lv .lv-lado .pie-correo{flex-shrink:0;line-height:1.5;min-height:1.5em}
