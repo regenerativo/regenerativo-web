@@ -1,7 +1,7 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=67';
-import { cop, fecha, iso } from './formato.js?v=67';
-import { btnIco } from './iconos.js?v=67';
+import * as D from './datos.js?v=68';
+import { cop, fecha, iso } from './formato.js?v=68';
+import { btnIco } from './iconos.js?v=68';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -54,7 +54,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
     const esperado = hon + adic;
     const recibido = suma(movs.filter(x => x.encargo_id === e.id), 'ingreso');
     const gastos = suma(movs.filter(x => x.encargo_id === e.id), 'gasto');
-    return { e, esperado, adic, recibido, gastos, porCobrar: Math.max(0, esperado - recibido) };
+    const pagado = !!e.pagado_total;
+    return { e, esperado, adic, recibido, gastos, pagado, porCobrar: pagado ? 0 : Math.max(0, esperado - recibido) };
   });
   const porCobrar = porEnc.reduce((s, r) => s + r.porCobrar, 0);
 
@@ -133,13 +134,13 @@ export async function vistaFinanzas(mesSel, listaSel) {
     <div class="fin-grid">
       <section class="panel"><h3>Ingresos y gastos · 6 meses</h3>${barras(serie)}</section>
       <section class="panel"><h3>Por cobrar</h3><div class="cifra-grande">${cop(porCobrar)}</div><p class="sub">${porEnc.filter(r => r.porCobrar > 0).length} encargos con saldo · valor de propuestas y adicionales menos lo recibido</p>
-        <div class="lista-filas">${porEnc.filter(r => r.esperado).map(r => `<button class="mov-fila" data-lista="${r.e.id}"><span class="mov-txt"><b>${esc(r.e.nombre)}</b><span class="barra"><i style="width:${Math.min(100, r.recibido / r.esperado * 100)}%"></i></span></span><span class="mov-val">${cop(r.porCobrar)}</span></button>`).join('')}</div>
+        <div class="lista-filas">${porEnc.filter(r => r.esperado && !r.pagado).map(r => `<button class="mov-fila" data-lista="${r.e.id}"><span class="mov-txt"><b>${esc(r.e.nombre)}</b><span class="barra"><i style="width:${Math.min(100, r.recibido / r.esperado * 100)}%"></i></span></span><span class="mov-val">${cop(r.porCobrar)}</span></button>`).join('')}</div>
       </section>
     </div>
     <section class="panel"><h3>Encargos</h3>
-      ${porEnc.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Encargo</th><th class="num">Valor</th><th class="num">Recibido</th><th class="num">Por cobrar</th><th class="num col-opc">Gastos</th></tr></thead><tbody>
-      ${porEnc.map(r => `<tr class="clic" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b>${r.adic ? `<div class="sub">Incluye ${cop(r.adic)} en adicionales</div>` : ''}</td><td class="num">${r.esperado ? cop(r.esperado) : '—'}</td><td class="num">${cop(r.recibido)}</td><td class="num">${cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td></tr>`).join('')}
-      <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td></tr>
+      ${porEnc.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Encargo</th><th class="num">Valor</th><th class="num">Recibido</th><th class="num">Por cobrar</th><th class="num col-opc">Gastos</th><th class="col-opc">Pago</th></tr></thead><tbody>
+      ${porEnc.map(r => `<tr class="clic" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b>${r.adic ? `<div class="sub">Incluye ${cop(r.adic)} en adicionales</div>` : ''}<div class="solo-movil"><button type="button" class="btn mini pago-tog${r.pagado ? ' on' : ''}" data-pagado="${r.e.id}">${r.pagado ? '✓ Pagado total' : 'Marcar pagado'}</button></div></td><td class="num">${r.esperado ? cop(r.esperado) : '—'}</td><td class="num">${cop(r.recibido)}</td><td class="num">${r.pagado ? '<span class="etiqueta despego">Pagado</span>' : cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td><td class="col-opc"><button type="button" class="btn mini pago-tog${r.pagado ? ' on' : ''}" data-pagado="${r.e.id}" title="${r.pagado ? 'Quitar la marca de pagado' : 'Marcar como pagado en su totalidad (no crea un ingreso)'}">${r.pagado ? '✓ Pagado total' : 'Marcar pagado'}</button></td></tr>`).join('')}
+      <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td><td class="col-opc"></td></tr>
       </tbody></table></div>` : '<p class="sub">Sin encargos.</p>'}
     </section>
     ${!pend.length ? `<section class="pend" id="por-confirmar"><div class="pend-cab"><h3>Por confirmar${D.SIN_CORREO ? '' : ' <span class="pend-n">0</span>'}</h3><span class="sub">Lo que llega por correo queda aquí hasta que lo apruebes con ✓; mientras tanto no cuenta en los totales. ${D.SIN_CORREO ? 'Esta vista previa no puede leer los pendientes del correo: en el portal real aparecen todos aquí.' : 'No hay movimientos pendientes.'}</span></div></section>` : ''}
@@ -177,6 +178,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
     const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
     $('#editar-pres').onclick = ev => { ev.preventDefault(); modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar); };
     document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => modalMov({ tipo: x.dataset.tipo || 'gasto', fecha: iso(new Date()), categoria_id: x.dataset.cat, ...(x.dataset.sub ? { subcategoria: x.dataset.sub } : {}), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
+    document.querySelectorAll('[data-pagado]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const e = encargos.find(x => x.id === b.dataset.pagado); b.disabled = true; await D.actualizarEncargo(e.id, { pagado_total: !e.pagado_total }); recargar(); });
     document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${mes}/${f.dataset.lista}`; scrollTo(0, 0); });
     $('#lista').onchange = ev => { location.hash = `#/finanzas/${mes}/${ev.target.value}`; };
     document.querySelectorAll('.g-col').forEach(col => {

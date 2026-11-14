@@ -841,3 +841,7 @@ html body .lv .lv-enc-grid{gap:14px}
 }
 @media (max-width:560px){html body .lv .lv-enc-cov{height:46px}}
 html body .lv .lv-tabs-in>a span,html body .lv .lv-tabs-in>button span{font-size:10.5px!important;letter-spacing:-.015em;overflow:visible;text-overflow:clip}
+/* Finanzas: marca de pagado total por encargo */
+html body .lv .pago-tog{white-space:nowrap;font-size:12px!important;padding:6px 12px!important;border-radius:99px!important;background:rgba(243,239,230,.9)!important;border:0!important;color:#1E221D}
+html body .lv .pago-tog.on{background:rgba(0,117,143,.1)!important;color:#00758F!important}
+@media (max-width:760px){html body .lv td>.solo-movil{display:block!important;margin-top:6px}}
