@@ -31,7 +31,7 @@ html.vivo .v-img.v-in{clip-path:inset(0 0 0 0)}
 .v-gal-tr{display:flex;align-items:center;height:72%;padding:0 18vw 0 clamp(64px,10vw,150px);will-change:transform}
 .v-gal-it{flex:none;position:relative;display:block;color:var(--v-negro)}
 .v-gal-it.t{align-self:flex-start}.v-gal-it.b{align-self:flex-end}
-.v-gal-fr{overflow:hidden;box-shadow:0 8px 30px rgba(30,34,29,.06);transition:transform .6s var(--v-ease),box-shadow .6s var(--v-ease)}
+.v-gal-fr{overflow:hidden;background:#F3EFE6;box-shadow:0 8px 30px rgba(30,34,29,.06);transition:transform .6s var(--v-ease),box-shadow .6s var(--v-ease)}
 .v-gal-fr img{display:block;width:100%;height:100%;object-fit:cover;transition:transform 1.2s var(--v-ease)}
 .v-gal-tx{position:absolute;left:0;top:calc(100% + 12px);display:flex;flex-direction:column;gap:3px;font:500 14px/1.25 "Stolzl",system-ui,sans-serif;letter-spacing:-.01em;white-space:nowrap;opacity:.0;transform:translateY(-4px);transition:opacity .4s var(--v-ease),transform .5s var(--v-ease)}
 .v-gal-tx small{font-weight:400;font-size:12.5px;color:var(--v-gris)}

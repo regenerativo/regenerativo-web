@@ -23,7 +23,7 @@ if(pub&&d.getElementById('hero')){
   var g=d.createElement('section');g.className='v-gal';g.setAttribute('aria-label','Encargos');
   var h='<div class="v-gal-pin"><span class="v-gal-et">ENCARGOS</span><div class="v-gal-tr">';
   var gaps=[40,28,56,36,80,32,48,60];
-  GAL.forEach(function(x,i){h+='<a class="v-gal-it '+x[5]+'" href="'+x[1]+'" data-ver="'+(x[3]==='Próximamente'?'Próximamente':'Ver encargo')+'" style="margin-right:'+gaps[i%8]+'px"><div class="v-gal-fr" style="height:calc(var(--gh) * '+x[6]+');width:calc(var(--gh) * '+(x[6]*x[4]).toFixed(3)+')"><img src="'+x[0]+'" alt="'+x[2]+'" loading="'+(i<4?'eager':'lazy')+'" draggable="false"></div><span class="v-gal-tx">'+x[2]+'<small>'+x[3]+'</small></span></a>'});
+  GAL.forEach(function(x,i){h+='<a class="v-gal-it '+x[5]+'" href="'+x[1]+'" data-ver="'+(x[3]==='Próximamente'?'Próximamente':'Ver encargo')+'" style="margin-right:'+gaps[i%8]+'px"><div class="v-gal-fr" style="height:calc(var(--gh) * '+x[6]+');width:calc(var(--gh) * '+(x[6]*x[4]).toFixed(3)+')"><img src="'+x[0]+'" alt="'+x[2]+'" loading="eager" decoding="async" draggable="false"></div><span class="v-gal-tx">'+x[2]+'<small>'+x[3]+'</small></span></a>'});
   h+='</div><div class="v-gal-bar"><i></i></div><div class="v-gal-hint">Desliza para explorar<svg width="20" height="12" viewBox="0 0 20 12" fill="none"><path d="M1 6H19M19 6L14 1M19 6L14 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>';
   g.innerHTML=h;pub.parentNode.insertBefore(g,pub);
   var pin=g.firstChild,tr=pin.querySelector('.v-gal-tr'),bar=pin.querySelector('.v-gal-bar i'),hint=pin.querySelector('.v-gal-hint'),dist=0;
