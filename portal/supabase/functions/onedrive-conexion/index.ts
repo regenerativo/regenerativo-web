@@ -21,6 +21,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
 const CLIENTE = "5fb20396-2b10-470b-b028-86f4b6e9d9ca";
 const ALCANCE = "offline_access Files.ReadWrite Mail.Read User.Read";
+// Al conectar se pide también Mail.Send (avisos de comentarios de clientes). La renovación usa ALCANCE para no romper OneDrive.
+const ALCANCE_CONEXION = ALCANCE + " Mail.Send";
+const CORREO_PROYECTOS = "proyectos@regenerativo.co";
+const CARPETAS_CLIENTE = ["DOC _ ENV", "DOC _ ENVIADOS"];
 const PORTAL = "https://regenerativo.co/portal/";
 const RAIZ = "REG";
 const PROPUESTAS = "REG/REG  I  GESTION INTEGRAL/ZL_REG_PROPUESTAS";
@@ -269,6 +273,36 @@ async function subir(at: string, encargoId: string, carpeta: string, nombre: str
   return { ruta: `${base}/${carpeta}/${nombre}`, web: d.webUrl };
 }
 
+// Aviso por correo de un comentario o duda de cliente a proyectos@regenerativo.co
+async function avisoComentario(id: string) {
+  const { data: c } = await admin.from("comentarios").select("id,texto,tipo,autor_nombre,avisado,creado,encargo:encargos(nombre,codigo)").eq("id", id).single();
+  if (!c) throw new Error("Comentario no encontrado.");
+  if (c.avisado) return { enviado: true, ya: true };
+  const { data: ig } = await admin.from("integraciones").select("refresh_token").eq("id", "onedrive").maybeSingle();
+  if (!ig?.refresh_token) return { enviado: false, motivo: "OneDrive no está conectado." };
+  let at: string;
+  try {
+    const t = await token({ grant_type: "refresh_token", refresh_token: ig.refresh_token, scope: "offline_access Mail.Send" });
+    at = t.access_token;
+  } catch (_) { return { enviado: false, motivo: "Falta el permiso para enviar correos: reconecta OneDrive en Ajustes." }; }
+  const e: any = c.encargo || {};
+  const esc = (s: string) => (s || "").replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" } as any)[x]);
+  const html = `<div style="font-family:Arial,sans-serif;color:#1E221D;max-width:560px">
+    <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#999">${c.tipo === "duda" ? "Duda" : "Comentario"} de cliente · portal de encargos</p>
+    <h2 style="font-weight:400;margin:0 0 6px">${esc(e.nombre)}</h2>
+    <p style="color:#999;margin:0 0 18px">${esc(c.autor_nombre || "Cliente")} · ${new Date(c.creado).toLocaleString("es-CO", { timeZone: "America/Bogota" })}</p>
+    <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${esc(c.texto).replace(/\n/g, "<br>")}</p>
+    <p><a href="${PORTAL}#/encargos" style="color:#00A3CB">Responder en el portal</a></p>
+    <p style="color:#999;font-size:12px">Por — regenerativo</p></div>`;
+  const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+    method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: { subject: `${c.tipo === "duda" ? "Duda" : "Comentario"} de cliente · ${e.nombre}`, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: false }),
+  });
+  if (!r.ok) return { enviado: false, motivo: "No se pudo enviar el correo." };
+  await admin.from("comentarios").update({ avisado: new Date().toISOString() }).eq("id", id);
+  return { enviado: true };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const u = new URL(req.url);
@@ -292,12 +326,29 @@ Deno.serve(async (req) => {
   try {
     const usuario = createClient(URL_SB, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
     const { data: esAdmin } = await usuario.rpc("es_admin");
-    if (!esAdmin) return json({ error: "Solo administración." }, 403);
     const b = await req.json();
+    // Acciones que puede usar cualquier persona invitada al encargo (clientes incluidos)
+    if (["aviso_comentario", "cli_enviados", "cli_archivo"].includes(b.accion)) {
+      const { data: yo } = await usuario.auth.getUser();
+      if (!yo?.user) return json({ error: "Sesión no válida." }, 401);
+      if (b.accion === "aviso_comentario") {
+        const { data: c } = await usuario.from("comentarios").select("id,autor").eq("id", b.comentario_id).maybeSingle();
+        if (!c || (c.autor !== yo.user.id && !esAdmin)) return json({ error: "Sin acceso." }, 403);
+        return json(await avisoComentario(c.id));
+      }
+      const { data: rol } = await usuario.rpc("rol_en_encargo", { p_encargo: b.encargo_id });
+      if (!rol && !esAdmin) return json({ error: "Sin acceso." }, 403);
+      const at = await accesoGraph();
+      if (b.accion === "cli_enviados") return json(await archivosEncargo(at, b.encargo_id, [CARPETAS_CLIENTE]));
+      const ruta = rutaSegura(b.ruta || "");
+      if (!CARPETAS_CLIENTE.some((c) => ruta.startsWith(c + "/"))) return json({ error: "Sin acceso." }, 403);
+      return json(await archivoEncargo(at, b.encargo_id, "", ruta, !!b.pdf));
+    }
+    if (!esAdmin) return json({ error: "Solo administración." }, 403);
     if (b.accion === "url") {
       const estado = crypto.randomUUID();
       await admin.from("oauth_estados").insert({ estado });
-      const q = new URLSearchParams({ client_id: CLIENTE, response_type: "code", redirect_uri: REDIRECCION, response_mode: "query", scope: ALCANCE, state: estado, prompt: "select_account" });
+      const q = new URLSearchParams({ client_id: CLIENTE, response_type: "code", redirect_uri: REDIRECCION, response_mode: "query", scope: ALCANCE_CONEXION, state: estado, prompt: "select_account" });
       return json({ url: `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/authorize?${q}` });
     }
     if (b.accion === "estado") {

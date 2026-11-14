@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=47';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=49';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -414,4 +414,32 @@ export async function onedrive(accion, extra = {}) {
   if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+// ---------------- Comentarios y dudas del cliente ----------------
+export async function comentarios(encargoId) {
+  if (MODO_DEMO) return [];
+  const { data, error } = await (await cliente()).from('comentarios').select('*').eq('encargo_id', encargoId).order('creado', { ascending: false });
+  if (error) throw error; return data || [];
+}
+export async function comentariosAbiertos() {
+  if (MODO_DEMO) return [];
+  const { data, error } = await (await cliente()).from('comentarios').select('id,texto,tipo,creado,autor_nombre,encargo:encargos(id,codigo,nombre)').eq('estado', 'abierto').order('creado', { ascending: false });
+  if (error) return []; return data || [];
+}
+/** Guarda el comentario y avisa por correo a proyectos@regenerativo.co (si el correo falla, el comentario igual queda guardado). */
+export async function comentar(encargoId, texto, tipo = 'comentario', autorNombre = '', avisar = true) {
+  const c = await cliente();
+  const { data: u } = await c.auth.getUser();
+  const { data, error } = await c.from('comentarios').insert({ encargo_id: encargoId, texto, tipo, autor: u.user.id, autor_nombre: autorNombre || u.user.email, estado: avisar ? 'abierto' : 'resuelto' }).select().single();
+  if (error) throw error;
+  const aviso = avisar ? await onedrive('aviso_comentario', { comentario_id: data.id }).catch(e => ({ enviado: false, motivo: e.message })) : null;
+  return { comentario: data, aviso };
+}
+export async function responderComentario(id, cambios) {
+  const c = await cliente();
+  const { data: u } = await c.auth.getUser();
+  const extra = cambios.respuesta ? { respondido_por: u.user.id, respondido: new Date().toISOString() } : {};
+  const { error } = await c.from('comentarios').update({ ...cambios, ...extra }).eq('id', id);
+  if (error) throw error;
 }

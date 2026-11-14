@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=47';
-import * as M from './modulos.js?v=47';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=47';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=47';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=47';
+import * as D from './datos.js?v=49';
+import * as M from './modulos.js?v=49';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=49';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=49';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=49';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -188,9 +188,11 @@ function armarIsla() {
 function armarTabs() {
   const tabs = $('#lv-tabs'), lado = $('#lado'), velo = $('#lv-velo');
   const enl = [...document.querySelectorAll('.lv-nav a:not(.volver):not(.enc-nom)')];
-  const prim = enl.slice(0, 4), resto = enl.slice(4);
+  const com = enl.find(a => /\/comentarios$/.test(a.getAttribute('href')));
+  const prim = com ? [...enl.filter(a => a !== com).slice(0, 3), com] : enl.slice(0, 4);
+  const resto = enl.filter(a => !prim.includes(a));
   const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
-  tabs.innerHTML = `<div class="lv-tabs-in">${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas')}</span></a>`).join('')}
+  tabs.innerHTML = `<div class="lv-tabs-in">${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Comentarios$/, 'Dudas')}</span></a>`).join('')}
     <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
   const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
   $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
@@ -223,29 +225,40 @@ function moverIndicador() {
 let islaAntes = null;
 
 // ---------------- Acceso ----------------
+// Marco de las pantallas de ingreso: lema a la izquierda y tarjeta de vidrio a la derecha, sobre las burbujas de regenerativo
+function marcoAcceso(form) {
+  return `<div class="lv-acceso">
+    <section class="lv-acc-hero">
+      <img class="lv-acc-simbolo" src="/assets/33b2a586a276.png" alt="">
+      <span class="lv-ceja">Portal de encargos</span>
+      <h1>No intervenimos,<br>regeneramos.</h1>
+      <p class="lv-acc-cita">Génesis 1.27</p>
+      <ul class="lv-acc-puntos"><li><i></i>Propuestas, contratos y documentos</li><li><i></i>Avance y cronograma del encargo</li><li><i></i>Conversación directa con el equipo</li></ul>
+    </section>
+    ${form}
+  </div>`;
+}
 function vistaAcceso() {
   let modo = sessionStorage.getItem('reg-modo-acceso') || 'cliente';
   const pintar = () => {
     const cli = modo === 'cliente';
-    raiz.innerHTML = `
-    <div class="acceso"><form class="acceso-caja" id="f">
-      <img src="/assets/33b2a586a276.png" alt="regenerativo">
-      <h1>Portal de encargos</h1>
-      <div class="pestanas">
-        <button type="button" class="${cli ? 'activa' : ''}" data-m="cliente">Clientes</button>
-        <button type="button" class="${cli ? '' : 'activa'}" data-m="equipo">Equipo regenerativo</button>
+    raiz.innerHTML = marcoAcceso(`<form class="lv-acc-card" id="f">
+      <span class="logo-reg">regenerativo</span>
+      <h2>${cli ? 'Bienvenido a tu encargo' : 'Hola, equipo'}</h2>
+      <div class="lv-seg ancho" role="tablist">
+        <button type="button" class="${cli ? 'activo' : ''}" data-m="cliente">Clientes</button>
+        <button type="button" class="${cli ? '' : 'activo'}" data-m="equipo">Equipo regenerativo</button>
       </div>
       ${cli
         ? `<label for="usuario">Nombre del encargo</label><input id="usuario" autocomplete="username" placeholder="Ej.: 20  I  PROYECTO" required>`
         : `<label for="usuario">Correo</label><input id="usuario" type="email" autocomplete="username" required>`}
       <label for="clave">${cli ? 'Acceso' : 'Contraseña'}</label><input id="clave" type="password" autocomplete="current-password" ${D.MODO_DEMO ? '' : 'required'}>
-      <button class="btn full" type="submit">Ingresar</button>
+      <button class="btn full" type="submit">Ingresar <span aria-hidden="true">→</span></button>
       <div class="aviso" id="aviso"></div>
-      ${cli ? '<p class="sub" style="margin:18px 0 0">¿No tienes tu acceso? Pídelo a regenerativo.</p>'
-            : '<p style="margin:18px 0 0;font-size:13px"><a href="#/recuperar">Olvidé mi contraseña</a></p>'}
-      <div class="firma"><span class="por">Por</span><span class="linea"></span><span class="reg">regenerativo</span></div>
-    </form></div>`;
-    document.querySelectorAll('.pestanas button').forEach(b => b.onclick = () => {
+      ${cli ? '<p class="lv-acc-pie">¿No tienes tu acceso? Pídelo a regenerativo.</p>'
+            : '<p class="lv-acc-pie"><a href="#/recuperar">Olvidé mi contraseña</a></p>'}
+    </form>`);
+    document.querySelectorAll('.lv-acc-card .lv-seg button').forEach(b => b.onclick = () => {
       modo = b.dataset.m; try { sessionStorage.setItem('reg-modo-acceso', modo); } catch (e) {} pintar();
     });
     $('#f').onsubmit = async e => {
@@ -264,21 +277,20 @@ function vistaAcceso() {
 function vistaNuevaClave(enlace) {
   document.body.classList.add('ingreso');
   if (enlace.error) {
-    raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="/assets/33b2a586a276.png" alt=""><h1>El enlace ya no sirve</h1>
-      <p>${esc(enlace.error)}. Pide una nueva invitación o usa "Olvidé mi contraseña".</p><a class="btn full" href="#/acceso">Ir al ingreso</a></div></div>`;
+    raiz.innerHTML = marcoAcceso(`<div class="lv-acc-card"><span class="logo-reg">regenerativo</span><h2>El enlace ya no sirve</h2>
+      <p class="lv-acc-txt">${esc(enlace.error)}. Pide una nueva invitación o usa "Olvidé mi contraseña".</p><a class="btn full" href="#/acceso">Ir al ingreso</a></div>`);
     return;
   }
   const bienvenida = enlace.tipo === 'invite';
-  raiz.innerHTML = `
-  <div class="acceso"><form class="acceso-caja" id="f">
-    <img src="/assets/33b2a586a276.png" alt="regenerativo">
-    <h1>${bienvenida ? 'Bienvenido al portal' : 'Nueva contraseña'}</h1>
-    <p>${bienvenida ? 'Crea tu contraseña para entrar a tus encargos.' : 'Escribe tu nueva contraseña.'}</p>
+  raiz.innerHTML = marcoAcceso(`<form class="lv-acc-card" id="f">
+    <span class="logo-reg">regenerativo</span>
+    <h2>${bienvenida ? 'Bienvenido al portal' : 'Nueva contraseña'}</h2>
+    <p class="lv-acc-txt">${bienvenida ? 'Crea tu contraseña para entrar a tus encargos.' : 'Escribe tu nueva contraseña.'}</p>
     <label for="c1">Contraseña (mínimo 8 caracteres)</label><input id="c1" type="password" autocomplete="new-password" minlength="8" required>
     <label for="c2">Repítela</label><input id="c2" type="password" autocomplete="new-password" minlength="8" required>
     <button class="btn full" type="submit">Guardar y entrar</button>
     <div class="aviso" id="aviso"></div>
-  </form></div>`;
+  </form>`);
   $('#f').onsubmit = async e => {
     e.preventDefault();
     if ($('#c1').value !== $('#c2').value) { $('#aviso').textContent = 'Las contraseñas no coinciden.'; return; }
@@ -288,16 +300,15 @@ function vistaNuevaClave(enlace) {
 }
 
 function vistaRecuperar() {
-  raiz.innerHTML = `
-  <div class="acceso"><form class="acceso-caja" id="f">
-    <img src="/assets/33b2a586a276.png" alt="regenerativo">
-    <h1>Recuperar contraseña</h1>
-    <p>Te enviaremos un enlace para crear una nueva.</p>
+  raiz.innerHTML = marcoAcceso(`<form class="lv-acc-card" id="f">
+    <span class="logo-reg">regenerativo</span>
+    <h2>Recuperar contraseña</h2>
+    <p class="lv-acc-txt">Te enviaremos un enlace para crear una nueva.</p>
     <label for="email">Correo</label><input id="email" type="email" required>
     <button class="btn full" type="submit">Enviar enlace</button>
     <div class="aviso" id="aviso"></div>
-    <p style="margin:18px 0 0;font-size:13px"><a href="#/acceso">Volver al ingreso</a></p>
-  </form></div>`;
+    <p class="lv-acc-pie"><a href="#/acceso">Volver al ingreso</a></p>
+  </form>`);
   $('#f').onsubmit = async e => {
     e.preventDefault();
     try { await D.recuperarClave($('#email').value.trim()); $('#aviso').style.color = 'var(--petroleo)'; $('#aviso').textContent = 'Si el correo está registrado, te llegará el enlace.'; }
@@ -314,13 +325,13 @@ const VERSICULOS = [   // tal como están en regenerativo.co/about
 async function vistaInicio(s) {
   const festLista = await D.festivos();
   const fest = new Set(festLista.map(f => f.fecha));
-  const [lista, props, movs, honor, docs] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
-    s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : []]);
+  const [lista, props, movs, honor, docs, coms] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
+    s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : [], s.admin ? D.comentariosAbiertos() : []]);
   const hoy = new Date().toISOString().slice(0, 10), mes = hoy.slice(0, 7);
   const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
   const espera = props.filter(p => p.estado === 'en_espera'), borrador = props.filter(p => p.estado === 'borrador');
   const dia = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  const V = VERSICULOS[dia % VERSICULOS.length];
+  const V = VERSICULOS.find(v => /G[ée]nesis/.test(v.cita)) || VERSICULOS[0]; // el de Génesis queda fijo en el principal
   const h = new Date().getHours();
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
   // Cifras de la empresa
@@ -338,7 +349,11 @@ async function vistaInicio(s) {
   const R = [];
   const rec = (nivel, txt, sub, href) => R.push({ nivel, txt, sub, href });
   if (pend.length) rec('alto', `${pend.length} movimiento${pend.length > 1 ? 's' : ''} del correo por aprobar`, 'No cuentan en finanzas hasta que los apruebes', '#/finanzas#por-confirmar');
-  espera.forEach(p => { const d = p.fecha_envio ? 30 - Math.round((new Date(hoy) - new Date(p.fecha_envio)) / 86400000) : null;
+  coms.forEach(c => rec('alto', `${c.tipo === 'duda' ? 'Duda' : 'Comentario'} de ${c.autor_nombre || 'cliente'} en ${(c.encargo?.nombre || '').replace(/^\d{2}\s+I\s+/, '')}`, c.texto.length > 70 ? c.texto.slice(0, 70) + '…' : c.texto, c.encargo ? `#/${D.slugEncargo(c.encargo)}/comentarios` : '#/encargos'));
+  const diasEnv = p => p.fecha_envio ? Math.round((new Date(hoy) - new Date(p.fecha_envio)) / 86400000) : null;
+  const viejas = espera.filter(p => diasEnv(p) > 30);
+  if (viejas.length) rec('medio', `${viejas.length} propuesta${viejas.length > 1 ? 's' : ''} en espera hace más de un mes`, 'Actualiza si despegaron o no', '#/propuestas');
+  espera.filter(p => !(diasEnv(p) > 30)).forEach(p => { const d = p.fecha_envio ? 30 - diasEnv(p) : null;
     rec(d !== null && d <= 7 ? 'alto' : 'medio', `Hacer seguimiento a ${p.nombre}`, d !== null ? `${p.cliente?.nombre || 'Cliente'} · ${d > 0 ? d + ' días para decidir' : 'vence hoy'}` : `${p.cliente?.nombre || 'Cliente'} · falta la fecha de envío`, '#/propuestas'); });
   borrador.forEach(p => rec('medio', `Enviar la propuesta ${p.nombre}`, p.archivo_nombre ? 'Está en borrador' : 'Falta cargar el Word', '#/propuestas'));
   props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera').forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
@@ -387,6 +402,80 @@ async function vistaInicio(s) {
       ${columnas(seis)}
     </section>` : ''}`;
   marco(s, { titulo: 'Inicio', ruta: 'Portal', activo: 'inicio', html, h1: `${saludo}, equipo.`, eyebrow: fechaLarga.charAt(0).toUpperCase() + fechaLarga.slice(1) });
+}
+
+// ---------- Comentarios y dudas del cliente ----------
+const fechaHora = f => new Date(f).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+function formComentario(admin = false) {
+  return `<form class="lv-com-f" id="f-com">
+    ${admin ? '' : '<div class="lv-seg" id="tipo-com"><button type="button" data-t="duda" class="activo">Duda</button><button type="button" data-t="comentario">Comentario</button></div>'}
+    <textarea name="texto" rows="3" required placeholder="${admin ? 'Escribe un mensaje para el cliente…' : 'Escribe aquí tu duda o comentario…'}"></textarea>
+    <div class="lv-fila-fin"><span class="sub" id="com-estado"></span><button class="btn" type="submit">Enviar</button></div></form>`;
+}
+function itemComentario(c, admin) {
+  const ini = (c.autor_nombre || 'C').split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  return `<li class="lv-com ${c.estado}">
+    <div class="lv-com-cab"><span class="lv-ava">${esc(ini)}</span><b>${esc(c.autor_nombre || 'Cliente')}</b>
+      <span class="lv-chip ${c.estado === 'abierto' ? 'por-iniciar' : 'en-curso'}"><i></i>${c.estado === 'abierto' ? 'Sin resolver' : 'Resuelto'}</span>
+      <span class="lv-tipo">${c.tipo === 'duda' ? 'Duda' : 'Comentario'}</span><time>${fechaHora(c.creado)}</time></div>
+    <p class="lv-com-t">${esc(c.texto).replace(/\n/g, '<br>')}</p>
+    ${c.respuesta ? `<div class="lv-resp"><b>regenerativo</b>${c.respondido ? ` <time>${fechaHora(c.respondido)}</time>` : ''}<p>${esc(c.respuesta).replace(/\n/g, '<br>')}</p></div>` : ''}
+    ${admin && c.estado === 'resuelto' && c.autor_nombre !== 'regenerativo' ? `<button type="button" class="btn sec mini lv-reabrir" data-id="${c.id}">Reabrir</button>` : ''}
+    ${admin && c.estado === 'abierto' ? `<form class="lv-resp-f" data-id="${c.id}"><textarea name="respuesta" rows="2" placeholder="Responder al cliente…">${esc(c.respuesta || '')}</textarea>
+      <div class="lv-fila-fin"><label class="lv-check"><input type="checkbox" name="resolver" ${c.estado === 'resuelto' ? 'checked' : ''}><span>Resuelto</span></label><button class="btn sec" type="submit">Guardar</button></div></form>` : ''}
+  </li>`;
+}
+function montarComentario(ctx) {
+  const f = $('#f-com'); if (!f) return;
+  let tipo = ctx.admin ? 'comentario' : 'duda';
+  f.querySelectorAll('#tipo-com button').forEach(b => b.onclick = () => { tipo = b.dataset.t; f.querySelectorAll('#tipo-com button').forEach(x => x.classList.toggle('activo', x === b)); });
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const texto = f.texto.value.trim(); if (!texto) return;
+    const est = $('#com-estado'), btn = f.querySelector('button[type=submit]');
+    btn.disabled = true; est.textContent = 'Enviando…';
+    try {
+      const nombre = ctx.esCliente ? (ctx.e.cliente?.nombre || 'Cliente') : 'regenerativo';
+      const r = await D.comentar(ctx.e.id, texto, tipo, nombre, !ctx.admin);
+      est.textContent = ctx.admin ? 'Nota guardada.' : r.aviso?.enviado ? 'Enviado. El equipo ya recibió tu mensaje.' : 'Enviado. El equipo lo verá en el portal.';
+      setTimeout(() => ctx.recargar(), 900);
+    } catch (err) { est.textContent = msg(err); btn.disabled = false; }
+  };
+}
+function vistaComentarios(ctx, coms, pintar) {
+  const { admin } = ctx;
+  const ab = coms.filter(c => c.estado === 'abierto').length;
+  pintar(`
+    <section class="panel lv-duda"><h3>${admin ? 'Mensaje al cliente' : '¿Tienes una duda o un comentario?'}</h3>
+      <p class="sub">${admin ? 'Queda en el historial del encargo y el cliente la ve.' : 'Le llega al equipo de regenerativo y te respondemos aquí mismo.'}</p>
+      ${formComentario(admin)}</section>
+    <section class="panel"><div class="lv-card-cab"><h3>Conversación</h3><span class="lv-cuenta">${ab} sin resolver</span></div>
+      ${coms.length ? `<ul class="lv-hilo">${coms.map(c => itemComentario(c, admin)).join('')}</ul>` : '<p class="sub">Todavía no hay comentarios en este encargo.</p>'}</section>`);
+  montarComentario(ctx);
+  document.querySelectorAll('.lv-resp-f').forEach(f => f.onsubmit = async ev => {
+    ev.preventDefault();
+    const b = f.querySelector('button'); b.disabled = true;
+    try { await D.responderComentario(f.dataset.id, { respuesta: f.respuesta.value.trim() || null, estado: f.resolver.checked ? 'resuelto' : 'abierto' }); ctx.recargar(); }
+    catch (err) { alert(msg(err)); b.disabled = false; }
+  });
+  document.querySelectorAll('.lv-reabrir').forEach(b => b.onclick = async () => { b.disabled = true; try { await D.responderComentario(b.dataset.id, { estado: 'abierto' }); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; } });
+}
+// Documentos que regenerativo le ha enviado al cliente (carpeta DOC _ ENV del encargo)
+async function enviadosCliente(ctx, pintar) {
+  pintar('<section class="panel" id="cli-env"><p class="sub">Cargando documentos…</p></section>');
+  const caja = $('#cli-env');
+  let r; try { r = await D.onedrive('cli_enviados', { encargo_id: ctx.e.id }); } catch (err) { caja.innerHTML = `<p class="sub">No se pudieron cargar los documentos en este momento. Intenta de nuevo más tarde.</p>`; return; }
+  const l = r.archivos || [];
+  caja.innerHTML = l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
+      <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
+      <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-i="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-i="${i}">Descargar</button></span></li>`).join('')}</ul>`
+    : '<p class="sub">Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.</p>';
+  caja.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
+    const a = l[+b.dataset.i]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+    try { const d = await D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta, pdf: !!b.dataset.pdf }); bajarBase64(d.base64, d.nombre); }
+    catch (err) { alert(msg(err)); }
+    b.disabled = false; b.textContent = t;
+  });
 }
 
 // Fecha del encargo que se cambia en el sitio: clic → calendario → se guarda en el encargo (no en la propuesta)
@@ -438,7 +527,8 @@ async function vistaEncargos(s) {
   const admin = s.admin;
   if (!admin && lista.length === 1) { location.replace(`#/${D.slugEncargo(lista[0])}`); return; }
   const fest = new Set((await D.festivos()).map(f => f.fecha));
-  const conTiempo = lista.map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
+  const abiertos = admin ? await D.comentariosAbiertos() : [];
+  const conTiempo = lista.map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest), dudas: abiertos.filter(c => c.encargo?.id === e.id).length }));
   const hoyE = new Date().toISOString().slice(0, 10);
   const fase = e => e.estado !== 'activo' ? e.estado : (!e.inicio || e.inicio > hoyE) ? 'por-iniciar' : 'en-curso';
   const F = [['todos', 'Todos'], ['en-curso', 'En curso'], ['por-iniciar', 'Por iniciar'], ['pausado', 'Pausados'], ['cerrado', 'Cerrados']]
@@ -459,7 +549,7 @@ async function vistaEncargos(s) {
     $('#tabla').innerHTML = f.length ? `<div class="lv-enc-grid">${f.map((e, i) => {
       const t = Math.round((e.tiempo || 0) * 100), lugar = e.cliente?.ciudad || e.ciudad || '';
       return `<a class="lv-card lv-enc ${semaforo(e)}" href="#/${D.slugEncargo(e)}" style="--i:${i}">
-        <div class="lv-enc-cab">${chip(e)}<span class="lv-flecha">${ico('ver')}</span></div>
+        <div class="lv-enc-cab">${chip(e)}${e.dudas ? `<span class="lv-chip duda" title="Comentarios del cliente sin resolver"><i></i>${e.dudas} sin resolver</span>` : ''}<span class="lv-flecha">${ico('ver')}</span></div>
         <h2>${esc(e.nombre)}</h2>
         <p class="lv-enc-sub">${lugar ? esc(lugar) + ' · ' : ''}<span class="lv-fe-et">Inicio</span> ${e.inicio ? fecha(e.inicio) : 'Sin fecha'}</p>
         <div class="lv-enc-av"><span>${servs(e).map(esc).join(' · ') || 'Tiempo'}</span><b>${fase(e) === 'por-iniciar' ? '—' : e.tiempo == null ? '' : t + '%'}</b></div>
@@ -609,7 +699,7 @@ const MODULOS = [
   ['propuesta', 'Propuesta'], ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
   ['informes', 'Actas e informes'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
-  ['ajustes', 'Ajustes'],
+  ['comentarios', 'Comentarios'], ['ajustes', 'Ajustes'],
 ];
 // Carpetas de OneDrive de cada módulo (plantilla REG_TEM DOCUMENTAL y, como respaldo, los nombres viejos).
 // Cada grupo usa la primera carpeta que exista. "RUTA#0" = solo los archivos sueltos de esa carpeta.
@@ -625,6 +715,7 @@ const FUENTES = {
   recibidos: [['DOC _ REC', 'DOC _ RECIBIDOS']],
 };
 const SIN_CONTEO = ['resumen', 'carpetas', 'ajustes'];
+const NO_DOC = ['comentarios', 'enviados'];
 const CONTEO_TTL = 10 * 60 * 1000;
 const conteoGuardado = id => { try { const c = JSON.parse(sessionStorage.getItem('reg-conteo-' + id)); if (c && Date.now() - c.t < CONTEO_TTL) return c.c; } catch (_) {} return null; };
 const guardarConteo = (id, c) => { try { sessionStorage.setItem('reg-conteo-' + id, JSON.stringify({ t: Date.now(), c })); } catch (_) {} };
@@ -650,30 +741,32 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const rol = admin ? 'admin' : await D.miRol(e.id);
   const esCliente = rol === 'cliente';
   const fest = new Set((await D.festivos()).map(f => f.fecha));
-  const [docs, tareas, pres, movs, prop] = await Promise.all([
+  const [docs, tareas, pres, movs, prop, coms] = await Promise.all([
     D.docsEncargo(e.id).catch(() => []), D.ganttTareas(e.id).catch(() => []), D.hayPresupuesto(e.id).catch(() => 0),
-    s.facturacion ? D.finMovimientosEncargo(e.id).catch(() => []) : [], admin ? D.propuestaDeEncargo(e.id) : null]);
+    s.facturacion ? D.finMovimientosEncargo(e.id).catch(() => []) : [], admin ? D.propuestaDeEncargo(e.id) : null, D.comentarios(e.id).catch(() => [])]);
   const movsOk = movs.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const nTipo = t => docs.filter(d => d.tipo === t && (!esCliente || d.estado !== 'borrador')).length;
-  const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length };
+  const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length, comentarios: coms.filter(c => c.estado === 'abierto').length };
   let od = admin ? (conteoGuardado(e.id) || {}) : {};
   const n = k => (web[k] || 0) + (od[k] || 0);
   const visible = k => {
-    if (k === 'resumen') return true;
+    if (k === 'resumen' || k === 'comentarios') return true;
+    if (k === 'enviados' && esCliente) return true;
     if (k === 'ajustes' || k === 'carpetas') return admin;
     if (k === 'finanzas') return s.facturacion;
     if (k === 'adendas' && esCliente) return false;
     return admin || web[k] > 0;
   };
   const pintaMenu = () => MODULOS.filter(([k]) => visible(k)).map(([k, nom]) => {
+    if (esCliente && k === 'enviados') nom = 'Documentos enviados';
     const c = SIN_CONTEO.includes(k) ? null : n(k);
     return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${icoMenu(k)}<span>${nom}</span>${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
   }).join('');
   const tiles = () => {
-    const l = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && n(k) > 0);
+    const l = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && k !== 'comentarios' && n(k) > 0);
     return l.length ? l.map(([k, nom]) => `<a class="tile" href="${base}/${k}"><b>${n(k)}</b><span>${nom}</span></a>`).join('') : '<p class="sub">Todavía no hay documentos en los módulos.</p>';
   };
-  const nombreSec = (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
+  const nombreSec = esCliente && seccion === 'enviados' ? 'Documentos enviados' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
   const pintar = (html, acciones = '') => {
     marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, eyebrow: seccion === 'resumen' ? ([e.cliente?.nombre, ...servs(e)].filter(Boolean).join(' · ') || 'Encargo') : e.nombre, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
@@ -699,7 +792,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const COL_AD = ['#7FC4D6', '#B9DDE7', '#5AA9BE', '#D4ECF2'];
     if (esCliente) {
       const DESC = { propuesta: 'Propuesta económica', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
-      const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && n(k) > 0);
+      const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && !NO_DOC.includes(k) && n(k) > 0);
       const htmlCli = `
         <div class="kpis kpis-3">
           ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
@@ -707,14 +800,21 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           ${kpi('Avance de la obra', g?.filas.length ? pct(g.realTotal) : '—', g?.filas.length ? `Esperado al corte ${pct(g.esperadoTotal)}` : 'Aún sin cronograma', g?.filas.length ? g.realTotal : undefined)}
         </div>
         <section class="panel"><h3>Tus documentos</h3>
-          ${mods.length ? `<div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}</div>`
-            : '<p class="sub">Aquí aparecerán los documentos de tu encargo a medida que te los enviemos.</p>'}
+          <div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}
+            <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos enviados</b><span class="sub">Planos, informes y archivos que te hemos enviado</span></span><span class="tc-flecha">›</span></a></div>
+        </section>
+        <section class="panel lv-duda">
+          <div class="lv-card-cab"><h3>¿Tienes una duda?</h3><a class="lv-link" href="${base}/comentarios">Ver conversación ${ico('ver')}</a></div>
+          <p class="sub">Escríbenos aquí: le llega al equipo de regenerativo y te respondemos en el portal.</p>
+          ${formComentario()}
+          ${coms.length ? `<ul class="lv-hilo corto">${coms.slice(0, 2).map(c => itemComentario(c, false)).join('')}</ul>` : ''}
         </section>
         <section class="panel"><h3>Tu encargo</h3>
           <dl class="datos datos-2c"><dt>Encargo</dt><dd>${esc(e.nombre)}</dd><dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xxx('')}</dd>
-          <dt>Inicio · fin</dt><dd>${fecha(e.inicio)} · ${fecha(e.fin)}</dd><dt>Equipo</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : 'Regenerativo'}</dd></dl>
+          <dt>Inicio</dt><dd>${e.inicio ? fecha(e.inicio) : 'Sin fecha'}</dd><dt>Entrega</dt><dd>${e.fin ? fecha(e.fin) : 'Sin fecha'}</dd><dt>Equipo</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : 'Regenerativo'}</dd></dl>
         </section>`;
-      return pintar(htmlCli);
+      pintar(htmlCli);
+      return montarComentario(ctx);
     }
     const html = `
       <div class="kpis">
@@ -763,6 +863,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     pintar('<section class="panel od" id="od"></section>');
     return panelOneDrive($('#od'), e, [['']], { titulo: 'Folders del encargo' });
   }
+  if (seccion === 'comentarios') return vistaComentarios(ctx, coms, pintar);
+  if (seccion === 'enviados' && !admin) return enviadosCliente(ctx, pintar);
   if (seccion === 'enviados' || seccion === 'recibidos') {
     if (!admin) { location.hash = base; return; }
     pintar('<section class="panel od" id="od"></section>');
