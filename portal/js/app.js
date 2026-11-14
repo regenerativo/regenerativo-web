@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=60';
-import * as M from './modulos.js?v=60';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=60';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=60';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=60';
+import * as D from './datos.js?v=61';
+import * as M from './modulos.js?v=61';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=61';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=61';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=61';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -145,9 +145,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
       <main class="cont">${html}</main>
       <footer class="remate">
         <div class="remate-fin">
-          <span class="porx"><span class="p1">Por</span><span class="ln"></span><span class="p2">regenerativo</span></span>
-          <span class="g c">No intervenimos, regeneramos.</span>
-          <span class="g d">© ${new Date().getFullYear()} regenerativo</span>
+          <span class="porx"><span class="p1">Por</span><span class="ln"></span><span class="p2">regenerativo</span><span class="g" style="margin-left:.6em">© 2020</span></span>
         </div>
       </footer>
     </div>
