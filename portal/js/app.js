@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=79';
-import * as M from './modulos.js?v=79';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=79';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=79';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=79';
+import * as D from './datos.js?v=80';
+import * as M from './modulos.js?v=80';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=80';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=80';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=80';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -657,7 +657,7 @@ async function despegarYAbrir(p) {
   const codigo = await D.despegarPropuesta(p.id);
   const e = await D.encargo(codigo);
   if (!D.MODO_DEMO) {
-    try { const r2 = await D.onedrive('despegar', { encargo_id: e.id }); alert(`Encargo creado.\nCarpeta en OneDrive: ${r2.carpeta} (estructura REG_TEM DOCUMENTAL)${r2.copiados?.length ? '\nCopia de la propuesta en LEGALES/00 PROPUESTA: ' + r2.copiados.join(', ') : ''}${r2.enviados?.carpeta ? '\nCopia para el cliente en ' + r2.enviados.carpeta + (r2.enviados.archivo ? ': ' + r2.enviados.archivo : '') : ''}`); }
+    try { const r2 = await D.onedrive('despegar', { encargo_id: e.id }); alert(`Encargo creado.\nCarpeta en OneDrive: ${r2.carpeta} (estructura REG_TEM DOCUMENTAL)${r2.legales?.length ? '\nCopia en LEGALES/00 PROPUESTA: ' + r2.legales.join(', ') : ''}${r2.enviados?.carpeta ? '\nCopia para el cliente en ' + r2.enviados.carpeta + (r2.enviados.archivo ? ': ' + r2.enviados.archivo : '') : ''}`); }
     catch (e2) { alert('El encargo se creó, pero no se pudo crear la carpeta en OneDrive: ' + msg(e2)); }
   }
   location.hash = `#/${e ? D.slugEncargo(e) : codigo}`;

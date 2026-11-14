@@ -3,7 +3,7 @@
 // POST {accion}         → solo administración:
 //   'url'      → dirección para autorizar la conexión
 //   'estado'   → si está conectado
-//   'despegar' → {encargo_id}: crea "REG/26  I  NOMBRE" desde la plantilla; copia la propuesta a LEGALES/00 PROPUESTA y su PDF a DOC _ ENV/AAAA MM DD _ PROPUESTA ECONÓMICA
+//   'despegar' → {encargo_id}: crea "REG/26  I  NOMBRE" desde la plantilla; copia Word+PDF de la propuesta a LEGALES/00 PROPUESTA y solo el PDF a DOC _ ENV/AAAA MM DD _ PROPUESTA ECONÓMICA
 //   'subir'    → {encargo_id, carpeta, nombre, base64}: guarda un archivo en la carpeta del encargo
 //   'propuesta'→ {propuesta_id}: crea la carpeta de la propuesta "SCREG_26xxx_NOMBRE" en ZL_REG_PROPUESTAS
 //   'subir_propuesta' → {propuesta_id, nombre, base64}: guarda el Word de la propuesta en su carpeta (y su ruta en la propuesta)
@@ -104,54 +104,71 @@ async function despegar(at: string, encargoId: string) {
   let estructura = ESTRUCTURA;
   try { const p = await carpetasPlantilla(at); if (p.length) estructura = p; } catch (_) { /* si no se lee la plantilla, se usa la lista fija */ }
   for (const sub of estructura) await asegurarCarpeta(at, `${base}/${sub}`);
-  // Copia (no mueve) la propuesta aprobada de ZL_REG_PROPUESTAS a LEGALES/00 PROPUESTA: el original queda en preliminares
-  let copiados: string[] = [];
-  try {
-    const hijos = await graph(at, `/me/drive/root:/${enc(PROPUESTAS)}:/children?$top=200&$select=id,name`);
-    const destino = await graph(at, `/me/drive/root:/${enc(base + "/" + CARPETA_PROPUESTA)}`);
-    for (const h of hijos.value.filter((x: any) => x.name.toUpperCase().startsWith(e.codigo.toUpperCase()))) {
-      await graph(at, `/me/drive/items/${h.id}/copy?@microsoft.graph.conflictBehavior=replace`, { method: "POST", body: JSON.stringify({ parentReference: { id: destino.id }, name: h.name }) });
-      copiados.push(h.name);
-    }
-  } catch (_) { /* si no hay propuesta en ZL, no es error */ }
   await admin.from("encargos").update({ onedrive_carpeta: base }).eq("id", e.id);
-  let enviados: any = null;
-  try { enviados = await propuestaEnviados(at, e.id); } catch (_) { /* no detiene el despegue */ }
-  return { carpeta: base, copiados, enviados };
+  // La propuesta aprobada se COPIA (el original queda en ZL_REG_PROPUESTAS):
+  // LEGALES/00 PROPUESTA → Word y PDF sueltos · DOC _ ENV/AAAA MM DD _ PROPUESTA ECONÓMICA → solo el PDF
+  const legales: string[] = []; let enviados: any = null;
+  try {
+    const ap = await propuestaAprobada(at, e.id);
+    const dl = await asegurarCarpeta(at, `${base}/${CARPETA_PROPUESTA}`);
+    if (ap.word) legales.push(await copiarItem(at, ap.word, dl.id));
+    if (ap.pdf) legales.push(await copiarItem(at, ap.pdf, dl.id));
+    else if (ap.word) { const n = await pdfDesdeWord(at, ap.word, dl.id); if (n) legales.push(n); }
+    enviados = await propuestaEnviados(at, e.id, ap);
+  } catch (_) { /* no detiene el despegue */ }
+  return { carpeta: base, legales, enviados };
 }
 
-// Al despegar: DOC _ ENV/"AAAA MM DD _ PROPUESTA ECONÓMICA" con el PDF de la propuesta aprobada (fecha de envío de la propuesta)
-async function propuestaEnviados(at: string, encargoId: string) {
-  const base = await baseEncargo(encargoId);
+// Word y PDF de la propuesta aprobada (carpeta de la propuesta en ZL_REG_PROPUESTAS o donde indique archivo_ruta)
+async function propuestaAprobada(at: string, encargoId: string) {
+  const { data: e } = await admin.from("encargos").select("codigo").eq("id", encargoId).single();
   const { data: p } = await admin.from("propuestas").select("fecha_envio,archivo_ruta").eq("encargo_id", encargoId).maybeSingle();
-  const fecha = String(p?.fecha_envio || new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })).slice(0, 10).replaceAll("-", " ");
+  const archivos: any[] = [];
+  const leer = async (ruta: string) => {
+    for (const h of await hijos(at, ruta)) {
+      if (h.file) archivos.push(h);
+      else if (h.folder) for (const x of await hijos(at, `${ruta}/${h.name}`)) if (x.file) archivos.push(x);
+    }
+  };
+  if (p?.archivo_ruta) { try { await leer(p.archivo_ruta.split("/").slice(0, -1).join("/")); } catch (_) { /* ruta vieja */ } }
+  if (!archivos.length && e?.codigo) {
+    for (const h of await hijos(at, PROPUESTAS)) {
+      if (!h.name.toUpperCase().startsWith(e.codigo.toUpperCase())) continue;
+      if (h.file) archivos.push(h); else await leer(`${PROPUESTAS}/${h.name}`);
+    }
+  }
+  const rec = (l: any[]) => l.sort((a, b) => (b.lastModifiedDateTime || "").localeCompare(a.lastModifiedDateTime || ""))[0];
+  const mejor = (l: any[]) => rec(l.filter((x) => /SCREG_|PROPUESTA/i.test(x.name))) || rec(l);
+  return {
+    fecha: p?.fecha_envio as string | null,
+    pdf: mejor(archivos.filter((x) => /\.pdf$/i.test(x.name))),
+    word: mejor(archivos.filter((x) => /\.docx?$/i.test(x.name))),
+  };
+}
+async function copiarItem(at: string, item: any, destinoId: string) {
+  await graph(at, `/me/drive/items/${item.id}/copy?@microsoft.graph.conflictBehavior=replace`, { method: "POST", body: JSON.stringify({ parentReference: { id: destinoId }, name: item.name }) });
+  return item.name as string;
+}
+async function pdfDesdeWord(at: string, word: any, destinoId: string) {
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${word.id}/content?format=pdf`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!r.ok) return null;
+  const nombre = word.name.replace(/\.docx?$/i, ".pdf");
+  const u = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${destinoId}:/${encodeURIComponent(nombre)}:/content?@microsoft.graph.conflictBehavior=replace`, {
+    method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/pdf" }, body: await r.arrayBuffer(),
+  });
+  return u.ok ? nombre : null;
+}
+// DOC _ ENV/"AAAA MM DD _ PROPUESTA ECONÓMICA" (fecha de envío de la propuesta) con solo el PDF aprobado
+async function propuestaEnviados(at: string, encargoId: string, ap?: Awaited<ReturnType<typeof propuestaAprobada>>) {
+  ap = ap || await propuestaAprobada(at, encargoId);
+  const base = await baseEncargo(encargoId);
+  const fecha = String(ap.fecha || new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })).slice(0, 10).replaceAll("-", " ");
   const env = (await primeraCarpeta(at, base, CARPETAS_CLIENTE)) || "DOC _ ENV";
   await asegurarCarpeta(at, `${base}/${env}`);
   const nombre = `${fecha} _ PROPUESTA ECONÓMICA`;
   const destino = await asegurarCarpeta(at, `${base}/${env}/${nombre}`);
-  const origen = p?.archivo_ruta ? p.archivo_ruta.split("/").slice(0, -1).join("/") : `${base}/${CARPETA_PROPUESTA}`;
-  const archivos: any[] = [];
-  for (const h of await hijos(at, origen)) {
-    if (h.file) archivos.push(h);
-    else if (h.folder) for (const x of await hijos(at, `${origen}/${h.name}`)) if (x.file) archivos.push(x);
-  }
-  const reciente = (l: any[]) => l.sort((a, b) => (b.lastModifiedDateTime || "").localeCompare(a.lastModifiedDateTime || ""))[0];
-  const pdfs = archivos.filter((x) => /\.pdf$/i.test(x.name));
-  const pdf = reciente(pdfs.filter((x) => /SCREG_|PROPUESTA/i.test(x.name))) || reciente(pdfs);
-  if (pdf) {
-    await graph(at, `/me/drive/items/${pdf.id}/copy?@microsoft.graph.conflictBehavior=replace`, { method: "POST", body: JSON.stringify({ parentReference: { id: destino.id }, name: pdf.name }) });
-    return { carpeta: `${env}/${nombre}`, archivo: pdf.name };
-  }
-  // Sin PDF: se convierte el Word más reciente de la propuesta
-  const word = reciente(archivos.filter((x) => /\.docx?$/i.test(x.name)));
-  if (!word) return { carpeta: `${env}/${nombre}`, archivo: null };
-  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${word.id}/content?format=pdf`, { headers: { Authorization: `Bearer ${at}` } });
-  if (!r.ok) return { carpeta: `${env}/${nombre}`, archivo: null };
-  const pdfNombre = word.name.replace(/\.docx?$/i, ".pdf");
-  const u = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${destino.id}:/${encodeURIComponent(pdfNombre)}:/content?@microsoft.graph.conflictBehavior=replace`, {
-    method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/pdf" }, body: await r.arrayBuffer(),
-  });
-  return { carpeta: `${env}/${nombre}`, archivo: u.ok ? pdfNombre : null };
+  const archivo = ap.pdf ? await copiarItem(at, ap.pdf, destino.id) : ap.word ? await pdfDesdeWord(at, ap.word, destino.id) : null;
+  return { carpeta: `${env}/${nombre}`, archivo };
 }
 
 async function carpetaPropuesta(at: string, propuestaId: string) {
