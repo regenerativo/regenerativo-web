@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=52';
-import * as M from './modulos.js?v=52';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=52';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=52';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=52';
+import * as D from './datos.js?v=53';
+import * as M from './modulos.js?v=53';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=53';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=53';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=53';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -560,7 +560,9 @@ async function vistaEncargos(s) {
       (!q || [e.nombre, e.codigo, e.cliente?.nombre].join(' ').toLowerCase().includes(q)));
     $('#tabla').innerHTML = f.length ? `<div class="lv-enc-grid">${f.map((e, i) => {
       const t = Math.round((e.tiempo || 0) * 100), lugar = e.cliente?.ciudad || e.ciudad || '';
+      const cov = [1, 2, 3, 5, 6, 7][[...String(e.id || e.nombre)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
       return `<a class="lv-card lv-enc ${semaforo(e)}" href="#/${D.slugEncargo(e)}" style="--i:${i}">
+        <div class="lv-enc-cov" aria-hidden="true"><img src="/assets/burbuja-b${cov}-max.webp" alt="" loading="lazy" decoding="async"></div>
         <div class="lv-enc-cab">${chip(e)}${e.dudas ? `<span class="lv-chip duda" title="Comentarios del cliente sin resolver"><i></i>${e.dudas} sin resolver</span>` : ''}<span class="lv-flecha">${ico('ver')}</span></div>
         <h2>${esc(e.nombre)}</h2>
         <p class="lv-enc-sub">${lugar ? esc(lugar) + ' · ' : ''}<span class="lv-fe-et">Inicio</span> ${e.inicio ? fecha(e.inicio) : 'Sin fecha'}</p>
@@ -1475,3 +1477,30 @@ async function vistaBasePrecios(s, pestana) {
   marco(s, { titulo: 'Base de precios', eyebrow: 'Común a todos los encargos', ruta: 'Portal · común a todos los encargos', activo: 'base', html: v.html });
   if (v.montar) v.montar(ir);
 }
+
+// Títulos que aparecen palabra por palabra (mismo gesto de regenerativo.co)
+(() => {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const partir = () => document.querySelectorAll('h1:not([data-w])').forEach(h => {
+    h.dataset.w = '1';
+    if (h.querySelector('img,svg,input,a,button')) return;
+    let n = 0;
+    const rec = nodo => [...nodo.childNodes].forEach(c => {
+      if (c.nodeType === 3) {
+        const partes = c.textContent.split(/(\s+)/);
+        const fr = document.createDocumentFragment();
+        partes.forEach(p => {
+          if (!p) return;
+          if (/^\s+$/.test(p)) { fr.appendChild(document.createTextNode(p)); return; }
+          const w = document.createElement('span'); w.className = 'lv-w';
+          const i = document.createElement('span'); i.style.setProperty('--wd', (n++ * 70) + 'ms'); i.textContent = p;
+          w.appendChild(i); fr.appendChild(w);
+        });
+        c.replaceWith(fr);
+      } else if (c.nodeType === 1 && c.tagName !== 'BR') rec(c);
+    });
+    rec(h);
+  });
+  new MutationObserver(partir).observe(document.body, { childList: true, subtree: true });
+  partir();
+})();
