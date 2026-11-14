@@ -38,8 +38,8 @@ if(pub&&d.getElementById('hero')){
 if(pub&&d.getElementById('hero')){
   /* lema que se escribe solo */
   var lem=[].slice.call(d.querySelectorAll('#heroContent p')).filter(function(p){return /NO INTERVENIMOS/.test(p.textContent)})[0];
-  if(lem&&!rm){var FR=['LEEMOS EL LUGAR.','DISEÑAMOS DESDE LA NATURALEZA.','NO INTERVENIMOS, REGENERAMOS.'],fi=0,ci=0,borra=false;lem.setAttribute('aria-label','No intervenimos, regeneramos.');lem.innerHTML='<span class="v-type" aria-hidden="true"></span>';var ty=lem.firstChild;
-   (function tick(){var f=FR[fi];if(!borra){ci++;ty.textContent=f.slice(0,ci);if(ci===f.length){borra=true;return setTimeout(tick,fi===FR.length-1?4200:1600)}}else{ci--;ty.textContent=f.slice(0,ci);if(ci===0){borra=false;fi=(fi+1)%FR.length}}setTimeout(tick,borra?22:55)})()}
+  if(lem&&!rm){var FR=['NO INTERVENIMOS, REGENERAMOS.','LEEMOS EL LUGAR.','DISEÑAMOS DESDE LA NATURALEZA.'],fi=0;lem.setAttribute('aria-label','No intervenimos, regeneramos.');lem.innerHTML='<span class="v-rot" aria-hidden="true">'+FR[0]+'</span>';var ro=lem.firstChild;
+   setInterval(function(){ro.classList.add('sale');setTimeout(function(){fi=(fi+1)%FR.length;ro.textContent=FR[fi];ro.classList.remove('sale');ro.classList.add('entra');void ro.offsetWidth;ro.classList.remove('entra')},450)},3200)}
 
   /* manifiesto que se enciende con el scroll */
   var man=d.createElement('section');man.className='v-man';
