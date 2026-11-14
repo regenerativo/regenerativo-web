@@ -95,11 +95,6 @@ var pmov=function(){var vh=innerHeight;par.forEach(function(p){var r=p.getBoundi
 addEventListener('scroll',function(){requestAnimationFrame(pmov)},{passive:true});pmov();
 
 if(!fino)return;
-/* cursor “Ver encargo” */
-var cur=d.createElement('div');cur.className='v-cur';d.body.appendChild(cur);var cx=0,cy=0,tx=0,ty=0,on=null;
-(function loop(){cx+=(tx-cx)*.2;cy+=(ty-cy)*.2;cur.style.left=cx+'px';cur.style.top=cy+'px';requestAnimationFrame(loop)})();
-addEventListener('mousemove',function(e){tx=e.clientX;ty=e.clientY;var a=e.target.closest&&e.target.closest('a');var ok=a&&a.querySelector('img')&&/\/encargos/.test(a.getAttribute('href')||'');if(ok){cur.textContent=a.dataset.ver||'Ver encargo';if(!on){cx=tx;cy=ty}cur.classList.add('on');on=a}else if(on){cur.classList.remove('on');on=null}},{passive:true});
-
 /* índice: vista previa flotante */
 var pv=d.createElement('div');pv.className='v-prev';pv.innerHTML='<img alt="">';d.body.appendChild(pv);var pi=pv.firstChild;
 d.querySelectorAll('ol a[href^="#"], .v-srv a').forEach(function(a){var src=a.dataset.img;if(!src){var art=d.querySelector(a.getAttribute('href'));var im=art&&art.querySelector('img');if(!im)return;src=im.currentSrc||im.src}
