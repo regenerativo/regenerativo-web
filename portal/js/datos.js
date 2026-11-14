@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=87';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=88';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -311,7 +311,14 @@ export async function actualizarPropuesta(id, cambios) {
 /** Propuesta (cotización) de la que nació el encargo: ahí vive la información del proyecto. */
 export async function propuestaDeEncargo(encargoId) {
   if (MODO_DEMO) { const d = leer(); return (d.propuestas || []).find(p => p.encargo_id === encargoId) || null; }
-  try { const { data } = await (await cliente()).from('propuestas').select('*').eq('encargo_id', encargoId).maybeSingle(); return data || null; }
+  try {
+    const c = await cliente();
+    const { data } = await c.from('propuestas').select('*').eq('encargo_id', encargoId).maybeSingle();
+    if (data) return data;
+    // El cliente no lee la tabla de propuestas: recibe solo los datos del proyecto (sin código, honorarios ni notas)
+    const { data: d2 } = await c.rpc('propuesta_de_mi_encargo', { p_encargo: encargoId });
+    return (Array.isArray(d2) ? d2[0] : d2) || null;
+  }
   catch (e) { return null; }
 }
 
