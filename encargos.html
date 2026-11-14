@@ -190,6 +190,6 @@ const sb=[...document.querySelectorAll('[data-s]')];
 sb.forEach(b=>b.addEventListener('click',()=>{const s=b.dataset.s;sb.forEach(x=>{const on=x===b;x.setAttribute('aria-pressed',on);x.style.fontWeight=on?'500':'300'});
  document.querySelectorAll('[data-sector]').forEach(c=>c.style.display=(s==='Todos'||c.dataset.sector===s)?'flex':'none');}));
 </script>
-<script src="/assets/vivo.js?v=8" defer></script>
+<script src="/assets/vivo.js?v=9" defer></script>
 </body>
 </html>

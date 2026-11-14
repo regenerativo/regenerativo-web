@@ -51,15 +51,6 @@ if(pub&&d.getElementById('hero')){
   addEventListener('scroll',function(){requestAnimationFrame(enc)},{passive:true});enc();
 
 
-  /* imagen que se expande con el scroll (Apple) */
-  var zo=d.createElement('section');zo.className='v-zoom';zo.setAttribute('aria-label','Reforma Ciento dos');
-  zo.innerHTML='<div class="v-zoom-pin"><div class="v-zoom-fr"><img src="/assets/cd-portada-cocina.jpg" alt="Reforma Ciento dos: cocina con isla verde y madera clara" decoding="async"></div><div class="v-zoom-tx"><b>Reforma Ciento dos</b><span>Residencial · Bogotá · 2026</span><a href="/encargos/ciento-dos">Ver encargo</a></div></div>';
-  man.parentNode.insertBefore(zo,man.nextSibling);
-  var zf=zo.querySelector('.v-zoom-fr'),zt=zo.querySelector('.v-zoom-tx');
-  var zoom=function(){var r=zo.getBoundingClientRect(),tot=zo.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;var e=Math.min(1,p/.75);e=e*e*(3-2*e);
-   zf.style.setProperty('--zi',(18*(1-e)).toFixed(2)+'%');zf.style.setProperty('--zx',((innerWidth<760?6:22)*(1-e)).toFixed(2)+'%');zf.style.setProperty('--zr',(28*(1-e)).toFixed(1)+'px');zf.style.setProperty('--zs',(1.25-.25*e).toFixed(3));
-   zt.style.setProperty('--zo',Math.max(0,Math.min(1,(p-.55)/.25)).toFixed(3))};
-  addEventListener('scroll',function(){requestAnimationFrame(zoom)},{passive:true});addEventListener('resize',zoom);zoom();
   /* cifras que cuentan */
   var num=d.createElement('section');num.className='v-num';
   var NUM=[[4,'Servicios'],[6,'Encargos publicados'],[3,'Sectores: residencial, comercial y oficinas'],[2023,'Primer encargo publicado']];
