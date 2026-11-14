@@ -177,3 +177,4 @@ a:has(svg) svg *{transition:stroke .35s ease,fill .35s ease}
 @media (max-width:760px){.linea-bajar{height:5px;width:112px}}
 /* nada se subraya al pasar el cursor: solo cambia el tono */
 a:hover,a:focus-visible{text-decoration:none!important}
+@media (max-width:760px){#goDown{bottom:calc(96px + env(safe-area-inset-bottom,0px))!important}}
