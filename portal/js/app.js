@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=53';
-import * as M from './modulos.js?v=53';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=53';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=53';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=53';
+import * as D from './datos.js?v=54';
+import * as M from './modulos.js?v=54';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=54';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=54';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=54';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -240,11 +240,11 @@ let islaAntes = null;
 function marcoAcceso(form) {
   return `<div class="lv-acceso">
     <section class="lv-acc-hero">
-      <a class="lv-acc-volver" href="https://regenerativo.co/">${ico('atras')}Volver a regenerativo.co</a>
+      <a class="lv-acc-volver" href="https://regenerativo.co/"><span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Volver a regenerativo.co</a>
       <a href="https://regenerativo.co/" aria-label="Ir a regenerativo.co"><img class="lv-acc-simbolo" src="/assets/33b2a586a276.png" alt=""></a>
       <span class="lv-ceja">Portal de encargos</span>
       <h1>No intervenimos,<br>regeneramos.</h1>
-      <p class="lv-acc-cita">Génesis 1.27</p>
+      <p class="lv-acc-cita">Génesis 1.27 · Eclesiastés 4.9-12</p>
       <ul class="lv-acc-puntos"><li><i></i>Propuestas, contratos y documentos</li><li><i></i>Avance y cronograma del encargo</li><li><i></i>Conversación directa con el equipo</li></ul>
     </section>
     ${form}
