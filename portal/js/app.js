@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=90';
-import * as M from './modulos.js?v=90';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=90';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=90';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=90';
+import * as D from './datos.js?v=91';
+import * as M from './modulos.js?v=91';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=91';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=91';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=91';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -238,6 +238,7 @@ let islaAntes = null;
 // ---------------- Acceso ----------------
 // Marco de las pantallas de ingreso: lema a la izquierda y tarjeta de vidrio a la derecha, sobre las burbujas de regenerativo
 function marcoAcceso(form) {
+  document.body.classList.add('ingreso');  // siempre con el estilo de ingreso (burbujas, vidrio, botones), venga de donde venga
   return `<div class="lv-acceso">
     <section class="lv-acc-hero">
       <a class="lv-acc-volver" href="https://regenerativo.co/"><span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Volver a regenerativo.co</a>
