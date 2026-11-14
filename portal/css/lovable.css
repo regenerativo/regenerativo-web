@@ -819,3 +819,25 @@ html body .lv input[type=search]:focus~svg,html body .lv :has(>input:focus)>svg{
 /* + en botones principales: gira suave */
 @media (hover:hover){html body .lv .btn:hover .mas,html body .lv .btn:hover svg.ico-mas{transform:rotate(90deg)}}
 html body .lv .btn .mas{display:inline-block;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+/* Tarjetas de encargo compactas (práctico en teléfono) */
+html body .lv .lv-enc{padding:16px 18px!important}
+html body .lv .lv-enc-cov{margin:-16px -18px 0;height:78px}
+html body .lv .lv-enc-cov+.lv-enc-cab{left:12px;right:12px;top:10px}
+html body .lv .lv-enc h2{font-size:clamp(19px,1.6vw,22px)!important;font-weight:300;line-height:1.15;margin-top:14px!important}
+html body .lv .lv-enc-sub{font-size:13px;margin-top:4px}
+html body .lv .lv-enc-av{margin-top:14px;font-size:12.5px}
+html body .lv .lv-enc-av b{font-size:15px}
+html body .lv .lv-enc .lv-pill.grande{height:6px}
+html body .lv .lv-enc-pie{margin-top:12px;padding-top:10px}
+html body .lv .lv-enc-cli,html body .lv .lv-enc-fin{font-size:12.5px}
+html body .lv .lv-enc-fin small{font-size:11px}
+html body .lv .lv-enc .lv-ava{width:28px;height:28px;font-size:10.5px}
+html body .lv .lv-enc-grid{gap:14px}
+@media (max-width:560px){
+ html body .lv .lv-enc{padding:14px 16px!important}
+ html body .lv .lv-enc-cov{margin:-14px -16px 0;height:58px}
+ html body .lv .lv-enc h2{font-size:19px!important;margin-top:12px!important}
+ html body .lv .lv-enc-grid{gap:12px}
+}
+@media (max-width:560px){html body .lv .lv-enc-cov{height:46px}}
+html body .lv .lv-tabs-in>a span,html body .lv .lv-tabs-in>button span{font-size:10.5px!important;letter-spacing:-.015em;overflow:visible;text-overflow:clip}
