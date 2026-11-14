@@ -733,3 +733,18 @@ body.ingreso #raiz.gl{background:linear-gradient(180deg,rgba(255,255,255,.42) 0,
 body.ingreso .lv-acc-card{background:rgba(255,255,255,.62)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6)!important;backdrop-filter:blur(22px) saturate(1.6)!important;border:1px solid rgba(255,255,255,.75)!important}
 body.ingreso .lv-acc-hero .lv-ceja{color:#1E221D!important;opacity:1!important}
 .lv-acc-simbolo,html.mov .lv-acc-simbolo{animation:none!important;transform:none!important}html.mov .lv-acc-hero>a:has(.lv-acc-simbolo){animation:none!important}
+/* Redes y contacto: mismo efecto que regenerativo.co (salto suave y cambio a gris) */
+a[href*="instagram.com"] svg,a[href^="mailto:"] svg,a[href*="wa.me"] svg,.lv-acc-volver svg{transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+a[href*="instagram.com"] svg *,a[href^="mailto:"] svg *,a[href*="wa.me"] svg *{transition:stroke .35s ease,fill .35s ease}
+@media (hover:hover){
+ a[href*="instagram.com"]:hover svg,a[href^="mailto:"]:hover svg,a[href*="wa.me"]:hover svg{transform:translateY(-3px) scale(1.08)}
+ a[href*="instagram.com"]:hover svg[stroke],a[href^="mailto:"]:hover svg[stroke],a[href*="wa.me"]:hover svg[stroke],
+ a[href*="instagram.com"]:hover svg [stroke]:not([stroke="none"]),a[href^="mailto:"]:hover svg [stroke]:not([stroke="none"]),a[href*="wa.me"]:hover svg [stroke]:not([stroke="none"]){stroke:#999999}
+ a[href*="instagram.com"]:hover svg [fill]:not([fill="none"]),a[href^="mailto:"]:hover svg [fill]:not([fill="none"]),a[href*="wa.me"]:hover svg [fill]:not([fill="none"]){fill:#999999}
+}
+/* cursor: círculo gris translúcido, igual que la web */
+@media (hover:hover) and (pointer:fine){
+ html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='7.2' fill='%23999999' fill-opacity='.42' stroke='%23ffffff' stroke-opacity='.7' stroke-width='1'/%3E%3C/svg%3E") 10 10,auto}
+ a,button,[role=button],label,summary,select{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Ccircle cx='13' cy='13' r='10.4' fill='%23999999' fill-opacity='.28' stroke='%23ffffff' stroke-opacity='.8' stroke-width='1'/%3E%3C/svg%3E") 13 13,pointer!important}
+ input,textarea,[contenteditable]{cursor:text!important}
+}
