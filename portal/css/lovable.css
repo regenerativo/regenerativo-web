@@ -727,3 +727,8 @@ html body .lv .lv-web:hover{background:rgba(255,255,255,.7)}html body .lv .lv-we
 .lv-acc-h1 img{display:inline-block;height:.5em;width:auto;vertical-align:baseline;margin-left:.14em}
 @media (max-width:560px){.lv-acc-hero .lv-acc-h1{font-size:34px!important}}
 @media (prefers-reduced-motion:reduce){.lv-acc-frase{transition:none}}
+/* Acceso: fondo como regenerativo.co (About): burbujas vivas detrás de un vidrio esmerilado crema */
+body.ingreso .bgfix::after{background:none!important}
+body.ingreso #raiz.gl{background:linear-gradient(180deg,rgba(255,255,255,.42) 0,rgba(255,255,255,.58) 55%,rgba(255,255,255,.7) 100%)!important;-webkit-backdrop-filter:blur(28px) saturate(1.8) brightness(1.04)!important;backdrop-filter:blur(28px) saturate(1.8) brightness(1.04)!important;min-height:100vh;min-height:100svh}
+body.ingreso .lv-acc-card{background:rgba(255,255,255,.62)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6)!important;backdrop-filter:blur(22px) saturate(1.6)!important;border:1px solid rgba(255,255,255,.75)!important}
+body.ingreso .lv-acc-hero .lv-ceja{color:#1E221D!important;opacity:1!important}
