@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=49';
-import * as M from './modulos.js?v=49';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=49';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=49';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=49';
+import * as D from './datos.js?v=50';
+import * as M from './modulos.js?v=50';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=50';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=50';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=50';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -192,13 +192,24 @@ function armarTabs() {
   const prim = com ? [...enl.filter(a => a !== com).slice(0, 3), com] : enl.slice(0, 4);
   const resto = enl.filter(a => !prim.includes(a));
   const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
-  tabs.innerHTML = `<div class="lv-tabs-in">${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Comentarios$/, 'Dudas')}</span></a>`).join('')}
-    <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
+  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Comentarios$/, 'Dudas')}</span></a>`).join('')}
+    <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu im-mas" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
   const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
   $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
   velo.onclick = cerrar;
   lado.querySelectorAll('a').forEach(a => a.addEventListener('click', cerrar));
+  // Burbuja de vidrio que se desliza a la pestaña tocada (como la barra de Apple) y gesto del ícono al tocar
+  const caja = tabs.querySelector('.lv-tabs-in'), ind = caja.querySelector('.lv-tab-ind');
+  const ir_ = (el, animar) => { if (!el) { ind.style.opacity = 0; return; }
+    const d = { x: el.offsetLeft, w: el.offsetWidth };
+    if (!animar) { ind.style.transition = 'none'; ind.style.transform = `translateX(${(tabAntes || d).x}px)`; ind.style.width = (tabAntes || d).w + 'px'; void ind.offsetWidth; ind.style.transition = ''; }
+    ind.style.opacity = 1; requestAnimationFrame(() => { ind.style.transform = `translateX(${d.x}px)`; ind.style.width = d.w + 'px'; }); tabAntes = d; };
+  ir_(caja.querySelector(':scope > .activo'), false);
+  caja.querySelectorAll(':scope > a, :scope > button').forEach(el => {
+    el.addEventListener('pointerdown', () => { el.classList.remove('toca'); void el.offsetWidth; el.classList.add('toca'); if (el.tagName === 'A') ir_(el, true); });
+  });
 }
+let tabAntes = null;
 
 // Indicador del menú que se desliza de la opción anterior a la nueva
 let indAntes = null;
