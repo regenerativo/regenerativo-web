@@ -1,7 +1,7 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=69';
-import { cop, fecha, iso } from './formato.js?v=69';
-import { btnIco } from './iconos.js?v=69';
+import * as D from './datos.js?v=70';
+import { cop, fecha, iso } from './formato.js?v=70';
+import { btnIco } from './iconos.js?v=70';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -102,7 +102,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         </div>
         <div class="mon-cols">${colsIng.map(c => {
           const hI = Math.max(c.recibido ? 8 : 0, c.recibido / maxCat * H);
-          return `<button class="mon-col ing" data-cat="${c.id}" data-sub="${esc(c.sub)}" data-tipo="ingreso" title="Agregar ingreso en ${esc(c.nombre)}">
+          return `<button class="mon-col ing" data-cat="${c.id}" data-sub="${esc(c.sub)}" data-tipo="ingreso" title="Ver ingresos de ${esc(c.nombre)}">
             <div class="mon-barra" style="height:${H}px"><div class="mon-gasto mon-ingreso" style="height:${hI}px"></div></div>
             <div class="mon-ico">${icoCat(c.nombre)}</div>
             <div class="mon-val">${compacto(c.recibido)}</div>
@@ -111,7 +111,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         }).join('')}${colsIng.length ? '<span class="mon-sep" aria-hidden="true"></span>' : ''}${catsGasto.map(c => {
           const p = Number(c.presupuesto_mensual || 0), exc = p && c.gastado > p;
           const hP = p / maxCat * H, hG = Math.max(c.gastado ? 8 : 0, c.gastado / maxCat * H);
-          return `<button class="mon-col" data-cat="${c.id}" title="Agregar gasto en ${esc(c.nombre)}">
+          return `<button class="mon-col" data-cat="${c.id}" title="Ver gastos de ${esc(c.nombre)}">
             <div class="mon-barra" style="height:${H}px">${p ? `<div class="mon-pres" style="height:${hP}px"></div>` : ''}<div class="mon-gasto ${exc ? 'exc' : ''}" style="height:${hG}px"></div></div>
             <div class="mon-ico">${icoCat(c.nombre)}</div>
             <div class="mon-val">${compacto(c.gastado)}</div>
@@ -177,7 +177,24 @@ export async function vistaFinanzas(mesSel, listaSel) {
     });
     const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
     $('#editar-pres').onclick = ev => { ev.preventDefault(); modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar); };
-    document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => modalMov({ tipo: x.dataset.tipo || 'gasto', fecha: iso(new Date()), categoria_id: x.dataset.cat, ...(x.dataset.sub ? { subcategoria: x.dataset.sub } : {}), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
+    document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => {
+      const tipo = x.dataset.tipo || 'gasto', sub = x.dataset.sub || '', cat = cats.find(c => c.id === x.dataset.cat);
+      const nuevo = { tipo, fecha: iso(new Date()), categoria_id: x.dataset.cat, ...(sub ? { subcategoria: sub } : {}), encargo_id: ['todo', 'general'].includes(lista) ? null : lista };
+      const subs = (cat?.subcategorias || []);
+      const lst = delMes.filter(m => m.tipo === tipo && m.categoria_id === x.dataset.cat && (tipo !== 'ingreso' || !subs.length || (sub ? m.subcategoria === sub : !subs.slice(1).includes(m.subcategoria))))
+        .sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+      const tot = lst.reduce((t, m) => t + Number(m.valor), 0);
+      const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
+      fondo.innerHTML = `<div class="modal modal-cat"><div class="mc-cab"><span class="mc-ico ${tipo}">${icoCat(sub || cat?.nombre)}</span><div><span class="lv-ceja">${tipo === 'ingreso' ? 'Ingresos' : 'Gastos'} · ${mesTxt}</span><h2>${esc(sub || cat?.nombre || '')}</h2></div><b class="mc-tot ${tipo}">${tipo === 'ingreso' ? '+' : '−'} ${cop(tot)}</b></div>
+        ${lst.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Fecha</th><th>Concepto</th><th class="col-opc">Encargo</th><th class="col-opc">Medio</th><th class="num">Valor</th></tr></thead><tbody>
+          ${lst.map(m => `<tr class="clic" data-ed="${m.id}"><td>${esc(m.fecha.split('-').reverse().join('/'))}</td><td>${esc(m.descripcion || subDe(m) || '—')}</td><td class="col-opc">${esc(encargos.find(e => e.id === m.encargo_id)?.nombre || 'General')}</td><td class="col-opc">${esc(m.medio || '—')}</td><td class="num">${cop(m.valor)}</td></tr>`).join('')}
+          </tbody></table></div>` : `<p class="sub">No hay ${tipo === 'ingreso' ? 'ingresos' : 'gastos'} en ${esc(sub || cat?.nombre || '')} este mes.</p>`}
+        <div class="pie-modal"><button type="button" class="btn sec" data-cerrar>Cerrar</button><button type="button" class="btn" data-agregar><span class="mas">+</span> ${tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</button></div></div>`;
+      document.body.appendChild(fondo);
+      fondo.onclick = ev => { if (ev.target === fondo || ev.target.closest('[data-cerrar]')) fondo.remove(); };
+      fondo.querySelector('[data-agregar]').onclick = () => { fondo.remove(); modalMov(nuevo, cats, encargos, recargar); };
+      fondo.querySelectorAll('[data-ed]').forEach(r => r.onclick = () => { fondo.remove(); modalMov(movs.find(m => m.id === r.dataset.ed), cats, encargos, recargar); });
+    });
     document.querySelectorAll('[data-pagado]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const e = encargos.find(x => x.id === b.dataset.pagado); b.disabled = true; await D.actualizarEncargo(e.id, { pagado_total: !e.pagado_total }); recargar(); });
     document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${mes}/${f.dataset.lista}`; scrollTo(0, 0); });
     $('#lista').onchange = ev => { location.hash = `#/finanzas/${mes}/${ev.target.value}`; };
@@ -218,7 +235,7 @@ export function modalMov(m, cats, encargos, recargar) {
       <div><label>Subcategoría</label><input name="subcategoria" list="subcats" value="${esc(m.subcategoria || '')}" placeholder="Suscripciones, Banco, Transporte…"><datalist id="subcats"></datalist></div>`}
       <div><label>Encargo</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select></div>
       <div class="ancho"><label>Concepto</label><input name="descripcion" value="${esc(m.descripcion || '')}" placeholder="${m.tipo === 'ingreso' ? 'Pago 50% al iniciar' : 'Taxi visita de obra'}"></div>
-      <div><label>Medio</label><input name="medio" value="${esc(m.medio || '')}" placeholder="Transferencia, efectivo, tarjeta…"></div>
+      <div><label>Medio de pago</label><input name="medio" list="medios" value="${esc(m.medio || '')}" placeholder="Transferencia, efectivo…"><datalist id="medios"><option value="Transferencia"><option value="Efectivo"><option value="Consignación"><option value="Tarjeta"><option value="Nequi"><option value="Daviplata"></datalist></div>
     </div>
     ${m.id ? `<div class="soportes"><h3>Soportes</h3>
       ${m.correo_texto || m.nota_correo || m.ref_correo ? `<div class="sop-correo"><span class="sub">Llegó por correo${m.medio ? ' · ' + esc(m.medio) : ''}</span>${esc(m.correo_texto || m.descripcion || '')}</div>` : ''}

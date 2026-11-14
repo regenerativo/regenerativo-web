@@ -868,3 +868,12 @@ html body .lv .folder-link .folder-ico svg{width:26px;height:26px}
 html body .lv .folder-link .folder-flecha{margin-left:auto;color:#999999;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
 @media (hover:hover){html body .lv .folder-link:hover{background:rgba(243,239,230,.95);color:#999999}html body .lv .folder-link:hover .folder-flecha{transform:translate(3px,-3px)}}
 @media (max-width:600px){html body .lv .datos-2c .dt-fechas,html body .lv .datos-2c .dd-fechas{grid-column:auto}}
+/* Finanzas: detalle por categoría (ingresos y gastos), como en MONAI */
+html body .modal.modal-cat{max-width:760px;width:min(760px,calc(100vw - 32px))}
+html body .modal-cat .mc-cab{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+html body .modal-cat .mc-cab h2{margin:2px 0 0;font-family:var(--t-titulo);font-weight:300;font-size:clamp(26px,3vw,34px);line-height:1.1}
+html body .modal-cat .mc-ico{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(122,46,46,.08);color:#7A2E2E;flex:none}
+html body .modal-cat .mc-ico.ingreso{background:rgba(0,117,143,.1);color:#00758F}
+html body .modal-cat .mc-tot{margin-left:auto;font-weight:500;font-size:17px;white-space:nowrap}
+html body .modal-cat .mc-tot.ingreso{color:#00758F}html body .modal-cat .mc-tot.gasto{color:#7A2E2E}
+html body .lv .mon-col{cursor:pointer}
