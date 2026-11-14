@@ -39,7 +39,7 @@ if(pub&&d.getElementById('hero')){
   /* lema que se escribe solo */
   var lem=[].slice.call(d.querySelectorAll('#heroContent p')).filter(function(p){return /NO INTERVENIMOS/.test(p.textContent)})[0];
   if(lem&&!rm){var FR=['NO INTERVENIMOS, REGENERAMOS.','LEEMOS EL LUGAR.','DISEÑAMOS DESDE LA NATURALEZA.'],fi=0;lem.setAttribute('aria-label','No intervenimos, regeneramos.');lem.innerHTML='<span class="v-rot" aria-hidden="true">'+FR[0]+'</span>';var ro=lem.firstChild;
-   setInterval(function(){ro.classList.add('sale');setTimeout(function(){fi=(fi+1)%FR.length;ro.textContent=FR[fi];ro.classList.remove('sale');ro.classList.add('entra');void ro.offsetWidth;ro.classList.remove('entra')},450)},3200)}
+   setInterval(function(){ro.classList.add('sale');setTimeout(function(){fi=(fi+1)%FR.length;ro.textContent=FR[fi];ro.classList.remove('sale')},1700)},6500)}
 
   /* manifiesto que se enciende con el scroll */
   var man=d.createElement('section');man.className='v-man';
