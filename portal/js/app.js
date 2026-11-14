@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=86';
-import * as M from './modulos.js?v=86';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=86';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=86';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=86';
+import * as D from './datos.js?v=87';
+import * as M from './modulos.js?v=87';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=87';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=87';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=87';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -279,7 +279,7 @@ function vistaAcceso() {
       e.preventDefault();
       const btn = $('#f .btn.full'), txt = btn.innerHTML; btn.disabled = true; btn.classList.add('ocupado'); btn.innerHTML = 'Ingresando…'; $('#aviso').textContent = '';
       try {
-        if (modo === 'cliente') await D.ingresarCliente($('#usuario').value, $('#clave').value);
+        if (modo === 'cliente' && !$('#usuario').value.includes('@')) await D.ingresarCliente($('#usuario').value, $('#clave').value);  // con correo (@) siempre entra como equipo
         else await D.ingresar($('#usuario').value.trim(), $('#clave').value);
         location.hash = '#/';
       } catch (err) { $('#aviso').textContent = msg(err); btn.disabled = false; btn.classList.remove('ocupado'); btn.innerHTML = txt; }
