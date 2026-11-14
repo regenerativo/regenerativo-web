@@ -732,3 +732,4 @@ body.ingreso .bgfix::after{background:none!important}
 body.ingreso #raiz.gl{background:linear-gradient(180deg,rgba(255,255,255,.42) 0,rgba(255,255,255,.58) 55%,rgba(255,255,255,.7) 100%)!important;-webkit-backdrop-filter:blur(28px) saturate(1.8) brightness(1.04)!important;backdrop-filter:blur(28px) saturate(1.8) brightness(1.04)!important;min-height:100vh;min-height:100svh}
 body.ingreso .lv-acc-card{background:rgba(255,255,255,.62)!important;-webkit-backdrop-filter:blur(22px) saturate(1.6)!important;backdrop-filter:blur(22px) saturate(1.6)!important;border:1px solid rgba(255,255,255,.75)!important}
 body.ingreso .lv-acc-hero .lv-ceja{color:#1E221D!important;opacity:1!important}
+.lv-acc-simbolo,html.mov .lv-acc-simbolo{animation:none!important;transform:none!important}html.mov .lv-acc-hero>a:has(.lv-acc-simbolo){animation:none!important}
