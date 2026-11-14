@@ -1,7 +1,7 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=50';
-import { cop, fecha, iso } from './formato.js?v=50';
-import { btnIco } from './iconos.js?v=50';
+import * as D from './datos.js?v=52';
+import { cop, fecha, iso } from './formato.js?v=52';
+import { btnIco } from './iconos.js?v=52';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -10,7 +10,25 @@ const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto'
 const mesDe = f => f.slice(0, 7);
 const compacto = n => n >= 1e6 ? (n / 1e6).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' M' : n >= 1e3 ? Math.round(n / 1e3) + ' mil' : String(Math.round(n));
 
-const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.icono || '')} ${esc(c.nombre)}</option>`).join('');
+// Íconos de línea por categoría (estilo The Noun Project), en vez de emojis
+const ICAT = {
+  ingreso: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  honorario: '<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.5-.8-1.4-1.2-2.5-1.2-1.5 0-2.6.8-2.6 2s1.1 1.6 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.1 0-2.1-.5-2.6-1.3M12 6.5V8M12 16v1.5"/>',
+  otros: '<path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="8.5"/>',
+  nomina: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
+  herramienta: '<path d="M14.5 5.5a4 4 0 0 0-5 5L4 16v4h4l5.5-5.5a4 4 0 0 0 5-5L16 12l-4-4z"/>',
+  transporte: '<path d="M4 14l2-5.2A2 2 0 0 1 7.9 7.5h8.2a2 2 0 0 1 1.9 1.3L20 14v3.5H4z"/><path d="M6.5 17.5V19M17.5 17.5V19M4 14h16"/><circle cx="8" cy="15.8" r=".6"/><circle cx="16" cy="15.8" r=".6"/>',
+  viatico: '<path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5c0 1.5 1 1.5 1 3M11.5 3.5c0 1.5 1 1.5 1 3"/>',
+  deuda: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10h18M7 14.5h4"/>',
+  suscripcion: '<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/>',
+  base: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="1.5"/>',
+};
+const claveCat = n => { n = (n || '').toLowerCase();
+  return /honorario/.test(n) && !/n[óo]mina/.test(n) ? 'honorario' : /otro.*ingreso|otros/.test(n) ? 'otros' : /ingreso/.test(n) ? 'ingreso' : /n[óo]mina|recurso|salari/.test(n) ? 'nomina'
+    : /herramienta/.test(n) ? 'herramienta' : /transporte/.test(n) ? 'transporte' : /vi[áa]tico|aliment/.test(n) ? 'viatico' : /deuda|banco|impuesto|cr[ée]dito/.test(n) ? 'deuda' : /suscrip/.test(n) ? 'suscripcion' : 'base'; };
+export const icoCat = n => `<svg class="ico-cat ic-${claveCat(n)}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICAT[claveCat(n)]}</svg>`;
+
+const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
 
 export async function vistaFinanzas(mesSel, listaSel) {
   const [cats, todos, encargos, docs, props] = await Promise.all([D.finCategorias(), D.finMovimientos(), D.encargos(), D.finDocumentosCobro(), D.finPropuestasEncargos().catch(() => [])]);
@@ -46,13 +64,20 @@ export async function vistaFinanzas(mesSel, listaSel) {
 
   const catsGasto = cats.filter(c => c.tipo === 'gasto' && c.id !== SALARIO).map(c => ({ ...c, gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
     .sort((x, y) => y.gastado - x.gastado);
+  // Columnas de ingresos: una por subcategoría de cada categoría de ingreso (Honorarios, Otros ingresos…)
+  const delIng = delMes.filter(x => x.tipo === 'ingreso');
+  const colsIng = cats.filter(c => c.tipo === 'ingreso').flatMap(c => {
+    const subs = (c.subcategorias || []).length ? c.subcategorias : [c.nombre];
+    const sinSub = delIng.filter(x => x.categoria_id === c.id && !subs.includes(x.subcategoria)).reduce((s, x) => s + Number(x.valor), 0);
+    return subs.map((sb, i) => ({ id: c.id, sub: sb === c.nombre ? '' : sb, nombre: sb, recibido: delIng.filter(x => x.categoria_id === c.id && x.subcategoria === sb).reduce((s, x) => s + Number(x.valor), 0) + (i === 0 ? sinSub : 0) }));
+  });
   const presTotal = catsGasto.reduce((s, c) => s + Number(c.presupuesto_mensual || 0), 0);
   const ejemplos = movs.some(x => x.ejemplo);
   const prev = new Date(a, m - 2, 1), next = new Date(a, m, 1);
   const k = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   const balance = ing - gas;
   const listas = [['todo', 'Todo regenerativo'], ['general', 'Gastos generales'], ...encargos.map(e => [e.id, e.nombre])];
-  const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))));
+  const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))), ...colsIng.map(c => c.recibido));
   const signo = x => x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : '';
   const H = 190;
   const subDe = x => x.subcategoria && x.subcategoria !== x.categoria?.nombre ? x.subcategoria : '';
@@ -74,24 +99,32 @@ export async function vistaFinanzas(mesSel, listaSel) {
             <select id="lista">${listas.map(([v, n]) => `<option value="${v}" ${v === lista ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
           </div>
         </div>
-        <div class="mon-cols">${catsGasto.map(c => {
+        <div class="mon-cols">${colsIng.map(c => {
+          const hI = Math.max(c.recibido ? 8 : 0, c.recibido / maxCat * H);
+          return `<button class="mon-col ing" data-cat="${c.id}" data-sub="${esc(c.sub)}" data-tipo="ingreso" title="Agregar ingreso en ${esc(c.nombre)}">
+            <div class="mon-barra" style="height:${H}px"><div class="mon-gasto mon-ingreso" style="height:${hI}px"></div></div>
+            <div class="mon-ico">${icoCat(c.nombre)}</div>
+            <div class="mon-val">${compacto(c.recibido)}</div>
+            <div class="mon-pct">ingreso</div>
+            <div class="mon-nom">${esc(c.nombre)}</div></button>`;
+        }).join('')}${colsIng.length ? '<span class="mon-sep" aria-hidden="true"></span>' : ''}${catsGasto.map(c => {
           const p = Number(c.presupuesto_mensual || 0), exc = p && c.gastado > p;
           const hP = p / maxCat * H, hG = Math.max(c.gastado ? 8 : 0, c.gastado / maxCat * H);
           return `<button class="mon-col" data-cat="${c.id}" title="Agregar gasto en ${esc(c.nombre)}">
             <div class="mon-barra" style="height:${H}px">${p ? `<div class="mon-pres" style="height:${hP}px"></div>` : ''}<div class="mon-gasto ${exc ? 'exc' : ''}" style="height:${hG}px"></div></div>
-            <div class="mon-ico">${esc(c.icono || '•')}</div>
+            <div class="mon-ico">${icoCat(c.nombre)}</div>
             <div class="mon-val">${compacto(c.gastado)}</div>
             <div class="mon-pct ${exc ? 'xxx' : ''}">${p ? Math.round(c.gastado / p * 100) + ' %' : '—'}</div>
             <div class="mon-nom">${esc(c.nombre)}</div></button>`;
         }).join('')}</div>
-        ${desglose.length ? `<div class="mon-sub">${desglose.map(d => `<div class="ms-fila"><span class="ms-cat">${esc(d.icono || '')} ${esc(d.nombre)}</span><span class="ms-chips">${d.subs.map(([n, v]) => `<span class="ms-chip">${esc(n)} <b>${compacto(v)}</b></span>`).join('')}</span></div>`).join('')}</div>` : ''}
-        <p class="sub mon-ley"><span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <a href="#" id="editar-pres">Editar presupuesto</a>${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
-        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" data-nuevo="ingreso">+ Ingreso</button><button class="mon-fab" data-nuevo="gasto" title="Agregar gasto">+</button></div>
+        ${desglose.length ? `<div class="mon-sub">${desglose.map(d => `<div class="ms-fila"><span class="ms-cat">${icoCat(d.nombre)} ${esc(d.nombre)}</span><span class="ms-chips">${d.subs.map(([n, v]) => `<span class="ms-chip">${esc(n)} <b>${compacto(v)}</b></span>`).join('')}</span></div>`).join('')}</div>` : ''}
+        <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <a href="#" id="editar-pres">Editar presupuesto</a>${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
+        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
       </section>
       <section class="panel fin-lado">
         <div class="od-cab"><h3>Movimientos del mes</h3><span class="sub">${delMes.length}</span></div>
         ${delMes.length ? `<div class="lista-filas">${delMes.map(x => `<button class="mov-fila" data-editar="${x.id}">
-          <span class="mov-ico">${esc(x.tipo === 'socio' ? '👤' : x.categoria?.icono || '•')}</span>
+          <span class="mov-ico ${x.tipo}">${icoCat(x.tipo === 'socio' ? 'nómina' : x.tipo === 'ingreso' ? (x.subcategoria || x.categoria?.nombre || 'ingreso') : x.categoria?.nombre)}</span>
           <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''} · ${esc(x.encargo?.nombre || 'General')}</span></span>
           <span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span></button>`).join('')}</div>`
         : '<p class="sub">No hay movimientos este mes en esta lista.</p>'}
@@ -143,7 +176,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
     });
     const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
     $('#editar-pres').onclick = ev => { ev.preventDefault(); modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar); };
-    document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => modalMov({ tipo: 'gasto', fecha: iso(new Date()), categoria_id: x.dataset.cat, encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
+    document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => modalMov({ tipo: x.dataset.tipo || 'gasto', fecha: iso(new Date()), categoria_id: x.dataset.cat, ...(x.dataset.sub ? { subcategoria: x.dataset.sub } : {}), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${mes}/${f.dataset.lista}`; scrollTo(0, 0); });
     $('#lista').onchange = ev => { location.hash = `#/finanzas/${mes}/${ev.target.value}`; };
     document.querySelectorAll('.g-col').forEach(col => {
@@ -173,7 +206,7 @@ function barras(serie) {
 
 export function modalMov(m, cats, encargos, recargar) {
   const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
-  const opsCat = t => cats.filter(c => c.tipo === t).map(c => `<option value="${c.id}" ${c.id === m.categoria_id ? 'selected' : ''}>${esc(c.icono || '')} ${esc(c.nombre)}</option>`).join('');
+  const opsCat = t => cats.filter(c => c.tipo === t).map(c => `<option value="${c.id}" ${c.id === m.categoria_id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
   fondo.innerHTML = `<form class="modal" id="fm">
     <h2>${m.id ? 'Editar' : 'Nuevo'} ${m.tipo === 'ingreso' ? 'ingreso' : m.tipo === 'socio' ? 'movimiento personal / socio' : 'gasto'}</h2>
     <div class="grilla-form">
@@ -227,7 +260,7 @@ function modalPresupuesto(cats, recargar) {
   const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
   fondo.innerHTML = `<form class="modal" id="fp"><h2>Presupuesto mensual de gastos</h2><p class="sub">Déjalo vacío si una categoría no tiene tope.</p>
     <div class="tabla-cont"><table><thead><tr><th>Categoría</th><th class="num">Tope mensual (COP)</th></tr></thead><tbody>
-    ${cats.map(c => `<tr><td>${esc(c.icono || '')} ${esc(c.nombre)}</td><td class="num"><input class="cant ancho-p" name="${c.id}" inputmode="numeric" value="${c.presupuesto_mensual ? Number(c.presupuesto_mensual).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></td></tr>`).join('')}
+    ${cats.map(c => `<tr><td>${esc(c.nombre)}</td><td class="num"><input class="cant ancho-p" name="${c.id}" inputmode="numeric" value="${c.presupuesto_mensual ? Number(c.presupuesto_mensual).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></td></tr>`).join('')}
     </tbody></table></div>
     <div class="pie-modal"><button type="button" class="btn sec" id="cancelar">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`;
   document.body.appendChild(fondo);

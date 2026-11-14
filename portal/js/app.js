@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=50';
-import * as M from './modulos.js?v=50';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=50';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=50';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=50';
+import * as D from './datos.js?v=52';
+import * as M from './modulos.js?v=52';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=52';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=52';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=52';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -127,14 +127,14 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
         ${menu || ''}
         ${enlacesGen}
       </nav>
-      <div class="lv-lema"><b>No intervenimos, regeneramos.</b><i>Génesis 1.27</i></div>
+      <a class="lv-web" href="https://regenerativo.co/">${ico('atras')}regenerativo.co</a>
       <div class="pie"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir">Cerrar sesión</button></div>
     </div></aside>
     <header class="lv-arriba" id="lv-arriba">
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a>
       <nav class="lv-isla" aria-label="Menú"><button type="button" class="lv-cambia" data-menu="lado" title="Llevar el menú al lado" aria-label="Llevar el menú al lado"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button><div class="lv-isla-in" id="lv-isla"><span class="lv-ind-h" aria-hidden="true"></span></div></nav>
       <div class="lv-cuenta-c"><button type="button" class="lv-circulo" id="lv-cuenta" aria-label="Cuenta"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg></button>
-        <div class="lv-pop" id="lv-pop" hidden><b>No intervenimos, regeneramos.</b><i>Génesis 1.27</i><span>${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button type="button" id="salir2">Cerrar sesión</button></div></div>
+        <div class="lv-pop" id="lv-pop" hidden><span>${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button type="button" id="salir2">Cerrar sesión</button></div></div>
     </header>
     <div class="main">
       ${D.MODO_DEMO ? '<div class="demo">Modo demostración: los datos son de ejemplo y se guardan solo en este navegador.</div>' : ''}
@@ -240,7 +240,8 @@ let islaAntes = null;
 function marcoAcceso(form) {
   return `<div class="lv-acceso">
     <section class="lv-acc-hero">
-      <img class="lv-acc-simbolo" src="/assets/33b2a586a276.png" alt="">
+      <a class="lv-acc-volver" href="https://regenerativo.co/">${ico('atras')}Volver a regenerativo.co</a>
+      <a href="https://regenerativo.co/" aria-label="Ir a regenerativo.co"><img class="lv-acc-simbolo" src="/assets/33b2a586a276.png" alt=""></a>
       <span class="lv-ceja">Portal de encargos</span>
       <h1>No intervenimos,<br>regeneramos.</h1>
       <p class="lv-acc-cita">Génesis 1.27</p>
