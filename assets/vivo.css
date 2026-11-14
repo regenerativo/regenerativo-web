@@ -171,3 +171,9 @@ a:has(svg) svg *{transition:stroke .35s ease,fill .35s ease}
 .navfull a::after{display:none!important}
 @media (hover:hover){.portal-acceso:hover svg{transform:translateX(4px) scale(1.06)!important}}
 *{font-synthesis:style}b,strong{font-weight:500}
+/* indicador para deslizar: línea alargada como la de Apple, mismo tono de la flecha */
+.linea-bajar{display:block;width:clamp(96px,9vw,124px);height:4px;border-radius:99px;background:#1E221D;opacity:.82;transition:opacity .35s ease,transform .5s cubic-bezier(.34,1.56,.64,1)}
+#goDown:hover .linea-bajar{opacity:.45;transform:scaleX(1.08)}
+@media (max-width:760px){.linea-bajar{height:5px;width:112px}}
+/* nada se subraya al pasar el cursor: solo cambia el tono */
+a:hover,a:focus-visible{text-decoration:none!important}

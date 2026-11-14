@@ -845,3 +845,26 @@ html body .lv .lv-tabs-in>a span,html body .lv .lv-tabs-in>button span{font-size
 html body .lv .pago-tog{white-space:nowrap;font-size:12px!important;padding:6px 12px!important;border-radius:99px!important;background:rgba(243,239,230,.9)!important;border:0!important;color:#1E221D}
 html body .lv .pago-tog.on{background:rgba(0,117,143,.1)!important;color:#00758F!important}
 @media (max-width:760px){html body .lv td>.solo-movil{display:block!important;margin-top:6px}}
+a:hover,a:focus-visible,button:hover{text-decoration:none!important}
+/* Al ingresar: nada se pone gris; el botón sigue vivo con un brillo que recorre */
+body.ingreso .lv-acc-card .btn.full:disabled,body.ingreso .lv-acc-card .btn.full.ocupado{opacity:1!important;position:relative;overflow:hidden}
+body.ingreso .lv-acc-card .btn.full.ocupado::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.28) 50%,transparent 80%);transform:translateX(-100%);animation:lv-brillo 1.3s ease-in-out infinite}
+@keyframes lv-brillo{to{transform:translateX(100%)}}
+body.cargando #raiz,body.cargando .lv-acc-card{filter:none!important;opacity:1!important}
+/* Tarjetas: las esquinas redondeadas se mantienen al pasar el cursor (Safari) */
+html body .lv .lv-enc-cov{border-top-left-radius:inherit;border-top-right-radius:inherit;-webkit-mask-image:-webkit-radial-gradient(white,black);isolation:isolate;transform:translateZ(0)}
+html body .lv .lv-enc{isolation:isolate}
+html body .lv .lv-card,html body .lv .kpi,html body .lv .panel,html body .lv .tarjeta-cli,html body .lv .tile{-webkit-backface-visibility:hidden;backface-visibility:hidden;will-change:transform;-webkit-transform:translateZ(0)}
+/* Detalles: las tres fechas juntas en una sola fila */
+html body .lv .datos-2c .dt-fechas{grid-column:1}
+html body .lv .datos-2c .dd-fechas{grid-column:2 / -1;display:flex;flex-wrap:wrap;gap:8px 28px}
+html body .lv .dd-fechas span{display:flex;flex-direction:column;gap:2px}
+html body .lv .dd-fechas small{font-size:11.5px;color:#999999}
+/* Folder del proyecto: un solo enlace, simple */
+html body .lv .folder-link{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;background:rgba(243,239,230,.6);color:#1E221D;text-decoration:none;transition:background .35s ease,color .35s ease}
+html body .lv .folder-link b{display:block;font-weight:400;font-size:14.25px}
+html body .lv .folder-link small{display:block;font-size:12.5px;color:#999999}
+html body .lv .folder-link .folder-ico svg{width:26px;height:26px}
+html body .lv .folder-link .folder-flecha{margin-left:auto;color:#999999;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+@media (hover:hover){html body .lv .folder-link:hover{background:rgba(243,239,230,.95);color:#999999}html body .lv .folder-link:hover .folder-flecha{transform:translate(3px,-3px)}}
+@media (max-width:600px){html body .lv .datos-2c .dt-fechas,html body .lv .datos-2c .dd-fechas{grid-column:auto}}

@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=68';
-import * as M from './modulos.js?v=68';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=68';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=68';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=68';
+import * as D from './datos.js?v=69';
+import * as M from './modulos.js?v=69';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=69';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=69';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=69';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -275,12 +275,12 @@ function vistaAcceso() {
     });
     $('#f').onsubmit = async e => {
       e.preventDefault();
-      const btn = $('#f .btn.full'); btn.disabled = true; $('#aviso').textContent = '';
+      const btn = $('#f .btn.full'), txt = btn.innerHTML; btn.disabled = true; btn.classList.add('ocupado'); btn.innerHTML = 'Ingresando…'; $('#aviso').textContent = '';
       try {
         if (modo === 'cliente') await D.ingresarCliente($('#usuario').value, $('#clave').value);
         else await D.ingresar($('#usuario').value.trim(), $('#clave').value);
         location.hash = '#/';
-      } catch (err) { $('#aviso').textContent = msg(err); btn.disabled = false; }
+      } catch (err) { $('#aviso').textContent = msg(err); btn.disabled = false; btn.classList.remove('ocupado'); btn.innerHTML = txt; }
     };
   };
   pintar();
@@ -852,9 +852,9 @@ async function vistaExpediente(s, codigo, seccion, sub) {
               <ul class="leyenda-valor"><li><i style="background:#0090B0"></i>Recibido<b>${cop(rec)}</b></li><li><i style="background:#E6E6E6"></i>Por cobrar<b>${cop(Math.max(0, V - rec))}</b></li></ul>` : ''}`
           : `<p class="sub">No hay honorarios registrados. ${admin ? 'Se toman de la propuesta (Propuestas preliminares) y de las adendas aprobadas.' : ''}</p>`}
         </section>
-        <section class="panel"><h3>Documentos</h3><div class="tiles" id="tiles">${tiles()}</div>
-          ${admin && webCarpeta(e) ? `<p class="sub" style="margin-top:12px"><a href="${esc(webCarpeta(e))}" target="_blank" rel="noopener">Abrir la carpeta del encargo en OneDrive ↗</a></p>` : ''}
-        </section>
+        ${admin ? `<section class="panel folder-proy"><h3>Folder del proyecto</h3>
+          ${webCarpeta(e) ? `<a class="folder-link" href="${esc(webCarpeta(e))}" target="_blank" rel="noopener"><span class="folder-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></span><span><b>${esc(e.nombre)}</b><small>Abrir en OneDrive</small></span><span class="folder-flecha">↗</span></a>` : '<p class="sub">El encargo aún no tiene carpeta conectada.</p>'}
+        </section>` : `<section class="panel"><h3>Documentos</h3><div class="tiles" id="tiles">${tiles()}</div></section>`}
       </div>
       <section class="panel">
         <h3>Detalles del encargo</h3>
@@ -863,9 +863,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xxx('')}</dd>
           ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
           ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
-          <dt>Inicio</dt><dd>${fechaEnc(e, 'inicio', 'Sin fecha', admin)}</dd>
-          <dt>Entrega</dt><dd>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</dd>
           ${prop && admin ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
+          <dt class="dt-fechas">Fechas</dt><dd class="dd-fechas"><span><small>Propuesta preliminar</small>${prop?.fecha_envio || prop?.fecha ? fecha(prop.fecha_envio || prop.fecha) : 'Sin fecha'}</span><span><small>Inicio</small>${fechaEnc(e, 'inicio', 'Sin fecha', admin)}</span><span><small>Entrega</small>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</span></dd>
           <dt>Responsables</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : xxx('')}</dd>
         </dl>
       </section>`;
