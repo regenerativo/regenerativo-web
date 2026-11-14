@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=84';
-import * as M from './modulos.js?v=84';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=84';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=84';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=84';
+import * as D from './datos.js?v=85';
+import * as M from './modulos.js?v=85';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=85';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=85';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=85';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -869,6 +869,19 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const V = valor.total;
     const seg = (v, c, tip) => v > 0 && V > 0 ? `<i style="width:${v / V * 100}%;background:${c}" title="${esc(tip)}"></i>` : '';
     const COL_AD = ['#7FC4D6', '#B9DDE7', '#5AA9BE', '#D4ECF2'];
+    const xx = admin ? xxx : (v => v ? esc(v) : '—');  // el cliente no ve los XXX de datos pendientes
+    const detallesEnc = `<section class="panel">
+        <h3>Detalles del encargo</h3>
+        <dl class="datos datos-2c">
+          <dt>Cliente</dt><dd>${xx(e.cliente?.nombre)}</dd>
+          <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xx('')}</dd>
+          ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
+          ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${xx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
+          ${prop && admin ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
+          <dt class="dt-fechas">Fechas</dt><dd class="dd-fechas"><span><small>Propuesta preliminar</small>${prop?.fecha_envio || prop?.fecha ? fecha(prop.fecha_envio || prop.fecha) : 'Sin fecha'}</span><span><small>Inicio</small>${fechaEnc(e, 'inicio', 'Sin fecha', admin)}</span><span><small>Entrega</small>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</span></dd>
+          <dt>Responsables</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : (admin ? xxx('') : 'regenerativo')}</dd>
+        </dl>
+      </section>`;
     if (esCliente) {
       const DESC = { propuesta: 'Propuesta económica', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
       const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && !NO_DOC.includes(k) && n(k) > 0);
@@ -878,6 +891,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
           ${kpi('Avance de la obra', g?.filas.length ? pct(g.realTotal) : '—', g?.filas.length ? `Esperado al corte ${pct(g.esperadoTotal)}` : 'Aún sin cronograma', g?.filas.length ? g.realTotal : undefined)}
         </div>
+        ${detallesEnc}
         <section class="panel"><h3>Tus documentos</h3>
           <div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}
             <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos</b><span class="sub">Enviados y recibidos del proyecto</span></span><span class="tc-flecha">›</span></a></div>
@@ -887,10 +901,6 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           <p class="sub">Escríbenos aquí: le llega al equipo de regenerativo y te respondemos en el portal.</p>
           ${formComentario()}
           ${coms.length ? `<ul class="lv-hilo corto">${coms.slice(0, 2).map(c => itemComentario(c, false)).join('')}</ul>` : ''}
-        </section>
-        <section class="panel"><h3>Tu encargo</h3>
-          <dl class="datos datos-2c"><dt>Encargo</dt><dd>${esc(e.nombre)}</dd><dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xxx('')}</dd>
-          <dt>Inicio</dt><dd>${e.inicio ? fecha(e.inicio) : 'Sin fecha'}</dd><dt>Entrega</dt><dd>${e.fin ? fecha(e.fin) : 'Sin fecha'}</dd><dt>Equipo</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : 'Regenerativo'}</dd></dl>
         </section>`;
       pintar(htmlCli);
       return montarComentario(ctx);
@@ -920,18 +930,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           ${webCarpeta(e) ? `<a class="folder-link" href="${esc(webCarpeta(e))}" target="_blank" rel="noopener"><span class="folder-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></span><span><b>${esc(e.nombre)}</b><small>Abrir en OneDrive</small></span><span class="folder-flecha">↗</span></a>` : '<p class="sub">El encargo aún no tiene carpeta conectada.</p>'}
         </section>` : `<section class="panel"><h3>Documentos</h3><div class="tiles" id="tiles">${tiles()}</div></section>`}
       </div>
-      <section class="panel">
-        <h3>Detalles del encargo</h3>
-        <dl class="datos datos-2c">
-          <dt>Cliente</dt><dd>${xxx(e.cliente?.nombre)}</dd>
-          <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xxx('')}</dd>
-          ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
-          ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${xxx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
-          ${prop && admin ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
-          <dt class="dt-fechas">Fechas</dt><dd class="dd-fechas"><span><small>Propuesta preliminar</small>${prop?.fecha_envio || prop?.fecha ? fecha(prop.fecha_envio || prop.fecha) : 'Sin fecha'}</span><span><small>Inicio</small>${fechaEnc(e, 'inicio', 'Sin fecha', admin)}</span><span><small>Entrega</small>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</span></dd>
-          <dt>Responsables</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : xxx('')}</dd>
-        </dl>
-      </section>`;
+      ${detallesEnc}`;
     pintar(html, admin ? btnIco('editar', 'Editar datos del encargo', 'id="editar-enc"') : '');
     const be = $('#editar-enc'); if (be) be.onclick = () => modalEncargo(e);
     return;
