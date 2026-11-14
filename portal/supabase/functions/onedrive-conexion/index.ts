@@ -3,7 +3,7 @@
 // POST {accion}         → solo administración:
 //   'url'      → dirección para autorizar la conexión
 //   'estado'   → si está conectado
-//   'despegar' → {encargo_id}: crea "REG/26  I  NOMBRE" con la estructura de carpetas y mueve la propuesta a LEGALES/PROP _ ECONOMICAS
+//   'despegar' → {encargo_id}: crea "REG/26  I  NOMBRE" desde la plantilla; copia la propuesta a LEGALES/00 PROPUESTA y su PDF a DOC _ ENV/AAAA MM DD _ PROPUESTA ECONÓMICA
 //   'subir'    → {encargo_id, carpeta, nombre, base64}: guarda un archivo en la carpeta del encargo
 //   'propuesta'→ {propuesta_id}: crea la carpeta de la propuesta "SCREG_26xxx_NOMBRE" en ZL_REG_PROPUESTAS
 //   'subir_propuesta' → {propuesta_id, nombre, base64}: guarda el Word de la propuesta en su carpeta (y su ruta en la propuesta)
@@ -104,23 +104,54 @@ async function despegar(at: string, encargoId: string) {
   let estructura = ESTRUCTURA;
   try { const p = await carpetasPlantilla(at); if (p.length) estructura = p; } catch (_) { /* si no se lee la plantilla, se usa la lista fija */ }
   for (const sub of estructura) await asegurarCarpeta(at, `${base}/${sub}`);
-  // Mover la carpeta (o archivo) de la propuesta cuyo nombre empieza por el código del encargo
-  let movidos: string[] = [];
+  // Copia (no mueve) la propuesta aprobada de ZL_REG_PROPUESTAS a LEGALES/00 PROPUESTA: el original queda en preliminares
+  let copiados: string[] = [];
   try {
     const hijos = await graph(at, `/me/drive/root:/${enc(PROPUESTAS)}:/children?$top=200&$select=id,name`);
     const destino = await graph(at, `/me/drive/root:/${enc(base + "/" + CARPETA_PROPUESTA)}`);
     for (const h of hijos.value.filter((x: any) => x.name.toUpperCase().startsWith(e.codigo.toUpperCase()))) {
-      await graph(at, `/me/drive/items/${h.id}`, { method: "PATCH", body: JSON.stringify({ parentReference: { id: destino.id } }) });
-      movidos.push(h.name);
+      await graph(at, `/me/drive/items/${h.id}/copy?@microsoft.graph.conflictBehavior=replace`, { method: "POST", body: JSON.stringify({ parentReference: { id: destino.id }, name: h.name }) });
+      copiados.push(h.name);
     }
   } catch (_) { /* si no hay propuesta en ZL, no es error */ }
-  // La ruta del Word de la propuesta cambia: queda dentro de LEGALES/00 PROPUESTA del encargo
-  const { data: p } = await admin.from("propuestas").select("id,archivo_ruta").eq("encargo_id", e.id).maybeSingle();
-  if (p?.archivo_ruta?.startsWith(PROPUESTAS + "/")) {
-    await admin.from("propuestas").update({ archivo_ruta: `${base}/${CARPETA_PROPUESTA}/${p.archivo_ruta.slice(PROPUESTAS.length + 1)}`, archivo_web: null }).eq("id", p.id);
-  }
   await admin.from("encargos").update({ onedrive_carpeta: base }).eq("id", e.id);
-  return { carpeta: base, movidos };
+  let enviados: any = null;
+  try { enviados = await propuestaEnviados(at, e.id); } catch (_) { /* no detiene el despegue */ }
+  return { carpeta: base, copiados, enviados };
+}
+
+// Al despegar: DOC _ ENV/"AAAA MM DD _ PROPUESTA ECONÓMICA" con el PDF de la propuesta aprobada (fecha de envío de la propuesta)
+async function propuestaEnviados(at: string, encargoId: string) {
+  const base = await baseEncargo(encargoId);
+  const { data: p } = await admin.from("propuestas").select("fecha_envio,archivo_ruta").eq("encargo_id", encargoId).maybeSingle();
+  const fecha = String(p?.fecha_envio || new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })).slice(0, 10).replaceAll("-", " ");
+  const env = (await primeraCarpeta(at, base, CARPETAS_CLIENTE)) || "DOC _ ENV";
+  await asegurarCarpeta(at, `${base}/${env}`);
+  const nombre = `${fecha} _ PROPUESTA ECONÓMICA`;
+  const destino = await asegurarCarpeta(at, `${base}/${env}/${nombre}`);
+  const origen = p?.archivo_ruta ? p.archivo_ruta.split("/").slice(0, -1).join("/") : `${base}/${CARPETA_PROPUESTA}`;
+  const archivos: any[] = [];
+  for (const h of await hijos(at, origen)) {
+    if (h.file) archivos.push(h);
+    else if (h.folder) for (const x of await hijos(at, `${origen}/${h.name}`)) if (x.file) archivos.push(x);
+  }
+  const reciente = (l: any[]) => l.sort((a, b) => (b.lastModifiedDateTime || "").localeCompare(a.lastModifiedDateTime || ""))[0];
+  const pdfs = archivos.filter((x) => /\.pdf$/i.test(x.name));
+  const pdf = reciente(pdfs.filter((x) => /SCREG_|PROPUESTA/i.test(x.name))) || reciente(pdfs);
+  if (pdf) {
+    await graph(at, `/me/drive/items/${pdf.id}/copy?@microsoft.graph.conflictBehavior=replace`, { method: "POST", body: JSON.stringify({ parentReference: { id: destino.id }, name: pdf.name }) });
+    return { carpeta: `${env}/${nombre}`, archivo: pdf.name };
+  }
+  // Sin PDF: se convierte el Word más reciente de la propuesta
+  const word = reciente(archivos.filter((x) => /\.docx?$/i.test(x.name)));
+  if (!word) return { carpeta: `${env}/${nombre}`, archivo: null };
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${word.id}/content?format=pdf`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!r.ok) return { carpeta: `${env}/${nombre}`, archivo: null };
+  const pdfNombre = word.name.replace(/\.docx?$/i, ".pdf");
+  const u = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${destino.id}:/${encodeURIComponent(pdfNombre)}:/content?@microsoft.graph.conflictBehavior=replace`, {
+    method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/pdf" }, body: await r.arrayBuffer(),
+  });
+  return { carpeta: `${env}/${nombre}`, archivo: u.ok ? pdfNombre : null };
 }
 
 async function carpetaPropuesta(at: string, propuestaId: string) {
@@ -210,7 +241,7 @@ const rutaSegura = (r: string) => { if (!r || r.split("/").some((x) => x === "..
 // "RUTA#0" = solo los archivos sueltos de esa carpeta (sin subcarpetas).
 type Fuente = string[];
 async function hijos(at: string, ruta: string) {
-  const sel = "$top=200&$select=name,file,folder,webUrl,size,lastModifiedDateTime";
+  const sel = "$top=200&$select=id,name,file,folder,webUrl,size,lastModifiedDateTime";
   return (await graph(at, `/me/drive/root:/${enc(ruta)}:/children?${sel}`))?.value || [];
 }
 async function recorrer(at: string, base: string, rel: string, prof: number, out: any[]) {
@@ -441,6 +472,7 @@ Deno.serve(async (req) => {
     }
     const at = await accesoGraph();
     if (b.accion === "despegar") return json(await despegar(at, b.encargo_id));
+    if (b.accion === "propuesta_enviados") return json(await propuestaEnviados(at, b.encargo_id));
     if (b.accion === "subir_propuesta") return json(await subirPropuesta(at, b.propuesta_id, b.nombre, b.base64));
     if (b.accion === "descargar_propuesta") return json(await descargarPropuesta(at, b.propuesta_id));
     if (b.accion === "archivos_propuesta") return json(await archivosPropuesta(at, b.propuesta_id));
