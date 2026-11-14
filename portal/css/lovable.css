@@ -760,7 +760,7 @@ html body .lv .lv-ico-l{width:36px;height:36px;display:flex;align-items:center;j
 html body .lv .lv-ico-l svg{width:22px;height:22px;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
 html body .lv .lv-web:hover,html body .lv .lv-salir:hover{color:#999999!important;background:none!important}
 html body .lv .lv-web:hover svg{transform:translateX(-4px) scale(1.06)}
-html body .lv .lv-salir:hover svg{transform:translateX(4px) scale(1.06)}
+html body .lv .lv-salir:hover svg{transform:translateX(-4px) scale(1.06)}
 html body .lv .lv-pie-lado{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin-top:6px;padding:10px 0 0 2px;border-top:1px dotted rgba(153,153,153,.55)}
 html body .lv .lv-pie-lado .pie-correo{font-size:12.5px;color:#999999;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .remate-fin{display:flex!important;justify-content:flex-start!important}
@@ -779,3 +779,43 @@ html body .lv .ha-lead{font-size:14.25px;line-height:1.6;color:#1E221D}
 html body .lv .ha-txt{font-size:14.25px;line-height:1.6;color:#999999;max-width:440px}
 html body .lv .ha-cita{font-size:14.25px;font-style:italic;color:#999999;margin-top:6px}
 html body .lv .ha-tit img{height:.5em;margin-left:.14em}
+html body .lv .lv-web,html body .lv .lv-salir{font-family:var(--t-texto)!important;letter-spacing:0!important}
+/* Una sola tipografía como en regenerativo.co: Stolzl también en el texto del portal (los documentos impresos conservan la suya) */
+:root{--t-texto:"Stolzl","Helvetica Neue",Arial,sans-serif}
+body{font-size:14.25px;letter-spacing:0}
+#impresion,#impresion *{--t-texto:"Metronic Pro","Figtree","Helvetica Neue",Arial,sans-serif}
+#impresion{font-family:"Metronic Pro","Figtree","Helvetica Neue",Arial,sans-serif}
+input,textarea,select,button{font-family:inherit}
+/* Más ancho útil para tablas: que las acciones se vean completas */
+html body .lv .cont,html body .lv .titulo-pag,html body .lv .remate{max-width:1480px}
+@media (min-width:761px){
+ html body .lv td.acciones-fila{white-space:nowrap;width:1%}
+ html body .lv td.acciones-fila>*{flex:none}
+ html body .lv table.t-prop td:nth-child(3){min-width:120px}
+}
+/* Propuestas en pantallas medianas: el código pasa debajo del nombre y las acciones se agrupan */
+@media (min-width:761px) and (max-width:1499px){
+ html body .lv table.t-prop th:first-child,html body .lv table.t-prop td:first-child{display:none}
+ html body .lv table.t-prop .solo-movil{display:inline!important}
+ html body .lv table.t-prop td:nth-child(3){min-width:0}
+}
+@media (min-width:761px) and (max-width:1280px){
+ html body .lv table.t-prop th,html body .lv table.t-prop td{padding-left:8px!important;padding-right:8px!important}
+ html body .lv table.t-prop td.acciones-fila{display:table-cell!important;white-space:normal!important;width:104px!important;min-width:104px;text-align:right;line-height:0}
+ html body .lv table.t-prop td.acciones-fila>*{display:inline-grid!important;margin:3px!important;vertical-align:top}
+}
+/* Dinamismo de íconos en todo el portal: mismo lenguaje de regenerativo.co */
+html body .lv button svg,html body .lv .btn svg,html body .lv a svg,html body .lv label svg,html body .lv .lv-buscar svg,html body .lv .buscar svg{transition:transform .5s cubic-bezier(.34,1.56,.64,1),color .35s ease,stroke .35s ease}
+@media (hover:hover){
+ html body .lv .btn:hover svg,html body .lv button:hover svg,html body .lv a:hover>svg,html body .lv a:hover .lv-flecha svg{transform:translateY(-2px) scale(1.12)}
+ html body .lv .btn.mini.ico{transition:transform .45s cubic-bezier(.34,1.56,.64,1),box-shadow .35s ease,background-color .35s ease,color .35s ease}
+ html body .lv .btn.mini.ico:hover{transform:translateY(-2px);box-shadow:0 8px 20px -10px rgba(30,34,29,.35)}
+ html body .lv .btn:not(.primario):not(.full):not([class*="negro"]):hover{color:#999999}
+ html body .lv .lv-seg button:not(.activo):hover{color:#1E221D!important}
+ html body .lv .lv-seg button.activo:hover{color:#999999!important}
+ html body .lv label.fecha-envio:hover svg{transform:rotate(-12deg) scale(1.15)}
+}
+html body .lv input[type=search]:focus~svg,html body .lv :has(>input:focus)>svg{transform:scale(1.15) rotate(-8deg)}
+/* + en botones principales: gira suave */
+@media (hover:hover){html body .lv .btn:hover .mas,html body .lv .btn:hover svg.ico-mas{transform:rotate(90deg)}}
+html body .lv .btn .mas{display:inline-block;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}

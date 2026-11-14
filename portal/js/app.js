@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=63';
-import * as M from './modulos.js?v=63';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=63';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=63';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=63';
+import * as D from './datos.js?v=66';
+import * as M from './modulos.js?v=66';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=66';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=66';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=66';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -128,13 +128,13 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
         ${enlacesGen}
       </nav>
       <a class="lv-web" href="https://regenerativo.co/"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Volver a regenerativo.co</a>
-      <div class="pie lv-pie-lado"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-4"/><path d="M4.5 12h10"/><path d="M11 8.5l3.5 3.5-3.5 3.5"/></svg></span>Cerrar sesión</button></div>
+      <div class="pie lv-pie-lado"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Cerrar sesión</button></div>
     </div></aside>
     <header class="lv-arriba" id="lv-arriba">
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a>
       <nav class="lv-isla" aria-label="Menú"><button type="button" class="lv-cambia" data-menu="lado" title="Llevar el menú al lado" aria-label="Llevar el menú al lado"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button><div class="lv-isla-in" id="lv-isla"><span class="lv-ind-h" aria-hidden="true"></span></div></nav>
       <div class="lv-cuenta-c"><button type="button" class="lv-circulo" id="lv-cuenta" aria-label="Cuenta"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg></button>
-        <div class="lv-pop" id="lv-pop" hidden><span>${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button type="button" id="salir2">Cerrar sesión</button></div></div>
+        <div class="lv-pop" id="lv-pop" hidden><span>${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button type="button" id="salir2" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Cerrar sesión</button></div></div>
     </header>
     <div class="main">
       ${D.MODO_DEMO ? '<div class="demo">Modo demostración: los datos son de ejemplo y se guardan solo en este navegador.</div>' : ''}
@@ -552,7 +552,7 @@ async function vistaEncargos(s) {
       <label class="lv-buscar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="buscar" placeholder="Buscar" aria-label="Buscar encargo"></label></div>
     <div id="tabla"></div>`;
   marco(s, { titulo: 'Encargos', ruta: 'Portal', activo: 'encargos', html, eyebrow: `${lista.length} encargo${lista.length === 1 ? '' : 's'}`,
-    acciones: admin ? '<button class="btn" id="nuevo">+ Nuevo encargo</button>' : '' });
+    acciones: admin ? '<button class="btn" id="nuevo"><span class="mas">+</span> Nuevo encargo</button>' : '' });
   const ini = n => (n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
   const chip = e => { const f = fase(e); return `<span class="lv-chip ${f}"><i></i>${f === 'en-curso' ? 'En curso' : f === 'por-iniciar' ? 'Por iniciar' : ESTADOS_ENCARGO[e.estado]}</span>`; };
   const pintar = () => {
@@ -913,7 +913,7 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
       ${kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', '')}
       ${kpi('Gastos del encargo', cop(gas), rec ? `Neto ${cop(rec - gas)}` : '')}
     </div>
-    <section class="panel"><div class="od-cab"><h3>Movimientos</h3><div class="barra-acc">${btnIco('mas', 'Agregar ingreso', 'data-nuevo="ingreso"', '')}<button class="btn sec mini" data-nuevo="gasto">+ Gasto</button></div></div>
+    <section class="panel"><div class="od-cab"><h3>Movimientos</h3><div class="barra-acc">${btnIco('mas', 'Agregar ingreso', 'data-nuevo="ingreso"', '')}<button class="btn sec mini" data-nuevo="gasto"><span class="mas">+</span> Gasto</button></div></div>
       ${movs.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Fecha</th><th>Concepto</th><th class="col-opc">Categoría</th><th class="num">Valor</th></tr></thead><tbody>
         ${movs.map(x => `<tr class="clic" data-mov="${x.id}"><td>${fecha(x.fecha)}</td><td>${esc(x.descripcion || '')}</td><td class="col-opc sub">${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}</td>
           <td class="num ${x.tipo}">${x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : ''} ${cop(x.valor)}</td></tr>`).join('')}</tbody></table></div>`
@@ -1000,7 +1000,7 @@ function ajustesEncargo(s, e, pintarPag) {
           <p class="sub" style="margin-top:-6px">El Gantt elige al responsable por su número; si cambias un nombre aquí, se actualiza en todo el encargo.</p>
           <div class="tabla-cont"><table><thead><tr><th style="width:52px">N°</th><th>Nombre</th><th class="col-opc">Cargo</th><th style="width:40px"></th></tr></thead>
           <tbody id="resp"></tbody></table></div>
-          <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sec" id="agregar">+ Agregar responsable</button><button class="btn" id="guardar-resp">Guardar</button></div>
+          <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sec" id="agregar"><span class="mas">+</span> Agregar responsable</button><button class="btn" id="guardar-resp">Guardar</button></div>
           <div class="aviso" id="aviso-resp"></div>
         </section>
         <section class="panel">
@@ -1167,7 +1167,7 @@ async function vistaPropuestas(s) {
     <div id="tabla"></div>`;
   let est = '';
   marco(s, { titulo: 'Propuestas', ruta: 'Portal', activo: 'propuestas', html, eyebrow: 'Propuestas preliminares',
-    acciones: '<button class="btn" id="nueva">+ Nueva propuesta</button>' });
+    acciones: '<button class="btn" id="nueva"><span class="mas">+</span> Nueva propuesta</button>' });
   const pintar = () => {
     const q = $('#buscar').value.toLowerCase();
     const f = lista.filter(p => (!est || p.estado === est) && (!q || [p.nombre, p.codigo, p.cliente?.nombre].join(' ').toLowerCase().includes(q)));
