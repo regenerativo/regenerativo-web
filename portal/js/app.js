@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=74';
-import * as M from './modulos.js?v=74';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=74';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=74';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=74';
+import * as D from './datos.js?v=76';
+import * as M from './modulos.js?v=76';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=76';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=76';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=76';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -766,7 +766,7 @@ const MODULOS = [
   ['resumen', 'Resumen'], ['carpetas', 'Folder'], ['legales', 'Legales'], ['propuesta', 'Propuesta'],
   ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
-  ['informes', 'Coordinación administrativa'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
+  ['informes', 'Coordinación administrativa'], ['tecnica', 'Coordinación técnica'], ['obra', 'Coordinación de obra'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
   ['comentarios', 'Comentarios'], ['resena', 'Reseña del proyecto'], ['ajustes', 'Ajustes'],
 ];
 // Carpetas de OneDrive de cada módulo (plantilla REG_TEM DOCUMENTAL y, como respaldo, los nombres viejos).
@@ -781,6 +781,8 @@ const FUENTES = {
   presupuesto: [['PRESUPUESTO']],
   gantt: [['PROGRAMACIÓN', 'PROGRAMACION']],
   informes: [['COOR _ ADMIN', 'COORDINACION _ ADMINISTRATIVA']],
+  tecnica: [['COOR _ TÉCNICA', 'COORDINACION _ TECNICA']],
+  obra: [['COOR _ OBRA', 'COORDINACION _ OBRA']],
   enviados: [['DOC _ ENV', 'DOC _ ENVIADOS']],
   recibidos: [['DOC _ REC', 'DOC _ RECIBIDOS']],
 };
@@ -824,7 +826,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     if (k === 'resena') return esCliente;
     if (k === 'enviados' && esCliente) return true;
     if (k === 'recibidos' && esCliente) return false;
-    if (k === 'ajustes' || k === 'carpetas' || k === 'legales') return admin;
+    if (k === 'ajustes' || k === 'carpetas' || k === 'legales' || k === 'obra' || k === 'tecnica') return admin;
     if (k === 'finanzas') return s.facturacion;
     if (['contrato', 'adendas'].includes(k)) return false;
     if (k === 'propuesta') return esCliente && web[k] > 0;
@@ -945,6 +947,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   }
   if (seccion === 'finanzas' && s.facturacion) return finanzasEncargo(ctx, movsOk, valor, pintar);
   if (seccion === 'ajustes' && admin) return ajustesEncargo(s, e, pintar);
+  if ((seccion === 'obra' || seccion === 'tecnica') && admin) {
+    pintar('<section class="panel od" id="od"></section>');
+    return panelOneDrive($('#od'), e, FUENTES[seccion], { titulo: seccion === 'obra' ? 'Coordinación de obra · 00 INFORMES OBRA y personal' : 'Coordinación técnica · 00 INFORMES TECNICOS, ARQ, MEP y STR' });
+  }
   if (seccion === 'legales' && admin) {
     const enlaces = [['propuesta', 'Propuesta del portal'], ['contrato', 'Contrato del portal'], ['adendas', 'Adendas del portal']].filter(([k]) => web[k] > 0);
     pintar(`<section class="panel od" id="od"></section>${enlaces.length ? `<section class="panel"><h3>Documentos hechos en el portal</h3><div class="tiles">${enlaces.map(([k, t]) => `<a class="tile" href="${base}/${k}"><b>${web[k]}</b><span>${t}</span></a>`).join('')}</div></section>` : ''}`);

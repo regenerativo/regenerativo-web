@@ -32,14 +32,25 @@ const RAIZ = "REG";
 const PROPUESTAS = "REG/REG  I  GESTION INTEGRAL/ZL_REG_PROPUESTAS";
 // Plantilla de gestión documental de regenerativo (REG  I  GESTION INTEGRAL/ZL_REG_LIBRERIAS/REG_TEM DOCUMENTAL)
 const ESTRUCTURA = [
-  "COOR _ ADMIN", "COOR _ ADMIN/00 INFORMES", "COOR _ OBRA", "COOR _ OBRA/COOR _ PERSONAL",
-  "COOR _ TÉCNICA", "COOR _ TÉCNICA/ARQ", "COOR _ TÉCNICA/MEP", "COOR _ TÉCNICA/STR",
+  "COOR _ ADMIN", "COOR _ OBRA", "COOR _ OBRA/00 INFORMES OBRA", "COOR _ OBRA/COOR _ PERSONAL",
+  "COOR _ TÉCNICA", "COOR _ TÉCNICA/00 INFORMES TECNICOS", "COOR _ TÉCNICA/ARQ", "COOR _ TÉCNICA/MEP", "COOR _ TÉCNICA/STR",
   "DOC _ ENV", "DOC _ REC", "IMAGEN _ VISUAL",
   "LEGALES", "LEGALES/00 PROPUESTA", "LEGALES/01 CONTRATOS", "LEGALES/02 ADENDAS",
   "LEGALES/03 ACTAS DE ENTREGA", "LEGALES/04 CUENTAS DE COBRO", "LEGALES/05 FACTURACION",
   "PRESUPUESTO", "PROGRAMACIÓN", "ZL_OBSOLETOS",
 ];
 const CARPETA_PROPUESTA = "LEGALES/00 PROPUESTA";
+const PLANTILLA = "REG/REG  I  GESTION INTEGRAL/ZL_REG_LIBRERIAS/REG_TEM DOCUMENTAL";
+// Lee la plantilla viva de OneDrive: cualquier carpeta que se agregue allá se crea en los encargos nuevos
+async function carpetasPlantilla(at: string, rel = "", out: string[] = []) {
+  for (const h of await hijos(at, rel ? `${PLANTILLA}/${rel}` : PLANTILLA)) {
+    if (!h.folder) continue;
+    const r = rel ? `${rel}/${h.name}` : h.name;
+    out.push(r);
+    await carpetasPlantilla(at, r, out);
+  }
+  return out;
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -90,7 +101,9 @@ async function despegar(at: string, encargoId: string) {
   if (!e) throw new Error("Encargo no encontrado");
   const base = `${RAIZ}/${e.nombre.toUpperCase()}`;
   await asegurarCarpeta(at, base);
-  for (const sub of ESTRUCTURA) await asegurarCarpeta(at, `${base}/${sub}`);
+  let estructura = ESTRUCTURA;
+  try { const p = await carpetasPlantilla(at); if (p.length) estructura = p; } catch (_) { /* si no se lee la plantilla, se usa la lista fija */ }
+  for (const sub of estructura) await asegurarCarpeta(at, `${base}/${sub}`);
   // Mover la carpeta (o archivo) de la propuesta cuyo nombre empieza por el código del encargo
   let movidos: string[] = [];
   try {
