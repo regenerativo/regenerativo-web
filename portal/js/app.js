@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=83';
-import * as M from './modulos.js?v=83';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=83';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=83';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=83';
+import * as D from './datos.js?v=84';
+import * as M from './modulos.js?v=84';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=84';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=84';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=84';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -880,7 +880,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         </div>
         <section class="panel"><h3>Tus documentos</h3>
           <div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}
-            <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos enviados</b><span class="sub">Planos, informes y archivos que te hemos enviado</span></span><span class="tc-flecha">›</span></a></div>
+            <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos</b><span class="sub">Enviados y recibidos del proyecto</span></span><span class="tc-flecha">›</span></a></div>
         </section>
         <section class="panel lv-duda">
           <div class="lv-card-cab"><h3>¿Tienes una duda?</h3><a class="lv-link" href="${base}/comentarios">Ver conversación ${ico('ver')}</a></div>
