@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=70';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=71';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -428,10 +428,10 @@ export async function comentariosAbiertos() {
   if (error) return []; return data || [];
 }
 /** Guarda el comentario y avisa por correo a proyectos@regenerativo.co (si el correo falla, el comentario igual queda guardado). */
-export async function comentar(encargoId, texto, tipo = 'comentario', autorNombre = '', avisar = true) {
+export async function comentar(encargoId, texto, tipo = 'comentario', autorNombre = '', avisar = true, calificacion = null) {
   const c = await cliente();
   const { data: u } = await c.auth.getUser();
-  const { data, error } = await c.from('comentarios').insert({ encargo_id: encargoId, texto, tipo, autor: u.user.id, autor_nombre: autorNombre || u.user.email, estado: avisar ? 'abierto' : 'resuelto' }).select().single();
+  const { data, error } = await c.from('comentarios').insert({ encargo_id: encargoId, texto, tipo, autor: u.user.id, autor_nombre: autorNombre || u.user.email, estado: avisar ? 'abierto' : 'resuelto', ...(calificacion ? { calificacion } : {}) }).select().single();
   if (error) throw error;
   const aviso = avisar ? await onedrive('aviso_comentario', { comentario_id: data.id }).catch(e => ({ enviado: false, motivo: e.message })) : null;
   return { comentario: data, aviso };

@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=70';
-import * as M from './modulos.js?v=70';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=70';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=70';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=70';
+import * as D from './datos.js?v=71';
+import * as M from './modulos.js?v=71';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=71';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=71';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=71';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -473,22 +473,65 @@ function vistaComentarios(ctx, coms, pintar) {
   });
   document.querySelectorAll('.lv-reabrir').forEach(b => b.onclick = async () => { b.disabled = true; try { await D.responderComentario(b.dataset.id, { estado: 'abierto' }); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; } });
 }
-// Documentos que regenerativo le ha enviado al cliente (carpeta DOC _ ENV del encargo)
-async function enviadosCliente(ctx, pintar) {
-  pintar('<section class="panel" id="cli-env"><p class="sub">Cargando documentos…</p></section>');
-  const caja = $('#cli-env');
-  let r; try { r = await D.onedrive('cli_enviados', { encargo_id: ctx.e.id }); } catch (err) { caja.innerHTML = `<p class="sub">No se pudieron cargar los documentos en este momento. Intenta de nuevo más tarde.</p>`; return; }
-  const l = r.archivos || [];
-  caja.innerHTML = l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
+// Documentos del cliente: Enviados (DOC _ ENV) y Recibidos (DOC _ REC), cada uno con su explicación
+const listaDocsCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
-      <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-i="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-i="${i}">Descargar</button></span></li>`).join('')}</ul>`
-    : '<p class="sub">Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.</p>';
-  caja.querySelectorAll('[data-i]').forEach(b => b.onclick = async () => {
-    const a = l[+b.dataset.i]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+      <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-${pref}="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-${pref}="${i}">Descargar</button></span></li>`).join('')}</ul>` : '';
+async function enviadosCliente(ctx, pintar) {
+  pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos enviados por regenerativo al cliente o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>
+    <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos compartidos por el cliente o el personal requerido con nuestro equipo regenerativo.</p></div>
+      <label class="btn mini cli-subir"><span class="mas">+</span> Compartir un documento<input type="file" id="cli-arch" multiple hidden></label><div class="aviso" id="cli-aviso"></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>`);
+  const bajar = (l, pref, caja) => caja.querySelectorAll(`[data-${pref}]`).forEach(b => b.onclick = async () => {
+    const a = l[+b.dataset[pref]]; const t = b.textContent; b.disabled = true; b.textContent = '…';
     try { const d = await D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta, pdf: !!b.dataset.pdf }); bajarBase64(d.base64, d.nombre); }
     catch (err) { alert(msg(err)); }
     b.disabled = false; b.textContent = t;
   });
+  const cargar = async (accion, id, pref, vacio) => {
+    const caja = $(`#${id} .cli-docs-l`);
+    try { const r = await D.onedrive(accion, { encargo_id: ctx.e.id }); const l = r.archivos || []; caja.innerHTML = listaDocsCli(l, pref) || `<p class="sub">${vacio}</p>`; bajar(l, pref, caja); }
+    catch (err) { caja.innerHTML = '<p class="sub">No se pudieron cargar los documentos en este momento. Intenta de nuevo más tarde.</p>'; }
+  };
+  cargar('cli_enviados', 'cli-env', 'ie', 'Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.');
+  cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
+  $('#cli-arch').onchange = async ev => {
+    const av = $('#cli-aviso'); const fs = [...ev.target.files]; if (!fs.length) return;
+    for (const f of fs) {
+      if (f.size > 25e6) { av.textContent = `${f.name} supera 25 MB: compártelo por correo.`; continue; }
+      av.textContent = `Subiendo ${f.name}…`;
+      try { const b64 = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(f); });
+        await D.onedrive('cli_subir', { encargo_id: ctx.e.id, nombre: f.name, base64: b64 }); }
+      catch (err) { av.textContent = msg(err); return; }
+    }
+    av.textContent = 'Listo, ya lo recibimos.'; ev.target.value = '';
+    cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
+  };
+}
+
+// Propuesta para el cliente: el PDF que se le envió (carpeta Enviados); si no hay, el documento del portal
+async function propuestaCliente(ctx, pintar, html) {
+  pintar('<section class="panel" id="cli-prop"><p class="sub">Cargando la propuesta…</p></section>');
+  let l = [];
+  try { l = ((await D.onedrive('cli_enviados', { encargo_id: ctx.e.id })).archivos || []).filter(a => /\.pdf$/i.test(a.nombre) && (/propuesta/i.test(a.nombre) || /SCREG_/i.test(a.nombre))).sort((x, y) => (y.fecha || '').localeCompare(x.fecha || '')).slice(0, 1); } catch (_) {}
+  if (!l.length) return html ? pintar(html.html) || html.montar?.() : pintar('<div class="vacio">Todavía no hay una propuesta para mostrar.</div>');
+  const caja = $('#cli-prop');
+  caja.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta económica</h3><p class="sub">El documento que te enviamos.</p></div>${listaDocsCli(l, 'ip')}`;
+  caja.querySelectorAll('[data-ip]').forEach(b => b.onclick = async () => {
+    const a = l[+b.dataset.ip]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+    try { const d = await D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta }); bajarBase64(d.base64, d.nombre); } catch (err) { alert(msg(err)); }
+    b.disabled = false; b.textContent = t;
+  });
+}
+
+// Presupuesto y Programación: el documento de la carpeta del encargo, solo para ver (se edita en OneDrive)
+async function visorDocumento(ctx, modulo, el) {
+  el.innerHTML = '<p class="sub">Buscando el documento…</p>';
+  let r; try { r = await D.onedrive('visor', { encargo_id: ctx.e.id, modulo }); } catch (err) { el.innerHTML = `<p class="sub">No se pudo abrir el documento: ${esc(msg(err))}</p>`; return false; }
+  if (!r.archivo) { el.innerHTML = `<p class="sub">Todavía no hay un documento en la carpeta ${esc(r.carpeta || (modulo === 'gantt' ? 'PROGRAMACIÓN' : 'PRESUPUESTO'))}.</p>`; return false; }
+  const a = r.archivo;
+  el.innerHTML = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · se edita en la carpeta y aquí se ve al día</span></div>${ctx.admin ? `<a class="btn mini sec" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en OneDrive ↗</a>` : ''}</div>
+    ${a.vista ? `<div class="visor-marco"><iframe src="${esc(a.vista)}" title="${esc(a.nombre)}" loading="lazy" allowfullscreen></iframe></div>` : '<p class="sub">La vista previa no está disponible para este archivo.</p>'}`;
+  return true;
 }
 
 // Fecha del encargo que se cambia en el sitio: clic → calendario → se guarda en el encargo (no en la propuesta)
@@ -709,27 +752,30 @@ async function modalEncargo(e = null) {
 
 // ---------------- Expediente del encargo ----------------
 // Módulos del encargo. Cada módulo junta lo del portal (web) y su carpeta de OneDrive.
+// Menú del encargo según la gestión documental (REG_TEM DOCUMENTAL): Legales reúne propuesta, contratos, adendas, actas, cobros y facturación
 const MODULOS = [
-  ['resumen', 'Resumen'], ['carpetas', 'Folders'],
-  ['propuesta', 'Propuesta'], ['contrato', 'Contrato'], ['adendas', 'Adendas'],
+  ['resumen', 'Resumen'], ['carpetas', 'Folder'], ['legales', 'Legales'], ['propuesta', 'Propuesta'],
+  ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
-  ['informes', 'Actas e informes'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
-  ['comentarios', 'Comentarios'], ['ajustes', 'Ajustes'],
+  ['informes', 'Coordinación administrativa'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
+  ['comentarios', 'Comentarios'], ['resena', 'Reseña del proyecto'], ['ajustes', 'Ajustes'],
 ];
 // Carpetas de OneDrive de cada módulo (plantilla REG_TEM DOCUMENTAL y, como respaldo, los nombres viejos).
 // Cada grupo usa la primera carpeta que exista. "RUTA#0" = solo los archivos sueltos de esa carpeta.
 const FUENTES = {
+  legales: [['LEGALES/00 PROPUESTA', 'LEGALES/PROP _ ECONOMICAS'], ['LEGALES/01 CONTRATOS', 'LEGALES/OPS CONTRATOS'], ['LEGALES/02 ADENDAS', 'LEGALES#0'],
+    ['LEGALES/03 ACTAS DE ENTREGA', 'LEGALES/04 ACTAS DE ENTREGA'], ['LEGALES/04 CUENTAS DE COBRO', 'LEGALES/05 CUENTAS DE COBRO', 'LEGALES/CUENTAS DE COBRO'], ['LEGALES/05 FACTURACION']],
   propuesta: [['LEGALES/00 PROPUESTA', 'LEGALES/PROP _ ECONOMICAS']],
   contrato: [['LEGALES/01 CONTRATOS', 'LEGALES/OPS CONTRATOS'], ['LEGALES/03 OTRO SI']],
   adendas: [['LEGALES/02 ADENDAS', 'LEGALES#0']],
-  finanzas: [['LEGALES/05 CUENTAS DE COBRO', 'LEGALES/CUENTAS DE COBRO']],
+  finanzas: [['LEGALES/04 CUENTAS DE COBRO', 'LEGALES/05 CUENTAS DE COBRO', 'LEGALES/CUENTAS DE COBRO']],
   presupuesto: [['PRESUPUESTO']],
   gantt: [['PROGRAMACIÓN', 'PROGRAMACION']],
   informes: [['COOR _ ADMIN', 'COORDINACION _ ADMINISTRATIVA']],
   enviados: [['DOC _ ENV', 'DOC _ ENVIADOS']],
   recibidos: [['DOC _ REC', 'DOC _ RECIBIDOS']],
 };
-const SIN_CONTEO = ['resumen', 'carpetas', 'ajustes'];
+const SIN_CONTEO = ['resumen', 'carpetas', 'ajustes', 'resena'];
 const NO_DOC = ['comentarios', 'enviados'];
 const CONTEO_TTL = 10 * 60 * 1000;
 const conteoGuardado = id => { try { const c = JSON.parse(sessionStorage.getItem('reg-conteo-' + id)); if (c && Date.now() - c.t < CONTEO_TTL) return c.c; } catch (_) {} return null; };
@@ -766,14 +812,18 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const n = k => (web[k] || 0) + (od[k] || 0);
   const visible = k => {
     if (k === 'resumen' || k === 'comentarios') return true;
+    if (k === 'resena') return esCliente;
     if (k === 'enviados' && esCliente) return true;
-    if (k === 'ajustes' || k === 'carpetas') return admin;
+    if (k === 'recibidos' && esCliente) return false;
+    if (k === 'ajustes' || k === 'carpetas' || k === 'legales') return admin;
     if (k === 'finanzas') return s.facturacion;
-    if (k === 'adendas' && esCliente) return false;
+    if (['contrato', 'adendas'].includes(k)) return false;
+    if (k === 'propuesta') return esCliente && web[k] > 0;
+    if (k === 'presupuesto' || k === 'gantt') return admin || web[k] > 0 || (od[k] || 0) > 0;
     return admin || web[k] > 0;
   };
   const pintaMenu = () => MODULOS.filter(([k]) => visible(k)).map(([k, nom]) => {
-    if (esCliente && k === 'enviados') nom = 'Documentos enviados';
+    if (esCliente && k === 'enviados') nom = 'Documentos';
     const c = SIN_CONTEO.includes(k) ? null : n(k);
     return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${icoMenu(k)}<span>${nom}</span>${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
   }).join('');
@@ -781,7 +831,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const l = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && k !== 'comentarios' && n(k) > 0);
     return l.length ? l.map(([k, nom]) => `<a class="tile" href="${base}/${k}"><b>${n(k)}</b><span>${nom}</span></a>`).join('') : '<p class="sub">Todavía no hay documentos en los módulos.</p>';
   };
-  const nombreSec = esCliente && seccion === 'enviados' ? 'Documentos enviados' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
+  const nombreSec = esCliente && seccion === 'enviados' ? 'Documentos' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
   const pintar = (html, acciones = '') => {
     marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, eyebrow: seccion === 'resumen' ? ([e.cliente?.nombre, ...servs(e)].filter(Boolean).join(' · ') || 'Encargo') : e.nombre, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
@@ -886,6 +936,39 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   }
   if (seccion === 'finanzas' && s.facturacion) return finanzasEncargo(ctx, movsOk, valor, pintar);
   if (seccion === 'ajustes' && admin) return ajustesEncargo(s, e, pintar);
+  if (seccion === 'legales' && admin) {
+    const enlaces = [['propuesta', 'Propuesta del portal'], ['contrato', 'Contrato del portal'], ['adendas', 'Adendas del portal']].filter(([k]) => web[k] > 0);
+    pintar(`<section class="panel od" id="od"></section>${enlaces.length ? `<section class="panel"><h3>Documentos hechos en el portal</h3><div class="tiles">${enlaces.map(([k, t]) => `<a class="tile" href="${base}/${k}"><b>${web[k]}</b><span>${t}</span></a>`).join('')}</div></section>` : ''}`);
+    return panelOneDrive($('#od'), e, FUENTES.legales, { titulo: 'Legales · propuesta, contratos, adendas, actas, cobros y facturación' });
+  }
+  if (seccion === 'resena') {
+    const mias = coms.filter(c => c.tipo === 'resena');
+    pintar(`<section class="panel resena"><h3>¿Cómo fue trabajar con regenerativo?</h3>
+      <p class="sub">Cuéntanos qué te gustó, qué podemos mejorar y cómo te sentiste en el proceso. Nos ayuda a crecer y a cuidar mejor cada encargo.</p>
+      <form id="f-resena"><div class="estrellas" role="radiogroup" aria-label="Calificación">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="estrella" data-n="${n}" aria-label="${n} de 5">${icoMenu('resena')}</button>`).join('')}</div>
+        <textarea id="t-resena" rows="5" placeholder="Tu reseña del proyecto, comentarios y mejoras para regenerativo…" required></textarea>
+        <button class="btn" type="submit">Enviar reseña</button><div class="aviso" id="a-resena"></div></form></section>
+      ${mias.length ? `<section class="panel"><h3>Tus reseñas</h3>${mias.map(c => `<div class="resena-item"><span class="estrellas mini">${'★'.repeat(c.calificacion || 0)}<i>${'★'.repeat(5 - (c.calificacion || 0))}</i></span><p>${esc(c.texto)}</p><span class="sub">${fecha(c.creado.slice(0, 10))}</span></div>`).join('')}</section>` : ''}`);
+    let cal = 0;
+    document.querySelectorAll('.estrella').forEach(b => b.onclick = () => { cal = +b.dataset.n; document.querySelectorAll('.estrella').forEach(x => x.classList.toggle('on', +x.dataset.n <= cal)); });
+    $('#f-resena').onsubmit = async ev => {
+      ev.preventDefault(); const t = $('#t-resena').value.trim(); if (!t) return;
+      const b = ev.target.querySelector('button[type=submit]'); b.disabled = true;
+      try { await D.comentar(e.id, t, 'resena', e.cliente?.nombre || '', true, cal || null); $('#a-resena').textContent = '¡Gracias! Tu reseña nos llegó.'; setTimeout(ir, 1200); }
+      catch (err) { $('#a-resena').textContent = msg(err); b.disabled = false; }
+    };
+    return;
+  }
+  if (seccion === 'propuesta' && esCliente) {
+    const v = web.propuesta > 0 && M.VISTAS.propuesta ? await M.VISTAS.propuesta(ctx) : null;
+    return propuestaCliente(ctx, pintar, v);
+  }
+  if ((seccion === 'presupuesto' || seccion === 'gantt') && !D.MODO_DEMO) {
+    const v = web[seccion] > 0 && M.VISTAS[seccion] ? await M.VISTAS[seccion](ctx) : null;
+    pintar(`<section class="panel visor" id="visor"></section>${v ? `<section class="panel"><h3>${seccion === 'gantt' ? 'Programación en el portal' : 'Presupuesto en el portal'}</h3></section>` + v.html : ''}`);
+    if (v?.montar) v.montar();
+    return visorDocumento(ctx, seccion, $('#visor'));
+  }
 
   if (M.VISTAS[seccion]) {
     const conWeb = web[seccion] > 0;
@@ -1005,8 +1088,10 @@ function ajustesEncargo(s, e, pintarPag) {
         <section class="panel">
           <h3>Acceso del cliente</h3>
           <p class="sub" style="margin-top:-6px">El cliente entra en la pestaña "Clientes" con el nombre del encargo y esta contraseña. Solo puede ver este encargo. Al cambiarla, todos los que tenían la anterior quedan fuera.</p>
-          <dl class="datos" style="margin:10px 0 4px"><dt>Usuario</dt><dd class="det">${esc(e.nombre)}</dd>
+          <dl class="datos acceso-datos" style="margin:10px 0 4px"><dt>Usuario</dt><dd class="det"><span id="acc-u">${esc(e.nombre)}</span> <button type="button" class="btn mini sec copiar" data-copiar="acc-u">Copiar</button></dd>
+            <dt>Contraseña</dt><dd class="det">${e.acceso_clave ? `<span id="acc-c" class="clave-vis">${esc(e.acceso_clave)}</span> <button type="button" class="btn mini sec copiar" data-copiar="acc-c">Copiar</button>` : e.cliente_usuario_id ? '<span class="sub">Asignada antes; cámbiala para verla aquí</span>' : '—'}</dd>
             <dt>Estado</dt><dd class="det">${e.cliente_usuario_id ? 'Activo' : '<span class="xxx">Sin acceso asignado</span>'}</dd></dl>
+          ${e.cliente_usuario_id && e.acceso_clave ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px"><button type="button" class="btn mini" id="copiar-todo">Copiar acceso completo</button><a class="btn mini sec" id="compartir-correo" href="mailto:${esc(e.cliente?.email || '')}?subject=${encodeURIComponent('Tu acceso al portal de ' + e.nombre)}&body=${encodeURIComponent(`Hola${e.cliente?.nombre ? ' ' + e.cliente.nombre : ''},\n\nYa puedes ver tu encargo en el portal de regenerativo:\nhttps://regenerativo.co/portal/\n\nEntra en la pestaña Clientes con:\nNombre del encargo: ${e.nombre}\nContraseña: ${e.acceso_clave}\n\nUn abrazo,\nregenerativo`)}">Compartir por correo</a></div>` : ''}
           <label>${e.cliente_usuario_id ? 'Nueva contraseña' : 'Contraseña'} (mínimo 8 caracteres)</label>
           <input id="clave-cliente" type="text" autocomplete="off" minlength="8">
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -1028,6 +1113,9 @@ function ajustesEncargo(s, e, pintarPag) {
       </div>`;
     pintarPag(html);
     $('#editar').onclick = () => modalEncargo(e);
+    const copiarTxt = async (t, b) => { try { await navigator.clipboard.writeText(t); } catch (err) { const r = document.createRange(); const sp = document.createElement('span'); sp.textContent = t; document.body.append(sp); r.selectNodeContents(sp); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); sp.remove(); } const o = b.textContent; b.textContent = 'Copiado ✓'; setTimeout(() => b.textContent = o, 1600); };
+    document.querySelectorAll('[data-copiar]').forEach(b => b.onclick = () => copiarTxt($('#' + b.dataset.copiar).textContent, b));
+    const ct = $('#copiar-todo'); if (ct) ct.onclick = () => copiarTxt(`Portal de regenerativo: https://regenerativo.co/portal/\nPestaña: Clientes\nNombre del encargo: ${e.nombre}\nContraseña: ${e.acceso_clave}`, ct);
     let resp = e.responsables.map(r => ({ ...r }));
     const pintar = () => {
       $('#resp').innerHTML = resp.length ? resp.map((r, i) => `<tr>
@@ -1082,6 +1170,14 @@ async function vistaAjustes(s, qs) {
         <td class="col-opc sub">${u.encargos.map(x => esc(x.nombre)).join(', ') || '—'}</td>
         <td class="acciones-fila">${btnIco('editar', 'Editar usuario', `data-us="${u.id}"`)}</td></tr>`).join('') || '<tr><td colspan="4" class="sub">Sin usuarios.</td></tr>'}</tbody></table></div>
     </section>
+    <section class="panel">
+      <div class="od-cab"><h3>Accesos de clientes</h3><span class="sub">Pestaña Clientes del acceso · nombre del encargo y contraseña</span></div>
+      <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Encargo</th><th>Contraseña</th><th class="col-opc">Estado</th><th></th></tr></thead>
+      <tbody>${encs.map(x => `<tr><td><b>${esc(x.nombre)}</b><div class="sub">${esc(x.cliente?.nombre || '')}</div></td>
+        <td>${x.acceso_clave ? `<span class="clave-vis">${esc(x.acceso_clave)}</span> <button type="button" class="btn mini sec copiar" data-copia="${esc(x.acceso_clave)}">Copiar</button>` : x.cliente_usuario_id ? '<span class="sub">Asignada antes</span>' : '—'}</td>
+        <td class="col-opc">${x.cliente_usuario_id ? '<span class="etiqueta despego">Activo</span>' : '<span class="etiqueta">Sin acceso</span>'}</td>
+        <td class="acciones-fila"><a class="btn mini sec" href="#/${D.slugEncargo(x)}/ajustes">Gestionar</a></td></tr>`).join('')}</tbody></table></div>
+    </section>
     <section class="panel"><div class="od-cab"><h3>Festivos</h3><span class="sub">Colombia · cuentan para los días de trabajo de los encargos</span></div>
       <div id="calendario"></div>
       ${D.MODO_DEMO ? '<button class="btn sec mini" id="reiniciar" style="margin-top:12px">Reiniciar datos de ejemplo</button>' : ''}</section>`;
@@ -1090,6 +1186,7 @@ async function vistaAjustes(s, qs) {
   const r = $('#reiniciar'); if (r) r.onclick = () => { D.reiniciarDemo(); location.hash = '#/'; ir(); };
   $('#od-conectar').onclick = async () => { try { location.href = (await D.onedrive('url')).url; } catch (e) { alert(msg(e)); } };
   document.querySelectorAll('[data-us]').forEach(b => b.onclick = () => modalUsuario(us.find(u => u.id === b.dataset.us)));
+  document.querySelectorAll('[data-copia]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copia); } catch (err) {} const o = b.textContent; b.textContent = 'Copiado ✓'; setTimeout(() => b.textContent = o, 1600); });
 }
 
 // Calendario mensual de festivos: un punto en cada festivo, flechas para cambiar de mes

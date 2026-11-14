@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     // Borrar la cuenta anterior cierra todas sus sesiones.
     if (enc.cliente_usuario_id) await admin.auth.admin.deleteUser(enc.cliente_usuario_id);
     if (quitar) {
-      await admin.from("encargos").update({ cliente_usuario_id: null }).eq("id", enc.id);
+      await admin.from("encargos").update({ cliente_usuario_id: null, acceso_clave: null }).eq("id", enc.id);
       return responder({ ok: true, quitado: true });
     }
     if (typeof clave !== "string" || clave.length < 8) return responder({ error: "La contraseña debe tener al menos 8 caracteres." }, 400);
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     });
     if (e1) throw e1;
     await admin.from("miembros_encargo").upsert({ encargo_id: enc.id, usuario_id: creado.user.id, rol: "cliente" });
-    await admin.from("encargos").update({ cliente_usuario_id: creado.user.id }).eq("id", enc.id);
+    await admin.from("encargos").update({ cliente_usuario_id: creado.user.id, acceso_clave: clave }).eq("id", enc.id);
     return responder({ ok: true });
   } catch (err) {
     return responder({ error: (err as Error).message ?? String(err) }, 500);

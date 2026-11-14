@@ -25,14 +25,19 @@ const ALCANCE = "offline_access Files.ReadWrite Mail.Read User.Read";
 const ALCANCE_CONEXION = ALCANCE + " Mail.Send";
 const CORREO_PROYECTOS = "proyectos@regenerativo.co";
 const CARPETAS_CLIENTE = ["DOC _ ENV", "DOC _ ENVIADOS"];
+const CARPETAS_RECIBIDOS = ["DOC _ REC", "DOC _ RECIBIDOS"];
+const CARPETAS_VISOR: Record<string, string[]> = { presupuesto: ["PRESUPUESTO"], gantt: ["PROGRAMACIÓN", "PROGRAMACION"] };
 const PORTAL = "https://regenerativo.co/portal/";
 const RAIZ = "REG";
 const PROPUESTAS = "REG/REG  I  GESTION INTEGRAL/ZL_REG_PROPUESTAS";
 // Plantilla de gestión documental de regenerativo (REG  I  GESTION INTEGRAL/ZL_REG_LIBRERIAS/REG_TEM DOCUMENTAL)
 const ESTRUCTURA = [
-  "COOR _ ADMIN", "COOR _ OBRA", "COOR _ OBRA/COOR _ PERSONAL", "COOR _ TÉCNICA", "DOC _ ENV", "DOC _ REC", "IMAGEN _ VISUAL",
-  "LEGALES", "LEGALES/00 PROPUESTA", "LEGALES/01 CONTRATOS", "LEGALES/02 ADENDAS", "LEGALES/03 OTRO SI",
-  "LEGALES/04 ACTAS DE ENTREGA", "LEGALES/05 CUENTAS DE COBRO", "PRESUPUESTO", "PROGRAMACIÓN", "ZL_OBSOLETOS",
+  "COOR _ ADMIN", "COOR _ ADMIN/00 INFORMES", "COOR _ OBRA", "COOR _ OBRA/COOR _ PERSONAL",
+  "COOR _ TÉCNICA", "COOR _ TÉCNICA/ARQ", "COOR _ TÉCNICA/MEP", "COOR _ TÉCNICA/STR",
+  "DOC _ ENV", "DOC _ REC", "IMAGEN _ VISUAL",
+  "LEGALES", "LEGALES/00 PROPUESTA", "LEGALES/01 CONTRATOS", "LEGALES/02 ADENDAS",
+  "LEGALES/03 ACTAS DE ENTREGA", "LEGALES/04 CUENTAS DE COBRO", "LEGALES/05 FACTURACION",
+  "PRESUPUESTO", "PROGRAMACIÓN", "ZL_OBSOLETOS",
 ];
 const CARPETA_PROPUESTA = "LEGALES/00 PROPUESTA";
 
@@ -303,6 +308,63 @@ async function avisoComentario(id: string) {
   return { enviado: true };
 }
 
+async function correoProyectos(asunto: string, html: string) {
+  const { data: ig } = await admin.from("integraciones").select("refresh_token").eq("id", "onedrive").maybeSingle();
+  if (!ig?.refresh_token) return false;
+  try {
+    const t = await token({ grant_type: "refresh_token", refresh_token: ig.refresh_token, scope: "offline_access Mail.Send" });
+    const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+      method: "POST", headers: { Authorization: `Bearer ${t.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: false }),
+    });
+    return r.ok;
+  } catch (_) { return false; }
+}
+const escH = (s: string) => (s || "").replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" } as any)[x]);
+async function avisoCliente(encargoId: string, accion: string, archivo: string) {
+  const { data: e } = await admin.from("encargos").select("nombre").eq("id", encargoId).maybeSingle();
+  const cuando = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" });
+  const html = `<div style="font-family:Arial,sans-serif;color:#1E221D;max-width:560px">
+    <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#999">Portal de encargos · ${escH(accion)}</p>
+    <h2 style="font-weight:400;margin:0 0 6px">${escH(e?.nombre || "")}</h2>
+    <p style="color:#999;margin:0 0 18px">${cuando}</p>
+    <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${escH(archivo)}</p>
+    <p style="color:#999;font-size:12px">Por — regenerativo</p></div>`;
+  return correoProyectos(`${accion} · ${e?.nombre || ""}`, html);
+}
+async function primeraCarpeta(at: string, base: string, opciones: string[]) {
+  for (const c of opciones) {
+    try { await graph(at, `/me/drive/root:/${enc(`${base}/${c}`)}?$select=id`); return c; } catch (_) { /* siguiente */ }
+  }
+  return null;
+}
+async function visorCarpeta(at: string, encargoId: string, modulo: string) {
+  const base = await baseEncargo(encargoId);
+  const carpeta = await primeraCarpeta(at, base, CARPETAS_VISOR[modulo] || []);
+  if (!carpeta) return { archivo: null };
+  const sel = "$top=200&$select=id,name,file,webUrl,size,lastModifiedDateTime";
+  const l = ((await graph(at, `/me/drive/root:/${enc(`${base}/${carpeta}`)}:/children?${sel}`))?.value || []).filter((x: any) => x.file);
+  const peso = (n: string) => /\.pdf$/i.test(n) ? 0 : /\.xlsx?$/i.test(n) ? 1 : 2;
+  l.sort((a: any, b: any) => (peso(a.name) - peso(b.name)) || (b.lastModifiedDateTime > a.lastModifiedDateTime ? 1 : -1));
+  const f = l.find((x: any) => peso(x.name) < 2) || l[0];
+  if (!f) return { archivo: null, carpeta };
+  let vista = "";
+  try { vista = (await graph(at, `/me/drive/items/${f.id}/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }))?.getUrl || ""; } catch (_) { /* sin vista previa */ }
+  return { carpeta, archivo: { nombre: f.name, fecha: f.lastModifiedDateTime, web: f.webUrl, vista, ruta: f.name } };
+}
+async function subirRecibido(at: string, encargoId: string, nombre: string, base64: string) {
+  const base = await baseEncargo(encargoId);
+  const carpeta = (await primeraCarpeta(at, base, CARPETAS_RECIBIDOS)) || "DOC _ REC";
+  const limpio = nombre.replace(/[\\/:*?"<>|#%]/g, " ").trim().slice(0, 180) || "archivo";
+  const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  if (bin.length > 60e6) throw new Error("El archivo supera 60 MB.");
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${base}/${carpeta}/${limpio}`)}:/content?@microsoft.graph.conflictBehavior=rename`, {
+    method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/octet-stream" }, body: bin,
+  });
+  if (!r.ok) throw new Error("No se pudo subir el archivo.");
+  return { ok: true, nombre: (await r.json()).name };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const u = new URL(req.url);
@@ -328,7 +390,7 @@ Deno.serve(async (req) => {
     const { data: esAdmin } = await usuario.rpc("es_admin");
     const b = await req.json();
     // Acciones que puede usar cualquier persona invitada al encargo (clientes incluidos)
-    if (["aviso_comentario", "cli_enviados", "cli_archivo"].includes(b.accion)) {
+    if (["aviso_comentario", "cli_enviados", "cli_archivo", "cli_recibidos", "cli_subir", "visor"].includes(b.accion)) {
       const { data: yo } = await usuario.auth.getUser();
       if (!yo?.user) return json({ error: "Sesión no válida." }, 401);
       if (b.accion === "aviso_comentario") {
@@ -340,9 +402,18 @@ Deno.serve(async (req) => {
       if (!rol && !esAdmin) return json({ error: "Sin acceso." }, 403);
       const at = await accesoGraph();
       if (b.accion === "cli_enviados") return json(await archivosEncargo(at, b.encargo_id, [CARPETAS_CLIENTE]));
+      if (b.accion === "cli_recibidos") return json(await archivosEncargo(at, b.encargo_id, [CARPETAS_RECIBIDOS]));
+      if (b.accion === "visor") return json(await visorCarpeta(at, b.encargo_id, b.modulo));
+      if (b.accion === "cli_subir") {
+        const r = await subirRecibido(at, b.encargo_id, String(b.nombre || ""), String(b.base64 || ""));
+        if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente compartió un documento", r.nombre);
+        return json(r);
+      }
       const ruta = rutaSegura(b.ruta || "");
-      if (!CARPETAS_CLIENTE.some((c) => ruta.startsWith(c + "/"))) return json({ error: "Sin acceso." }, 403);
-      return json(await archivoEncargo(at, b.encargo_id, "", ruta, !!b.pdf));
+      if (![...CARPETAS_CLIENTE, ...CARPETAS_RECIBIDOS].some((c) => ruta.startsWith(c + "/"))) return json({ error: "Sin acceso." }, 403);
+      const archivo = await archivoEncargo(at, b.encargo_id, "", ruta, !!b.pdf);
+      if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente descargó un documento", ruta.split("/").pop() || ruta);
+      return json(archivo);
     }
     if (!esAdmin) return json({ error: "Solo administración." }, 403);
     if (b.accion === "url") {

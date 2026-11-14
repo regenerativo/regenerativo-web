@@ -877,3 +877,27 @@ html body .modal-cat .mc-ico.ingreso{background:rgba(0,117,143,.1);color:#00758F
 html body .modal-cat .mc-tot{margin-left:auto;font-weight:500;font-size:17px;white-space:nowrap}
 html body .modal-cat .mc-tot.ingreso{color:#00758F}html body .modal-cat .mc-tot.gasto{color:#7A2E2E}
 html body .lv .mon-col{cursor:pointer}
+html body .lv .clave-vis{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;letter-spacing:.02em;background:rgba(243,239,230,.8);padding:3px 8px;border-radius:8px}html body .lv .copiar{margin-left:6px}
+/* Cliente: Enviados y Recibidos con su explicación */
+html body .lv .cli-docs-cab{margin-bottom:14px}
+html body .lv .cli-docs-cab h3{margin:0 0 4px}
+html body .lv .cli-docs-cab .sub{max-width:620px}
+html body .lv .cli-subir{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px;cursor:pointer}
+html body .lv .cli-docs+.cli-docs{margin-top:18px}
+/* Visor de Presupuesto y Programación (solo lectura, al día con la carpeta) */
+html body .lv .visor-cab{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+html body .lv .visor-cab b{display:block;font-weight:400;font-size:17px}
+html body .lv .visor-cab .sub{font-size:12.5px}
+html body .lv .visor-marco{position:relative;width:100%;height:min(78vh,900px);border-radius:16px;overflow:hidden;background:#F3EFE6;border:1px solid rgba(30,34,29,.06)}
+html body .lv .visor-marco iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+@media (max-width:760px){html body .lv .visor-marco{height:70vh}}
+/* Reseña del proyecto */
+html body .lv .resena textarea{width:100%;margin:12px 0;border-radius:14px;padding:14px;border:1px solid rgba(30,34,29,.1);font:inherit;resize:vertical;background:rgba(255,255,255,.8)}
+html body .lv .estrellas{display:flex;gap:4px;margin-top:14px}
+html body .lv .estrella{border:0;background:none;padding:4px;color:#D9D4C7;cursor:pointer;transition:color .3s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
+html body .lv .estrella svg{width:26px;height:26px}
+html body .lv .estrella.on{color:#DFDF3F}
+@media (hover:hover){html body .lv .estrella:hover{transform:scale(1.18)}}
+html body .lv .resena-item{padding:12px 0;border-bottom:1px dotted rgba(153,153,153,.55)}
+html body .lv .resena-item p{margin:6px 0}
+html body .lv .estrellas.mini{color:#C9C93A;letter-spacing:2px;font-size:14px}html body .lv .estrellas.mini i{font-style:normal;color:#E3DFD3}
