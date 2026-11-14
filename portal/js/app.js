@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=80';
-import * as M from './modulos.js?v=80';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=80';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=80';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=80';
+import * as D from './datos.js?v=81';
+import * as M from './modulos.js?v=81';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=81';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=81';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=81';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -102,6 +102,7 @@ async function irSeguro() {
 
 // ---------------- Marco general ----------------
 function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '', eyebrow = '' }) {
+  document.body.classList.remove('ingreso');  // el pie del ingreso (Por regenerativo fijo abajo) no debe quedar encima del menú
   const esCli = s.email.endsWith('@clientes.portal.regenerativo.co');
   const enlacesGen = esCli || enc ? '' : `
     ${s.soloFinanzas ? '' : `<a href="#/" class="${activo === 'inicio' ? 'activo' : ''}">${icoMenu('inicio')}<span>Inicio</span></a>`}
@@ -523,7 +524,9 @@ async function propuestaCliente(ctx, pintar, html) {
   let l = [];
   try { l = ((await D.onedrive('cli_enviados', { encargo_id: ctx.e.id })).archivos || []).filter(a => /\.pdf$/i.test(a.nombre) && (/propuesta/i.test(a.nombre) || /SCREG_/i.test(a.nombre))).sort((x, y) => (y.fecha || '').localeCompare(x.fecha || '')).slice(0, 1); } catch (_) {}
   if (!l.length) return html ? pintar(html.html) || html.montar?.() : pintar('<div class="vacio">Todavía no hay una propuesta para mostrar.</div>');
+  // Si mientras cargaba se cambió de sección, no hay caja: no se pinta nada (antes rompía la página)
   const caja = $('#cli-prop');
+  if (!caja) return;
   caja.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta económica</h3><p class="sub">El documento que te enviamos.</p></div>${listaDocsCli(l, 'ip')}`;
   caja.querySelectorAll('[data-ip]').forEach(b => b.onclick = async () => {
     const a = l[+b.dataset.ip]; const t = b.textContent; b.disabled = true; b.textContent = '…';
