@@ -1,0 +1,75 @@
+/* regenerativo · capa viva: movimiento editorial (no cambia logo ni tipografía) */
+:root{--v-ease:cubic-bezier(.16,1,.3,1);--v-negro:#1E221D;--v-gris:#999999;--v-azul:#00A3CB;--v-lima:#DFDF3F}
+.v-prog{position:fixed;left:0;top:0;height:2px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--v-azul),var(--v-lima));z-index:60;pointer-events:none}
+
+html.vivo .v-up{opacity:0;transform:translateY(28px);transition:opacity .9s var(--v-ease),transform 1.1s var(--v-ease);transition-delay:var(--vd,0ms)}
+html.vivo .v-up.v-in{opacity:1;transform:none}
+
+.v-w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+.v-w>span{display:inline-block;transform:translateY(105%);transition:transform 1.1s var(--v-ease);transition-delay:var(--vd,0ms)}
+.v-in .v-w>span,.v-w.v-in>span{transform:none}
+
+html.vivo .v-img{clip-path:inset(12% 0 0 0);transition:clip-path 1.4s var(--v-ease);transition-delay:var(--vd,0ms)}
+html.vivo .v-img.v-in{clip-path:inset(0 0 0 0)}
+.v-par{overflow:hidden}
+.v-par>img{transform:translate3d(0,var(--vy,0px),0) scale(1.08);transition:transform .9s var(--v-ease);will-change:transform}
+@media (hover:hover){.v-par:hover>img{transform:translate3d(0,var(--vy,0px),0) scale(1.12)}}
+
+/* cursor “Ver encargo” */
+.v-cur{position:fixed;left:0;top:0;z-index:70;pointer-events:none;padding:10px 16px;border-radius:999px;font:500 13px/1 "Stolzl",system-ui,sans-serif;letter-spacing:.01em;color:#fff;background:rgba(30,34,29,.72);-webkit-backdrop-filter:blur(12px) saturate(1.6);backdrop-filter:blur(12px) saturate(1.6);transform:translate(-50%,-50%) scale(.4);opacity:0;transition:opacity .35s var(--v-ease),transform .45s var(--v-ease);white-space:nowrap}
+.v-cur.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* vista previa flotante del índice */
+.v-prev{position:fixed;left:0;top:0;z-index:55;width:min(300px,24vw);aspect-ratio:4/5;pointer-events:none;overflow:hidden;opacity:0;transform:translate(24px,-50%) scale(.92) rotate(-2deg);transition:opacity .35s var(--v-ease),transform .6s var(--v-ease);box-shadow:0 30px 80px rgba(30,34,29,.18)}
+.v-prev.on{opacity:1;transform:translate(24px,-50%) scale(1) rotate(0)}
+.v-prev img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* galería horizontal de encargos */
+.v-gal{position:relative;margin-top:clamp(40px,5vw,72px)}
+.v-gal-pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center}
+.v-gal-et{position:absolute;left:clamp(20px,3.3vw,48px);top:50%;transform:translateY(-50%) rotate(-90deg);transform-origin:0 0;margin-top:60px;font:500 12px/1 "Stolzl",system-ui,sans-serif;letter-spacing:.2em;color:var(--v-gris);white-space:nowrap;z-index:2}
+.v-gal-tr{display:flex;align-items:center;height:72%;padding:0 18vw 0 clamp(64px,10vw,150px);will-change:transform}
+.v-gal-it{flex:none;position:relative;display:block;color:var(--v-negro)}
+.v-gal-it.t{align-self:flex-start}.v-gal-it.b{align-self:flex-end}
+.v-gal-fr{overflow:hidden;box-shadow:0 8px 30px rgba(30,34,29,.06);transition:transform .6s var(--v-ease),box-shadow .6s var(--v-ease)}
+.v-gal-fr img{display:block;width:100%;height:100%;object-fit:cover;transition:transform 1.2s var(--v-ease)}
+.v-gal-tx{position:absolute;left:0;top:calc(100% + 12px);display:flex;flex-direction:column;gap:3px;font:500 14px/1.25 "Stolzl",system-ui,sans-serif;letter-spacing:-.01em;white-space:nowrap;opacity:.0;transform:translateY(-4px);transition:opacity .4s var(--v-ease),transform .5s var(--v-ease)}
+.v-gal-tx small{font-weight:400;font-size:12.5px;color:var(--v-gris)}
+.v-gal-it.b .v-gal-tx{top:auto;bottom:calc(100% + 12px)}
+.v-gal-it:hover .v-gal-fr{transform:scale(1.02);box-shadow:0 25px 80px rgba(30,34,29,.14)}
+.v-gal-it:hover .v-gal-fr img{transform:scale(1.06)}
+.v-gal-it:hover .v-gal-tx,.v-gal-it:focus-visible .v-gal-tx{opacity:1;transform:none}
+@media (hover:none){.v-gal-tx{opacity:1;transform:none}}
+.v-gal-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(30,34,29,.06)}
+.v-gal-bar i{display:block;height:100%;width:100%;transform-origin:0 50%;transform:scaleX(0);background:rgba(30,34,29,.28)}
+.v-gal-hint{position:absolute;right:clamp(20px,3.3vw,48px);bottom:28px;display:flex;align-items:center;gap:10px;font:400 12.5px/1 "Stolzl",system-ui,sans-serif;color:var(--v-gris);transition:opacity .5s}
+.v-gal-hint svg{animation:v-pulso 1.6s ease-in-out infinite}
+@keyframes v-pulso{50%{transform:translateX(5px);opacity:.5}}
+
+/* franja en movimiento */
+.v-mq{overflow:hidden;padding:clamp(56px,7vw,110px) 0 0;user-select:none}
+.v-mq-tr{display:flex;width:max-content;animation:v-mq 46s linear infinite}
+.v-mq span{font:300 clamp(46px,8.6vw,132px)/1 "Stolzl",system-ui,sans-serif;letter-spacing:-.035em;color:var(--v-negro);white-space:nowrap;padding-right:.5em}
+.v-mq span i{font-style:normal;color:var(--v-gris)}
+@keyframes v-mq{to{transform:translateX(-50%)}}
+
+/* tarjetas de encargos */
+@media (hover:hover){a[data-sector] img{transition:transform 1.2s var(--v-ease)}a[data-sector]:hover img{transform:scale(1.05)}}
+
+/* enlaces del menú: subrayado que se desliza */
+.navfull a{position:relative}
+.navfull a::after{content:"";position:absolute;left:0;right:0;bottom:8px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:100% 50%;transition:transform .5s var(--v-ease)}
+.navfull a:hover::after{transform:scaleX(1);transform-origin:0 50%}
+
+@media (max-width:760px){
+  .v-gal-tr{height:58%;padding-left:clamp(20px,5vw,40px)}
+  .v-gal-et{transform:none;top:calc(env(safe-area-inset-top,0px) + 88px);margin:0}
+  .v-gal-it.b{margin-bottom:44px}
+  .v-gal-it.b .v-gal-tx{top:calc(100% + 12px);bottom:auto}
+}
+@media (prefers-reduced-motion:reduce){
+  html.vivo .v-up,html.vivo .v-img{opacity:1;transform:none;clip-path:none;transition:none}
+  .v-w>span{transform:none;transition:none}
+  .v-mq-tr{animation:none}
+  .v-par>img{transform:none}
+}

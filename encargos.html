@@ -33,6 +33,7 @@ html,body{overflow-x:clip}
 html{scroll-behavior:auto}
 header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0 !important;padding:8px 24px 16px;background:rgba(255,255,255,.96);border-radius:0 0 18px 18px}
 </style>
+<link rel="stylesheet" href="/assets/vivo.css?v=1">
 </head>
 <body>
 <div style="font-family: Stolzl, 'Helvetica Neue', Arial, sans-serif; color: #1E221D; background: transparent; min-width: 0; position: relative">
@@ -189,5 +190,6 @@ const sb=[...document.querySelectorAll('[data-s]')];
 sb.forEach(b=>b.addEventListener('click',()=>{const s=b.dataset.s;sb.forEach(x=>{const on=x===b;x.setAttribute('aria-pressed',on);x.style.fontWeight=on?'500':'300'});
  document.querySelectorAll('[data-sector]').forEach(c=>c.style.display=(s==='Todos'||c.dataset.sector===s)?'flex':'none');}));
 </script>
+<script src="/assets/vivo.js?v=1" defer></script>
 </body>
 </html>
