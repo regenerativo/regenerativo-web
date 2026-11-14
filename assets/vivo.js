@@ -14,6 +14,10 @@ if(pub&&d.getElementById('hero')){
 
 
 }
+/* la línea para deslizar queda en el mismo eje que 'Por regenerativo' y los íconos */
+(function(){var g=d.getElementById('goDown'),h=d.getElementById('hero');if(!g||!h)return;var ref=h.querySelector('.porx');if(!ref)return;
+ var al=function(){if(innerWidth<=760){g.style.removeProperty('bottom');return}var hr=h.getBoundingClientRect(),r=ref.getBoundingClientRect();var c=(r.top+r.bottom)/2;g.style.setProperty('bottom',(hr.bottom-c-g.offsetHeight/2).toFixed(1)+'px','important')};
+ al();addEventListener('resize',al);addEventListener('load',al);if(d.fonts)d.fonts.ready.then(al)})();
 /* franja en movimiento antes del pie */
 var pie=d.querySelector('footer');
 if(pie&&!d.querySelector('.v-mq')){var m=d.createElement('div');m.className='v-mq';m.setAttribute('aria-hidden','true');var t='<span>No intervenimos, <i>regeneramos.</i></span>';m.innerHTML='<div class="v-mq-tr">'+t+t+t+t+'</div>';pie.parentNode.insertBefore(m,pie)}
