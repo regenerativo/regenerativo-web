@@ -99,7 +99,7 @@ td.num,th.num{text-align:right;white-space:nowrap}
 .datos dd.det{font-style:italic;font-weight:300}
 .modulos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .modulo{border:1px dotted var(--gris);border-radius:10px;padding:12px 14px;text-decoration:none;display:block}
-.modulo b{font-weight:600;display:block}
+.modulo b{font-weight:500;display:block}
 .modulo span{font-size:12px;color:var(--gris)}
 .xxx{color:var(--vino)}
 .vacio{padding:48px 20px;text-align:center;color:var(--gris);border:1px dotted var(--gris);border-radius:12px}
@@ -182,9 +182,9 @@ body.cargando::before{content:"";position:fixed;top:0;left:0;height:2px;width:10
 .cierre-tabla td{border-top:1px dotted var(--gris);padding:8px 10px}
 .cierre-tabla tr.total td{font-family:var(--t-titulo);font-weight:500;background:var(--gris-claro)}
 .tabla-pres tr.fila-cap td{background:#EDEDED;font-family:var(--t-titulo);font-weight:500;font-size:13px}
-.tabla-pres tr.fila-act td{background:#F7F7F7;font-weight:600}
-.fila-cap td{font-weight:600}
-tr.fila-act td{font-weight:600}
+.tabla-pres tr.fila-act td{background:#F7F7F7;font-weight:500}
+.fila-cap td{font-weight:500}
+tr.fila-act td{font-weight:500}
 input.cant{width:78px;padding:5px 8px;text-align:right}
 input.ancho-p{width:120px}
 .tabla-gantt input[type=date]{padding:5px 6px;width:140px}
@@ -292,7 +292,7 @@ input.ancho-p{width:120px}
 .mon-gasto.exc{background:#E7B9A6}
 .mon-col:hover .mon-gasto{filter:brightness(.95)}
 .mon-ico{font-size:20px;margin-top:-34px;position:relative}
-.mon-val{font-size:13px;margin-top:12px;font-weight:600}
+.mon-val{font-size:13px;margin-top:12px;font-weight:500}
 .mon-pct{font-size:11px;color:var(--gris)}
 .mon-nom{font-size:10.5px;color:var(--gris);line-height:1.2;margin-top:2px;height:26px;overflow:hidden}
 .mon-ley{display:flex;align-items:center;gap:6px;flex-wrap:wrap}

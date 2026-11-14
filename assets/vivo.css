@@ -170,3 +170,4 @@ a:has(svg) svg *{transition:stroke .35s ease,fill .35s ease}
 .postbody>p{overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .navfull a::after{display:none!important}
 @media (hover:hover){.portal-acceso:hover svg{transform:translateX(4px) scale(1.06)!important}}
+*{font-synthesis:none}b,strong{font-weight:500}

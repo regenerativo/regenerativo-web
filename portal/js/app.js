@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=58';
-import * as M from './modulos.js?v=58';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=58';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=58';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=58';
+import * as D from './datos.js?v=59';
+import * as M from './modulos.js?v=59';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=59';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=59';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=59';
 
 // Mensajes de Supabase en español
 function msg(err) {
