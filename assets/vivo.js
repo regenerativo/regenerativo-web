@@ -4,59 +4,13 @@ var d=document,H=d.documentElement,rm=matchMedia('(prefers-reduced-motion: reduc
 H.classList.add('vivo');
 var fuera=function(el){return el.closest('#hero,.stage,header,.v-gal,.v-mq,nav[aria-label="Redes"]')};
 
-/* galería horizontal (solo inicio) */
-var GAL=[
- ['/assets/pub-ciento-dos.jpg','/encargos/ciento-dos','Reforma Ciento dos','Residencial · Bogotá',1,'c',1],
- ['/assets/tcs-tarjeta-portal.jpg','/encargos/topara-concept-store','Topara Concept Store','Comercial · Colombia',.8,'t',1.15],
- ['/assets/thub-portada-benny.jpg','/encargos/t-hub','T-Hub · Nalsani','Oficinas · Bogotá',1.5,'b',.9],
- ['/assets/aira-tarjeta2.jpg','/encargos/studio-aira-ultra','Studio Aira Ultra','Residencial · Chía',.8,'c',1],
- ['/assets/tfs-portada-entrada32.jpg','/encargos/totto-topara-flagship-store','Totto Topara Flagship Store','Comercial · Bogotá',1.5,'t',.85],
- ['/assets/cd-portada-cocina.jpg','/encargos/ciento-dos','Reforma Ciento dos','Residencial · Bogotá',1.78,'b',1],
- ['/assets/tcs-vitrina-b.jpg','/encargos/topara-concept-store','Topara Concept Store','Comercial · Colombia',.75,'c',.8],
- ['/assets/thub-g1-1.jpg','/encargos/t-hub','T-Hub · Nalsani','Oficinas · Bogotá',1,'t',.75],
- ['/assets/aira-portada2.jpg','/encargos/studio-aira-ultra','Studio Aira Ultra','Residencial · Chía',1.78,'c',1.05],
- ['/assets/tfs-1154-c.jpg','/encargos/totto-topara-flagship-store','Totto Topara Flagship Store','Comercial · Bogotá',.8,'b',.9],
- ['/assets/lat21-tarjeta2.jpg','/encargos','Latitud 21 · Nalsani','Próximamente',.8,'t',.85]
-];
 var pub=d.getElementById('publicaciones');
-if(pub&&d.getElementById('hero')){
-  var g=d.createElement('section');g.className='v-gal';g.setAttribute('aria-label','Encargos');
-  var h='<div class="v-gal-pin"><span class="v-gal-et">ENCARGOS</span><div class="v-gal-tr">';
-  var gaps=[40,28,56,36,80,32,48,60];
-  GAL.forEach(function(x,i){h+='<a class="v-gal-it '+x[5]+'" href="'+x[1]+'" data-ver="'+(x[3]==='Próximamente'?'Próximamente':'Ver encargo')+'" style="margin-right:'+gaps[i%8]+'px"><div class="v-gal-fr" style="height:calc(var(--gh) * '+x[6]+');width:calc(var(--gh) * '+(x[6]*x[4]).toFixed(3)+')"><img src="'+x[0]+'" alt="'+x[2]+'" loading="eager" decoding="async" draggable="false"></div><span class="v-gal-tx">'+x[2]+'<small>'+x[3]+'</small></span></a>'});
-  h+='</div><div class="v-gal-bar"><i></i></div><div class="v-gal-hint">Desliza para explorar<svg width="20" height="12" viewBox="0 0 20 12" fill="none"><path d="M1 6H19M19 6L14 1M19 6L14 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>';
-  g.innerHTML=h;pub.parentNode.insertBefore(g,pub);
-  var pin=g.firstChild,tr=pin.querySelector('.v-gal-tr'),bar=pin.querySelector('.v-gal-bar i'),hint=pin.querySelector('.v-gal-hint'),dist=0;
-  var medir=function(){var vh=innerHeight;var gh=innerWidth<760?Math.min(innerWidth*.56,vh*.34):Math.min(vh*.5,520);tr.style.setProperty('--gh',gh+'px');dist=Math.max(0,tr.scrollWidth-innerWidth);g.style.height=(vh+dist*.9)+'px';mover()};
-  var its=[].slice.call(tr.children),ly=scrollY,sk=0;var mover=function(){var v=scrollY-ly;ly=scrollY;sk+=(Math.max(-8,Math.min(8,v*.12))-sk)*.3;var r=g.getBoundingClientRect(),tot=g.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;tr.style.transform='translate3d('+(-p*dist).toFixed(1)+'px,0,0)';bar.style.transform='scaleX('+p.toFixed(4)+')';hint.style.opacity=p<.08?1:0};
-  addEventListener('resize',medir);addEventListener('load',medir);medir();
-  addEventListener('scroll',function(){requestAnimationFrame(mover)},{passive:true});
-}
-
-
 /* ——— inicio con más fuerza ——— */
 if(pub&&d.getElementById('hero')){
   /* lema que se escribe solo */
   var lem=[].slice.call(d.querySelectorAll('#heroContent p')).filter(function(p){return /NO INTERVENIMOS/.test(p.textContent)})[0];
   if(lem&&!rm){var FR=['NO INTERVENIMOS, REGENERAMOS.','LEEMOS EL LUGAR.','DISEÑAMOS DESDE LA NATURALEZA.'],fi=0;lem.setAttribute('aria-label','No intervenimos, regeneramos.');lem.innerHTML='<span class="v-rot" aria-hidden="true">'+FR[0]+'</span>';var ro=lem.firstChild;
    setInterval(function(){ro.classList.add('sale');setTimeout(function(){fi=(fi+1)%FR.length;ro.textContent=FR[fi];ro.classList.remove('sale')},1700)},6500)}
-
-  /* manifiesto que se enciende con el scroll */
-  var man=d.createElement('section');man.className='v-man';
-  var TX='Cada lugar ya tiene una forma de funcionar. Leemos sus relaciones, sus flujos y sus comportamientos, y desde ahí diseñamos espacios que nacen de lo que ya estaba.';
-  man.innerHTML='<small>MANIFIESTO</small><p>'+TX.split(' ').map(function(w){return '<span>'+w+'</span>'}).join(' ')+'</p>';
-  var gal=d.querySelector('.v-gal');gal.parentNode.insertBefore(man,gal);
-  var ws=[].slice.call(man.querySelectorAll('p span'));
-  var enc=function(){var r=man.querySelector('p').getBoundingClientRect(),vh=innerHeight;var p=Math.max(0,Math.min(1,(vh*.85-r.top)/(r.height+vh*.35)));var k=Math.round(p*ws.length);ws.forEach(function(w,i){w.classList.toggle('on',i<k)})};
-  addEventListener('scroll',function(){requestAnimationFrame(enc)},{passive:true});enc();
-
-
-  /* cifras que cuentan */
-  var num=d.createElement('section');num.className='v-num';
-  var NUM=[[4,'Servicios'],[6,'Encargos publicados'],[3,'Sectores: residencial, comercial y oficinas'],[2023,'Primer encargo publicado']];
-  num.innerHTML=NUM.map(function(x,i){return '<div style="--vd:'+i*120+'ms"><b data-n="'+x[0]+'">'+(rm?x[0]:0)+'</b><span>'+x[1]+'</span></div>'}).join('');
-  gal.parentNode.insertBefore(num,gal);
-  var cnt=new IntersectionObserver(function(en){if(!en[0].isIntersecting)return;num.classList.add('v-in');cnt.disconnect();if(rm)return;num.querySelectorAll('b').forEach(function(b,i){var n=+b.dataset.n,ini=n>1000?n-40:0,t0=performance.now()+i*120;(function f(t){var k=Math.max(0,Math.min(1,(t-t0)/1600));k=1-Math.pow(1-k,4);b.textContent=Math.round(ini+(n-ini)*k);if(k<1)requestAnimationFrame(f)})(t0)})},{threshold:.4});cnt.observe(num);
 
 
 }

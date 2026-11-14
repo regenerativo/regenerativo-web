@@ -146,3 +146,6 @@ html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!
 .v-man p{line-height:1.1;max-width:920px}
 .v-man small,.v-man p{margin-left:clamp(0px,9vw,136px)}
 @media (max-width:760px){.v-man small,.v-man p{margin-left:0}}
+/* franja discreta, escala de subtítulo */
+.v-mq{padding-top:clamp(40px,5vw,72px)}
+.v-mq span{font-size:clamp(20px,1.9vw,26px)!important;font-weight:300;letter-spacing:-.01em;line-height:1.4;padding-right:1.2em}
