@@ -58,11 +58,7 @@ if(pub&&d.getElementById('hero')){
   gal.parentNode.insertBefore(num,gal);
   var cnt=new IntersectionObserver(function(en){if(!en[0].isIntersecting)return;num.classList.add('v-in');cnt.disconnect();if(rm)return;num.querySelectorAll('b').forEach(function(b,i){var n=+b.dataset.n,ini=n>1000?n-40:0,t0=performance.now()+i*120;(function f(t){var k=Math.max(0,Math.min(1,(t-t0)/1600));k=1-Math.pow(1-k,4);b.textContent=Math.round(ini+(n-ini)*k);if(k<1)requestAnimationFrame(f)})(t0)})},{threshold:.4});cnt.observe(num);
 
-  /* servicios en filas con imagen flotante */
-  var srv=d.createElement('section');srv.className='v-srv';
-  var SRV=[['Arquitectura','Lugares nuevos y reformas, desde la lectura del sitio.','/assets/tfs-portada-entrada32.jpg'],['Diseño de Espacios','Interiores que ordenan cómo se vive y se trabaja.','/assets/pub-ciento-dos.jpg'],['Muebles y Objetos','Piezas a la medida de cada lugar.','/assets/thub-g1-1.jpg'],['Conceptualización de Proyectos','La idea que guía todo lo demás.','/assets/lat21-tarjeta2.jpg']];
-  srv.innerHTML='<small>QUÉ HACEMOS</small>'+SRV.map(function(x,i){return '<a href="/about" data-img="'+x[2]+'"><i>0'+(i+1)+'</i><strong>'+x[0]+'</strong><em>'+x[1]+'</em><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>'}).join('');
-  pub.parentNode.insertBefore(srv,pub);
+
 }
 /* franja en movimiento antes del pie */
 var pie=d.querySelector('footer');
