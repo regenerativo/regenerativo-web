@@ -28,9 +28,9 @@ if(pub&&d.getElementById('hero')){
   g.innerHTML=h;pub.parentNode.insertBefore(g,pub);
   var pin=g.firstChild,tr=pin.querySelector('.v-gal-tr'),bar=pin.querySelector('.v-gal-bar i'),hint=pin.querySelector('.v-gal-hint'),dist=0;
   var medir=function(){var vh=innerHeight;var gh=innerWidth<760?Math.min(innerWidth*.56,vh*.34):Math.min(vh*.5,520);tr.style.setProperty('--gh',gh+'px');dist=Math.max(0,tr.scrollWidth-innerWidth);g.style.height=(vh+dist*.9)+'px';mover()};
-  var its=[].slice.call(tr.children),ly=scrollY,sk=0;var mover=function(){var v=scrollY-ly;ly=scrollY;sk+=(Math.max(-8,Math.min(8,v*.12))-sk)*.3;if(!rm)its.forEach(function(it,i){it.style.transform='skewX('+(-sk*.6).toFixed(2)+'deg) translateY('+(Math.sin(i*1.7)*sk*2).toFixed(1)+'px)'});var r=g.getBoundingClientRect(),tot=g.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;tr.style.transform='translate3d('+(-p*dist).toFixed(1)+'px,0,0)';bar.style.transform='scaleX('+p.toFixed(4)+')';hint.style.opacity=p<.08?1:0};
+  var its=[].slice.call(tr.children),ly=scrollY,sk=0;var mover=function(){var v=scrollY-ly;ly=scrollY;sk+=(Math.max(-8,Math.min(8,v*.12))-sk)*.3;var r=g.getBoundingClientRect(),tot=g.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;tr.style.transform='translate3d('+(-p*dist).toFixed(1)+'px,0,0)';bar.style.transform='scaleX('+p.toFixed(4)+')';hint.style.opacity=p<.08?1:0};
   addEventListener('resize',medir);addEventListener('load',medir);medir();
-  addEventListener('scroll',function(){requestAnimationFrame(mover)},{passive:true});(function dec(){if(Math.abs(sk)>.05){sk*=.88;its.forEach(function(it,i){it.style.transform='skewX('+(-sk*.6).toFixed(2)+'deg) translateY('+(Math.sin(i*1.7)*sk*2).toFixed(1)+'px)'})}requestAnimationFrame(dec)})();
+  addEventListener('scroll',function(){requestAnimationFrame(mover)},{passive:true});
 }
 
 
@@ -74,8 +74,6 @@ var prog=function(){var m=H.scrollHeight-innerHeight;pr.style.transform='scaleX(
 addEventListener('scroll',function(){requestAnimationFrame(prog)},{passive:true});prog();
 
 
-/* scroll con inercia (fluidez tipo Apple) solo con mouse/trackpad */
-if(!rm&&fino&&!/iPad|iPhone/.test(navigator.userAgent)){var ls=d.createElement('script');ls.src='https://unpkg.com/lenis@1.1.13/dist/lenis.min.js';ls.onload=function(){try{var L=new Lenis({lerp:.085,wheelMultiplier:.9});(function raf(t){L.raf(t);requestAnimationFrame(raf)})(performance.now());d.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var t=d.querySelector(a.getAttribute('href'));if(t){e.preventDefault();L.scrollTo(t,{offset:-90})}})})}catch(e){}};d.head.appendChild(ls)}
 if(rm)return;
 
 /* títulos palabra por palabra */
