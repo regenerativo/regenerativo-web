@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=59';
-import * as M from './modulos.js?v=59';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=59';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=59';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=59';
+import * as D from './datos.js?v=60';
+import * as M from './modulos.js?v=60';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=60';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=60';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=60';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -127,8 +127,8 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
         ${menu || ''}
         ${enlacesGen}
       </nav>
-      <a class="lv-web" href="https://regenerativo.co/">${ico('atras')}regenerativo.co</a>
-      <div class="pie"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir">Cerrar sesión</button></div>
+      <a class="lv-web" href="https://regenerativo.co/"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Volver a regenerativo.co</a>
+      <div class="pie lv-pie-lado"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-4"/><path d="M4.5 12h10"/><path d="M11 8.5l3.5 3.5-3.5 3.5"/></svg></span>Cerrar sesión</button></div>
     </div></aside>
     <header class="lv-arriba" id="lv-arriba">
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio">regenerativo</a>
