@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=81';
-import * as M from './modulos.js?v=81';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=81';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=81';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=81';
+import * as D from './datos.js?v=82';
+import * as M from './modulos.js?v=82';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=82';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=82';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=82';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -488,8 +488,8 @@ const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
       <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-${pref}="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-${pref}="${i}">Descargar</button></span></li>`).join('')}</ul>` : '';
 async function enviadosCliente(ctx, pintar) {
-  pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>
-    <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que tú o el personal requerido han compartido con nuestro equipo regenerativo.</p></div>
+  pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>
+    <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos que tú o el personal requerido han compartido con nuestro equipo regenerativo.</p></div>
       <label class="btn mini cli-subir"><span class="mas">+</span> Compartir un documento<input type="file" id="cli-arch" multiple hidden></label><div class="aviso" id="cli-aviso"></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>`);
   const bajar = (l, pref, caja) => caja.querySelectorAll(`[data-${pref}]`).forEach(b => b.onclick = async () => {
     const a = l[+b.dataset[pref]]; const t = b.textContent; b.disabled = true; b.textContent = '…';
