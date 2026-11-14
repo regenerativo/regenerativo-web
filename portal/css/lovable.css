@@ -910,3 +910,10 @@ html body .lv .estrellas.mini{color:#C9C93A;letter-spacing:2px;font-size:14px}ht
 @media (hover:hover){.lv-claude:hover{transform:translateY(-3px);gap:8px;color:#999999;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 20px 40px -16px rgba(30,34,29,.4)}.lv-claude:hover span{max-width:80px;opacity:1}.lv-claude:hover svg{transform:rotate(90deg)}}
 @media (max-width:880px){.lv-claude{bottom:calc(104px + env(safe-area-inset-bottom));height:46px;padding:0 12px}}
 body.ingreso .lv-claude{display:none}
+html body .lv .cli-carpeta{border-bottom:1px dotted rgba(153,153,153,.55)}
+html body .lv .cli-carpeta summary{display:flex;align-items:center;gap:10px;padding:12px 2px;cursor:pointer;list-style:none;transition:color .35s ease}
+html body .lv .cli-carpeta summary::-webkit-details-marker{display:none}
+html body .lv .cli-carpeta summary b{font-weight:400;flex:1}
+@media (hover:hover){html body .lv .cli-carpeta summary:hover{color:#999999}}
+html body .lv .cli-carpeta[open] summary svg{color:#00A3CB}
+html body .lv label.cli-subir{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:500}

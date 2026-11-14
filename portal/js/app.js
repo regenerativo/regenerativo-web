@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=72';
-import * as M from './modulos.js?v=72';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=72';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=72';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=72';
+import * as D from './datos.js?v=73';
+import * as M from './modulos.js?v=73';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=73';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=73';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=73';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -474,8 +474,16 @@ function vistaComentarios(ctx, coms, pintar) {
   });
   document.querySelectorAll('.lv-reabrir').forEach(b => b.onclick = async () => { b.disabled = true; try { await D.responderComentario(b.dataset.id, { estado: 'abierto' }); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; } });
 }
-// Documentos del cliente: Enviados (DOC _ ENV) y Recibidos (DOC _ REC), cada uno con su explicación
-const listaDocsCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
+// Documentos del cliente: Enviados (DOC _ ENV) y Recibidos (DOC _ REC), cada uno con su explicación, agrupados por carpeta
+const listaDocsCli = (l, pref) => {
+  if (!l.length) return '';
+  const sub = a => (a.carpeta || '').split('/').slice(1).join(' / ');
+  const grupos = [...new Set(l.map(sub))];
+  if (grupos.length < 2) return listaPlanaCli(l, pref);
+  return grupos.map(g => { const idx = l.map((a, i) => [a, i]).filter(([a]) => sub(a) === g);
+    return `<details class="cli-carpeta" ${g ? '' : 'open'}><summary><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg><b>${esc(g || 'Documentos sueltos')}</b><span class="sub">${idx.length}</span></summary>${listaPlanaCli(idx.map(([a]) => a), pref).replace(new RegExp(`data-${pref}="(\\d+)"`, 'g'), (m, n) => `data-${pref}="${idx[+n][1]}"`)}</details>`; }).join('');
+};
+const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
       <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-${pref}="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-${pref}="${i}">Descargar</button></span></li>`).join('')}</ul>` : '';
 async function enviadosCliente(ctx, pintar) {
