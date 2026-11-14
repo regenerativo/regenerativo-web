@@ -149,3 +149,23 @@ html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!
 /* franja discreta, escala de subtítulo */
 .v-mq{padding-top:clamp(40px,5vw,72px)}
 .v-mq span{font-size:clamp(34px,4.25vw,54px)!important;font-weight:300;letter-spacing:-.025em;line-height:1.3;padding-right:.8em}
+
+/* ——— detalles de interacción ——— */
+/* todo lo que se puede picar pasa de negro a gris, suave */
+a,button,[data-f]{transition:color .35s ease,opacity .35s ease}
+button[data-f]:hover,.burger:hover{color:#999999!important}
+a:hover{color:#999999}
+/* íconos de contacto: pequeño salto y cambio de tono */
+a:has(>svg) svg{transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+a:has(>svg) svg *{transition:stroke .35s ease,fill .35s ease}
+@media (hover:hover){
+ a:has(>svg):hover svg{transform:translateY(-3px) scale(1.08)}
+ a:has(>svg):hover svg[stroke]:not([stroke="none"]),a:has(>svg):hover svg [stroke]:not([stroke="none"]){stroke:#999999}
+ a:has(>svg):hover svg [fill]:not([fill="none"]){fill:#999999}
+}
+/* cursor gris translúcido, como el del iPad */
+@media (hover:hover) and (pointer:fine){
+ html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%23999999' fill-opacity='.42' stroke='%23ffffff' stroke-opacity='.7' stroke-width='1'/%3E%3C/svg%3E") 12 12,auto}
+ a,button,[role=button],label,summary,[data-f]{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23999999' fill-opacity='.28' stroke='%23ffffff' stroke-opacity='.8' stroke-width='1'/%3E%3C/svg%3E") 16 16,pointer!important}
+ input,textarea{cursor:text}
+}
