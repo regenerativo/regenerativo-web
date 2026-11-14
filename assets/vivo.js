@@ -28,11 +28,51 @@ if(pub&&d.getElementById('hero')){
   g.innerHTML=h;pub.parentNode.insertBefore(g,pub);
   var pin=g.firstChild,tr=pin.querySelector('.v-gal-tr'),bar=pin.querySelector('.v-gal-bar i'),hint=pin.querySelector('.v-gal-hint'),dist=0;
   var medir=function(){var vh=innerHeight;var gh=innerWidth<760?Math.min(innerWidth*.56,vh*.34):Math.min(vh*.5,520);tr.style.setProperty('--gh',gh+'px');dist=Math.max(0,tr.scrollWidth-innerWidth);g.style.height=(vh+dist*.9)+'px';mover()};
-  var mover=function(){var r=g.getBoundingClientRect(),tot=g.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;tr.style.transform='translate3d('+(-p*dist).toFixed(1)+'px,0,0)';bar.style.transform='scaleX('+p.toFixed(4)+')';hint.style.opacity=p<.08?1:0};
+  var its=[].slice.call(tr.children),ly=scrollY,sk=0;var mover=function(){var v=scrollY-ly;ly=scrollY;sk+=(Math.max(-8,Math.min(8,v*.12))-sk)*.3;if(!rm)its.forEach(function(it,i){it.style.transform='skewX('+(-sk*.6).toFixed(2)+'deg) translateY('+(Math.sin(i*1.7)*sk*2).toFixed(1)+'px)'});var r=g.getBoundingClientRect(),tot=g.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;tr.style.transform='translate3d('+(-p*dist).toFixed(1)+'px,0,0)';bar.style.transform='scaleX('+p.toFixed(4)+')';hint.style.opacity=p<.08?1:0};
   addEventListener('resize',medir);addEventListener('load',medir);medir();
-  addEventListener('scroll',function(){requestAnimationFrame(mover)},{passive:true});
+  addEventListener('scroll',function(){requestAnimationFrame(mover)},{passive:true});(function dec(){if(Math.abs(sk)>.05){sk*=.88;its.forEach(function(it,i){it.style.transform='skewX('+(-sk*.6).toFixed(2)+'deg) translateY('+(Math.sin(i*1.7)*sk*2).toFixed(1)+'px)'})}requestAnimationFrame(dec)})();
 }
 
+
+/* ——— inicio con más fuerza ——— */
+if(pub&&d.getElementById('hero')){
+  /* lema que se escribe solo */
+  var lem=[].slice.call(d.querySelectorAll('#heroContent p')).filter(function(p){return /NO INTERVENIMOS/.test(p.textContent)})[0];
+  if(lem&&!rm){var FR=['LEEMOS EL LUGAR.','DISEÑAMOS DESDE LA NATURALEZA.','NO INTERVENIMOS, REGENERAMOS.'],fi=0,ci=0,borra=false;lem.setAttribute('aria-label','No intervenimos, regeneramos.');lem.innerHTML='<span class="v-type" aria-hidden="true"></span>';var ty=lem.firstChild;
+   (function tick(){var f=FR[fi];if(!borra){ci++;ty.textContent=f.slice(0,ci);if(ci===f.length){borra=true;return setTimeout(tick,fi===FR.length-1?4200:1600)}}else{ci--;ty.textContent=f.slice(0,ci);if(ci===0){borra=false;fi=(fi+1)%FR.length}}setTimeout(tick,borra?22:55)})()}
+
+  /* manifiesto que se enciende con el scroll */
+  var man=d.createElement('section');man.className='v-man';
+  var TX='Cada lugar ya tiene una forma de funcionar. Leemos sus relaciones, sus flujos y sus comportamientos, y desde ahí diseñamos espacios que nacen de lo que ya estaba.';
+  man.innerHTML='<small>MANIFIESTO</small><p>'+TX.split(' ').map(function(w){return '<span>'+w+'</span>'}).join(' ')+'</p>';
+  var gal=d.querySelector('.v-gal');gal.parentNode.insertBefore(man,gal);
+  var ws=[].slice.call(man.querySelectorAll('p span'));
+  var enc=function(){var r=man.querySelector('p').getBoundingClientRect(),vh=innerHeight;var p=Math.max(0,Math.min(1,(vh*.85-r.top)/(r.height+vh*.35)));var k=Math.round(p*ws.length);ws.forEach(function(w,i){w.classList.toggle('on',i<k)})};
+  addEventListener('scroll',function(){requestAnimationFrame(enc)},{passive:true});enc();
+
+
+  /* imagen que se expande con el scroll (Apple) */
+  var zo=d.createElement('section');zo.className='v-zoom';zo.setAttribute('aria-label','Reforma Ciento dos');
+  zo.innerHTML='<div class="v-zoom-pin"><div class="v-zoom-fr"><img src="/assets/cd-portada-cocina.jpg" alt="Reforma Ciento dos: cocina con isla verde y madera clara" decoding="async"></div><div class="v-zoom-tx"><b>Reforma Ciento dos</b><span>Residencial · Bogotá · 2026</span><a href="/encargos/ciento-dos">Ver encargo</a></div></div>';
+  man.parentNode.insertBefore(zo,man.nextSibling);
+  var zf=zo.querySelector('.v-zoom-fr'),zt=zo.querySelector('.v-zoom-tx');
+  var zoom=function(){var r=zo.getBoundingClientRect(),tot=zo.offsetHeight-innerHeight;var p=tot>0?Math.max(0,Math.min(1,-r.top/tot)):0;var e=Math.min(1,p/.75);e=e*e*(3-2*e);
+   zf.style.setProperty('--zi',(18*(1-e)).toFixed(2)+'%');zf.style.setProperty('--zx',((innerWidth<760?6:22)*(1-e)).toFixed(2)+'%');zf.style.setProperty('--zr',(28*(1-e)).toFixed(1)+'px');zf.style.setProperty('--zs',(1.25-.25*e).toFixed(3));
+   zt.style.setProperty('--zo',Math.max(0,Math.min(1,(p-.55)/.25)).toFixed(3))};
+  addEventListener('scroll',function(){requestAnimationFrame(zoom)},{passive:true});addEventListener('resize',zoom);zoom();
+  /* cifras que cuentan */
+  var num=d.createElement('section');num.className='v-num';
+  var NUM=[[4,'Servicios'],[6,'Encargos publicados'],[3,'Sectores: residencial, comercial y oficinas'],[2023,'Primer encargo publicado']];
+  num.innerHTML=NUM.map(function(x,i){return '<div style="--vd:'+i*120+'ms"><b data-n="'+x[0]+'">'+(rm?x[0]:0)+'</b><span>'+x[1]+'</span></div>'}).join('');
+  gal.parentNode.insertBefore(num,gal);
+  var cnt=new IntersectionObserver(function(en){if(!en[0].isIntersecting)return;num.classList.add('v-in');cnt.disconnect();if(rm)return;num.querySelectorAll('b').forEach(function(b,i){var n=+b.dataset.n,ini=n>1000?n-40:0,t0=performance.now()+i*120;(function f(t){var k=Math.max(0,Math.min(1,(t-t0)/1600));k=1-Math.pow(1-k,4);b.textContent=Math.round(ini+(n-ini)*k);if(k<1)requestAnimationFrame(f)})(t0)})},{threshold:.4});cnt.observe(num);
+
+  /* servicios en filas con imagen flotante */
+  var srv=d.createElement('section');srv.className='v-srv';
+  var SRV=[['Arquitectura','Lugares nuevos y reformas, desde la lectura del sitio.','/assets/tfs-portada-entrada32.jpg'],['Diseño de Espacios','Interiores que ordenan cómo se vive y se trabaja.','/assets/pub-ciento-dos.jpg'],['Muebles y Objetos','Piezas a la medida de cada lugar.','/assets/thub-g1-1.jpg'],['Conceptualización de Proyectos','La idea que guía todo lo demás.','/assets/lat21-tarjeta2.jpg']];
+  srv.innerHTML='<small>QUÉ HACEMOS</small>'+SRV.map(function(x,i){return '<a href="/about" data-img="'+x[2]+'"><i>0'+(i+1)+'</i><strong>'+x[0]+'</strong><em>'+x[1]+'</em><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>'}).join('');
+  pub.parentNode.insertBefore(srv,pub);
+}
 /* franja en movimiento antes del pie */
 var pie=d.querySelector('footer');
 if(pie&&!d.querySelector('.v-mq')){var m=d.createElement('div');m.className='v-mq';m.setAttribute('aria-hidden','true');var t='<span>No intervenimos, <i>regeneramos.</i></span>';m.innerHTML='<div class="v-mq-tr">'+t+t+t+t+'</div>';pie.parentNode.insertBefore(m,pie)}
@@ -42,6 +82,9 @@ var pr=d.createElement('div');pr.className='v-prog';d.body.appendChild(pr);
 var prog=function(){var m=H.scrollHeight-innerHeight;pr.style.transform='scaleX('+(m>0?scrollY/m:0).toFixed(4)+')'};
 addEventListener('scroll',function(){requestAnimationFrame(prog)},{passive:true});prog();
 
+
+/* scroll con inercia (fluidez tipo Apple) solo con mouse/trackpad */
+if(!rm&&fino&&!/iPad|iPhone/.test(navigator.userAgent)){var ls=d.createElement('script');ls.src='https://unpkg.com/lenis@1.1.13/dist/lenis.min.js';ls.onload=function(){try{var L=new Lenis({lerp:.085,wheelMultiplier:.9});(function raf(t){L.raf(t);requestAnimationFrame(raf)})(performance.now());d.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var t=d.querySelector(a.getAttribute('href'));if(t){e.preventDefault();L.scrollTo(t,{offset:-90})}})})}catch(e){}};d.head.appendChild(ls)}
 if(rm)return;
 
 /* títulos palabra por palabra */
@@ -51,7 +94,7 @@ d.querySelectorAll('h1').forEach(function(t){if(fuera(t)||t.children.length)retu
 var imgs=[];d.querySelectorAll('main img, body img').forEach(function(im){if(fuera(im)||im.closest('footer')||imgs.indexOf(im)>-1)return;var p=im.parentElement;if(!p||p.children.length!==1)return;if(im.getBoundingClientRect().width<140&&im.width<140)return;im.classList.add('v-img');p.classList.add('v-par');imgs.push(im)});
 
 /* textos que entran escalonados */
-var txt=[];d.querySelectorAll('h2,h3,p,li,form,.postmeta,dl,blockquote').forEach(function(e){if(fuera(e)||e.closest('footer')||e.closest('.v-up')||e.querySelector('h1,h2,p,li')&&e.tagName!=='LI'&&e.tagName!=='FORM')return;e.classList.add('v-up');txt.push(e)});
+var txt=[];d.querySelectorAll('h2,h3,p,li,form,.postmeta,dl,blockquote,.v-srv a').forEach(function(e){if(fuera(e)||e.closest('footer')||e.closest('.v-up')||e.querySelector('h1,h2,p,li')&&e.tagName!=='LI'&&e.tagName!=='FORM')return;e.classList.add('v-up');txt.push(e)});
 
 var io=new IntersectionObserver(function(en){var n=0;en.forEach(function(x){if(!x.isIntersecting)return;var e=x.target;e.style.setProperty('--vd',Math.min(n++*80,400)+'ms');e.classList.add('v-in');io.unobserve(e)})},{rootMargin:'0px 0px -8% 0px',threshold:.08});
 txt.concat(imgs).concat([].slice.call(d.querySelectorAll('.v-tit'))).forEach(function(e){io.observe(e)});
@@ -70,8 +113,8 @@ addEventListener('mousemove',function(e){tx=e.clientX;ty=e.clientY;var a=e.targe
 
 /* índice: vista previa flotante */
 var pv=d.createElement('div');pv.className='v-prev';pv.innerHTML='<img alt="">';d.body.appendChild(pv);var pi=pv.firstChild;
-d.querySelectorAll('ol a[href^="#"]').forEach(function(a){var art=d.querySelector(a.getAttribute('href'));var im=art&&art.querySelector('img');if(!im)return;
- a.addEventListener('mouseenter',function(){pi.src=im.currentSrc||im.src;pv.classList.add('on')});
+d.querySelectorAll('ol a[href^="#"], .v-srv a').forEach(function(a){var src=a.dataset.img;if(!src){var art=d.querySelector(a.getAttribute('href'));var im=art&&art.querySelector('img');if(!im)return;src=im.currentSrc||im.src}
+ a.addEventListener('mouseenter',function(){pi.src=src;pv.classList.add('on')});
  a.addEventListener('mousemove',function(e){pv.style.left=e.clientX+'px';pv.style.top=e.clientY+'px'});
  a.addEventListener('mouseleave',function(){pv.classList.remove('on')})});
 })();

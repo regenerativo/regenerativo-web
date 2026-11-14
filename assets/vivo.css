@@ -73,3 +73,49 @@ html.vivo .v-img.v-in{clip-path:inset(0 0 0 0)}
   .v-mq-tr{animation:none}
   .v-par>img{transform:none}
 }
+
+/* ——— inicio con más fuerza ——— */
+.v-type{display:inline-block;min-height:1.2em}
+.v-type::after{content:"";display:inline-block;width:1px;height:1.05em;margin-left:3px;vertical-align:-.15em;background:currentColor;animation:v-car 1s steps(1) infinite}
+@keyframes v-car{50%{opacity:0}}
+
+.v-man{max-width:1344px;margin:0 auto;padding:clamp(72px,9vw,140px) clamp(20px,3.3vw,48px) clamp(24px,3vw,40px);box-sizing:border-box}
+.v-man p{margin:0 0 0 clamp(0px,9vw,136px);max-width:1040px;font:300 clamp(30px,4.4vw,64px)/1.12 "Stolzl",system-ui,sans-serif;letter-spacing:-.03em;text-wrap:balance}
+.v-man p span{color:#1E221D;opacity:.14;transition:opacity .25s linear}
+.v-man p span.on{opacity:1}
+.v-man small{display:block;margin:0 0 22px clamp(0px,9vw,136px);font:500 12px/1 "Stolzl",system-ui,sans-serif;letter-spacing:.2em;color:#999}
+
+.v-num{max-width:1344px;margin:0 auto;padding:clamp(40px,5vw,72px) clamp(20px,3.3vw,48px) 0;box-sizing:border-box;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.v-num div{border-top:1px solid rgba(30,34,29,.12);padding-top:18px;display:flex;flex-direction:column;gap:8px;position:relative}
+.v-num div::before{content:"";position:absolute;left:0;top:-1px;height:1px;width:100%;background:#1E221D;transform:scaleX(0);transform-origin:0 50%;transition:transform 1.6s cubic-bezier(.16,1,.3,1) var(--vd,0ms)}
+.v-num.v-in div::before{transform:scaleX(1)}
+.v-num b{font:300 clamp(48px,6.4vw,96px)/1 "Stolzl",system-ui,sans-serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.v-num span{font-size:14.25px;color:#999}
+@media (max-width:760px){.v-num{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 16px}}
+
+.v-srv{max-width:1344px;margin:0 auto;padding:clamp(96px,10vw,150px) clamp(20px,3.3vw,48px) 0;box-sizing:border-box}
+.v-srv>small{display:block;margin-bottom:18px;font:500 12px/1 "Stolzl",system-ui,sans-serif;letter-spacing:.2em;color:#999}
+.v-srv a{position:relative;display:flex;align-items:center;gap:20px;padding:clamp(18px,2.2vw,30px) 0;border-bottom:1px solid rgba(30,34,29,.12);color:#1E221D;overflow:hidden;isolation:isolate}
+.v-srv a::before{content:"";position:absolute;inset:0;background:#1E221D;transform:scaleY(0);transform-origin:50% 100%;transition:transform .6s cubic-bezier(.16,1,.3,1);z-index:-1}
+.v-srv a i{font-style:normal;font-size:13px;color:#999;width:40px;flex:none;font-variant-numeric:tabular-nums;transition:color .4s}
+.v-srv a strong{flex:1;font:300 clamp(30px,4.6vw,68px)/1.08 "Stolzl",system-ui,sans-serif;letter-spacing:-.035em;transition:transform .6s cubic-bezier(.16,1,.3,1),color .4s}
+.v-srv a em{font-style:normal;font-size:14.25px;color:#999;max-width:300px;transition:color .4s}
+.v-srv a svg{flex:none;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+@media (hover:hover){
+ .v-srv a:hover::before{transform:scaleY(1)}
+ .v-srv a:hover strong{color:#fff;transform:translateX(18px)}
+ .v-srv a:hover i,.v-srv a:hover em{color:rgba(255,255,255,.6)}
+ .v-srv a:hover svg{transform:rotate(-45deg);color:#fff}
+}
+@media (max-width:760px){.v-srv a em{display:none}.v-srv a i{width:28px}}
+.v-gal-it{transition:transform .5s cubic-bezier(.16,1,.3,1)}
+/* imagen que se expande al estilo Apple */
+.v-zoom{position:relative;height:220vh}
+.v-zoom-pin{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.v-zoom-fr{position:relative;width:100%;height:100%;overflow:hidden;will-change:clip-path;clip-path:inset(var(--zi,18%) var(--zx,22%) round var(--zr,28px))}
+.v-zoom-fr img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(var(--zs,1.25));will-change:transform}
+.v-zoom-tx{position:absolute;left:0;right:0;bottom:clamp(28px,6vh,64px);text-align:center;color:#fff;opacity:var(--zo,0);transform:translateY(calc((1 - var(--zo,0)) * 24px));text-shadow:0 2px 30px rgba(0,0,0,.25);pointer-events:none}
+.v-zoom-tx b{display:block;padding:0 16px;font:300 clamp(34px,6.6vw,104px)/1.02 "Stolzl",system-ui,sans-serif;letter-spacing:-.04em}
+.v-zoom-tx span{display:block;margin-top:12px;font:400 15px/1.4 "Stolzl",system-ui,sans-serif;opacity:.85}
+.v-zoom-tx a{pointer-events:auto;display:inline-block;margin-top:22px;padding:12px 22px;border-radius:999px;color:#1E221D;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font:500 14px/1 "Stolzl",system-ui,sans-serif;text-shadow:none}
+html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}
