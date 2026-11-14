@@ -58,8 +58,6 @@ html.vivo .v-img.v-in{clip-path:inset(0 0 0 0)}
 
 /* enlaces del menú: subrayado que se desliza */
 .navfull a{position:relative}
-.navfull a::after{content:"";position:absolute;left:0;right:0;bottom:8px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:100% 50%;transition:transform .5s var(--v-ease)}
-.navfull a:hover::after{transform:scaleX(1);transform-origin:0 50%}
 
 @media (max-width:760px){
   .v-gal-tr{height:58%;padding-left:clamp(20px,5vw,40px)}
@@ -170,3 +168,4 @@ a:has(>svg) svg *{transition:stroke .35s ease,fill .35s ease}
  input,textarea{cursor:text}
 }
 .postbody>p{overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.navfull a::after{display:none!important}
