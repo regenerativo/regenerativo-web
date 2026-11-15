@@ -6,170 +6,185 @@
 <title>regenerativo</title><link rel="canonical" href="https://regenerativo.co/encargos"><meta property="og:type" content="website"><meta property="og:site_name" content="regenerativo"><meta property="og:locale" content="es_CO"><meta property="og:title" content="Encargos · regenerativo"><meta property="og:description" content="Lo que hemos diseñado, lugar por lugar. Encargos residenciales, comerciales y corporativos de regenerativo."><meta property="og:url" content="https://regenerativo.co/encargos"><meta property="og:image" content="https://regenerativo.co/assets/og-regenerativo.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="Lo que hemos diseñado, lugar por lugar. Encargos residenciales, comerciales y corporativos de regenerativo.">
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png"><link rel="icon" type="image/svg+xml" href="/assets/favicon.svg"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"><meta name="theme-color" content="#FFFFFF">
+<link rel="stylesheet" href="/assets/base.css?v=1">
 <style>
-:root{--reg-negro:#1E221D;--reg-gris:#999999;--reg-crema:#F3EFE6;--reg-blanco:#FFFFFF;--reg-azul:#00758F;--reg-vino:#800000;--reg-logo-azul:#00A3CB;--reg-logo-lima:#DFDF3F;--reg-logo-rosa:#E7DCE3;--reg-logo-gris:#D9D9D9}/* Paleta regenerativo · azul: Pantone 18-4528 TCX Mosaic Blue (documentos), no se usa en la web · vino #800000 (planos) · logo (colores del isotipo): #00A3CB, #DFDF3F, #E7DCE3, #D9D9D9 */
-@font-face{font-family:"Stolzl";src:url("/assets/6ef7f120019d.ttf") format("truetype");font-weight:300;font-style:normal}
-@font-face{font-family:"Stolzl";src:url("/assets/101d4104c384.ttf") format("truetype");font-weight:400;font-style:normal}
-@font-face{font-family:"Stolzl";src:url("/assets/dcb6daf412a5.ttf") format("truetype");font-weight:500;font-style:normal}
-body{margin:0;background:#FFFFFF}
-button,a[style*="border: 1px solid"],a[style*="background: #1E221D"],span[style*="border: 1px solid"],input,textarea{border-radius:3px}
-.wm{font-family:Stolzl,"Helvetica Neue",Arial,sans-serif;font-weight:500;letter-spacing:-0.01em;line-height:1;color:#1E221D;white-space:nowrap}
-.burger{display:none}
-@media (max-width: 760px){.navfull{display:none !important}.burger{display:flex}}
-a{color:#1E221D;text-decoration:none}a:hover{color:#999999}
-button{font-family:inherit}
-.porx{display:inline-flex;align-items:baseline;gap:0;font-family:Stolzl,"Helvetica Neue",Arial,sans-serif;line-height:1;white-space:nowrap;letter-spacing:-.005em}.porx .p1{font-weight:300}.porx .p2{font-weight:500}.porx .ln{display:inline-block;width:1.65em;height:.05em;min-height:1px;background:currentColor;margin:0 .2em 0 .17em}
+@layer base {
+/* Paleta regenerativo · azul: Pantone 18-4528 TCX Mosaic Blue (documentos), no se usa en la web · vino #800000 (planos) · logo (colores del isotipo): #00A3CB, #DFDF3F, #E7DCE3, #D9D9D9 */
+.wm {
+  font-family: Stolzl, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: #1e221d;
+  white-space: nowrap;
+}
+button {
+  font-family: inherit;
+}
 
-.bgfix{position:fixed;inset:0;z-index:0;overflow:hidden;background:#FFFFFF radial-gradient(55% 45% at 12% 8%, rgba(243,239,230,.95), rgba(243,239,230,0) 70%), radial-gradient(45% 40% at 92% 85%, rgba(243,239,230,.7), rgba(243,239,230,0) 70%);pointer-events:none}
-.gl{background:rgba(255,255,255,.58);-webkit-backdrop-filter:blur(30px) saturate(1.8) brightness(1.04);backdrop-filter:blur(30px) saturate(1.8) brightness(1.04);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(255,255,255,.35)}
-@media (max-width: 600px){footer > div:last-child{grid-template-columns:1fr !important;gap:4px !important}footer > div:last-child > *{justify-self:start !important;text-align:left !important}}@media (max-width: 600px){section[style*="padding: clamp(112px, 11vw, 160px)"]{padding-top:56px !important}footer[style*="padding: clamp(96px, 10vw, 144px)"]{padding-top:48px !important}section[style*="padding: 0 clamp(20px, 3.3vw, 48px) 120px"]{padding-bottom:56px !important}div[style*="gap: 56px 24px"]{row-gap:36px !important}section[style*="padding-top: clamp(96px, 9vw, 144px)"]{padding-top:56px !important}section[style*="padding-top: clamp(72px, 7vw, 112px)"]{padding-top:40px !important}section[style*="padding-bottom: 120px"]{padding-bottom:56px !important}[style*="padding: 120px clamp(20px, 3.3vw, 48px)"]{padding-top:56px !important;padding-bottom:56px !important}[style*="gap: 72px 96px"]{row-gap:36px !important}[style*="gap: 56px 96px"]{row-gap:32px !important}[style*="padding: 96px clamp(20px, 3.3vw, 48px)"]{padding-top:48px !important;padding-bottom:48px !important}section[style*="padding: 78px clamp(20px, 3.3vw, 48px) 120px"]{padding-bottom:56px !important}[style*="margin-bottom: 56px"]{margin-bottom:28px !important}div[style*="margin-left: clamp(0px, 9vw, 136px)"]{margin-left:0 !important}span[style*="left: calc(-1 * clamp(0px, 9vw, 136px))"]{left:0 !important}ol a[style*="min-height: 44px"]{min-height:36px !important;padding:6px 0 !important}a[href*="wa.me"] svg{overflow:visible}}
-@media (max-width: 767px){.ptop{padding-top:40px !important}}
-@media (min-width: 600px) and (max-width: 999px){footer>div:first-child{column-gap:24px !important}footer>div:first-child>:first-child{flex:1 1 100% !important}footer>div:first-child>:not(:first-child){flex:1 1 0 !important;min-width:0}}
-@media (max-width: 599px){footer>div:first-child>*{flex:1 1 100% !important}}
-img{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-html,body{overflow-x:clip}
-#hero .stage{width:max(100%, calc(100svh * 1280 / 858.5))}
-@media (orientation: portrait) and (max-width: 760px){#hero .stage{width:max(100svh, calc(100vw * 1280 / 858.5))}}
-html{scroll-behavior:auto}
-header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0 !important;padding:8px 24px 16px;background:rgba(255,255,255,.96);border-radius:0 0 18px 18px}
+.bgfix {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    #ffffff radial-gradient(55% 45% at 12% 8%, rgba(243, 239, 230, 0.95), rgba(243, 239, 230, 0) 70%),
+    radial-gradient(45% 40% at 92% 85%, rgba(243, 239, 230, 0.7), rgba(243, 239, 230, 0) 70%);
+  pointer-events: none;
+}
+.gl {
+  background: rgba(255, 255, 255, 0.58);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8) brightness(1.04);
+  backdrop-filter: blur(30px) saturate(1.8) brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+@media (max-width: 767px) {
+  .ptop {
+    padding-top: 40px !important;
+  }
+}
+}
 </style>
-<link rel="stylesheet" href="/assets/vivo.css?v=25">
+<link rel="stylesheet" href="/assets/sitio.css?v=1">
+<link rel="stylesheet" href="/assets/vivo.css?v=26">
 </head>
 <body>
-<div style="font-family: Stolzl, 'Helvetica Neue', Arial, sans-serif; color: #1E221D; background: transparent; min-width: 0; position: relative">
+<div class="pagina">
   <div class="bgfix" aria-hidden="true"></div>
-  <div class="gl" style="position: relative; z-index: 1; min-height: 100%">
+  <div class="gl pagina-cuerpo">
 
-  <header style="position: sticky; top: 0; z-index: 5; background: rgba(255,255,255,0.62); backdrop-filter: blur(24px) saturate(1.7); -webkit-backdrop-filter: blur(24px) saturate(1.7); border-radius: 0 0 18px 18px; box-shadow: inset 0 -1px 0 rgba(255,255,255,.9), 0 10px 30px rgba(30,34,29,.06)">
-    <div style="max-width: 1344px; margin: 0 auto; padding: 0 clamp(20px, 3.3vw, 48px); min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px">
-      <nav class="navfull" aria-label="Menú principal" style="display: flex; flex-wrap: wrap; gap: 4px 28px; font-size: 15px">
-        <a href="/encargos" style="font-weight: 500; padding: 12px 0">Encargos</a>
-        <a href="/about" style="padding: 12px 0">About</a>
-        <a href="/contacto" style="padding: 12px 0">Contacto</a>
+  <header class="menu">
+    <div class="menu-fila">
+      <nav class="navfull menu-enlaces" aria-label="Menú principal">
+        <a class="menu-enlace-activo" href="/encargos">Encargos</a>
+        <a class="menu-enlace" href="/about">About</a>
+        <a class="menu-enlace" href="/contacto">Contacto</a>
       </nav>
-      <a href="/" aria-label="regenerativo, inicio" style="display: flex; align-items: center; gap: 12px">
-        <span style="font-family: Stolzl, 'Helvetica Neue', Arial, sans-serif; font-weight: 500; letter-spacing: -0.01em; line-height: 1; color: #1E221D; white-space: nowrap; font-size: 20px">regenerativo</span>
+      <a class="menu-marca" href="/" aria-label="regenerativo, inicio">
+        <span class="marca-nombre">regenerativo</span>
       </a>
-      <button type="button" class="burger" aria-label="Abrir menú" style="width: 44px; height: 44px; background: transparent; border: 0; padding: 0; flex-direction: column; justify-content: center; align-items: flex-end; gap: 6px"><span style="width: 22px; height: 1.5px; background: #1E221D; display: block"></span><span style="width: 22px; height: 1.5px; background: #1E221D; display: block"></span><span style="width: 14px; height: 1.5px; background: #1E221D; display: block"></span></button>
+      <button type="button" class="burger menu-boton" aria-label="Abrir menú"><span class="menu-boton-linea"></span><span class="menu-boton-linea"></span><span class="menu-boton-linea-media"></span></button>
     </div>
   </header>
 
-  <section class="ptop" style="max-width: 1344px; margin: 0 auto; padding: 78px clamp(20px, 3.3vw, 48px) 32px; display: flex; flex-direction: column; gap: 22px">
-    <div style="display: flex; flex-direction: column; gap: 20px">
-      <h1 style="margin: 0; font-size: clamp(34px, 4.25vw, 54px); font-weight: 300; line-height: 1; letter-spacing: -0.025em">Encargos</h1>
-      <p style="margin: 0; font-size: 14.25px; line-height: 1.65; color: #6B6B6B">Lugares residenciales, comerciales y corporativos. Cada uno empezó leyendo lo que ya estaba ahí.</p>
+  <section class="ptop encargos-encabezado">
+    <div class="encabezado-pagina">
+      <h1 class="titulo-pagina">Encargos</h1>
+      <p class="bajada-pagina">Lugares residenciales, comerciales y corporativos. Cada uno empezó leyendo lo que ya estaba ahí.</p>
     </div>
-    <div role="group" aria-label="Filtrar por tipo" style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 24px">
-      <button type="button" data-s="Todos" aria-pressed="true" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 500">Todos</button>
-        <button type="button" data-s="Residencial" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">Residencial</button>
-        <button type="button" data-s="Comercial" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">Comercial</button>
-        <button type="button" data-s="Corporativo" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">Corporativo</button>
-    </div>
-  </section>
-
-  <section style="max-width: 1344px; margin: 0 auto; padding: 0 clamp(20px, 3.3vw, 48px) 120px">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 56px 24px">
-      <div class="proximo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Residencial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="aspect-ratio: 4 / 5; background: #F3EFE6 url(/assets/proximamente-3.jpg) center / cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 14.25px; font-weight: 500; color: #1E221D; text-align: center; padding: 24px; box-sizing: border-box">Próximamente</div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Casa yh</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Residencial</span><span>Vélez - Colombia</span><span>En curso</span></span>
-          </div>
-        </div>
-        <div class="proximo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Residencial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="aspect-ratio: 4 / 5; background: #F3EFE6 url(/assets/proximamente-2.jpg) center / cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 14.25px; font-weight: 500; color: #1E221D; text-align: center; padding: 24px; box-sizing: border-box">Próximamente</div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Casa e</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Residencial</span><span>Paipa - Colombia</span><span>En curso</span></span>
-          </div>
-        </div>
-        <div class="proximo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Residencial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="aspect-ratio: 4 / 5; background: #F3EFE6 url(/assets/proximamente-10.jpg) center / cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 14.25px; font-weight: 500; color: #1E221D; text-align: center; padding: 24px; box-sizing: border-box">Próximamente</div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Casa t</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Residencial</span><span>Sotaquirá - Colombia</span><span>En curso</span></span>
-          </div>
-        </div>
-        <a href="/encargos/ciento-dos" data-sector="Residencial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="position: relative; aspect-ratio: 4 / 5; background: #F3EFE6; overflow: hidden">
-              <img src="/assets/pub-ciento-dos.jpg" alt="Ciento dos: hall con muebles de madera clara e isla verde" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; box-sizing: border-box; padding: 0">
-              
-            </div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Reforma Ciento dos</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Residencial</span><span>Bogotá - Colombia</span><span>2026</span></span>
-          </div>
-        </a>
-        <a href="/encargos/t-hub" data-sector="Corporativo" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="position: relative; aspect-ratio: 4 / 5; background: #F3EFE6; overflow: hidden">
-              <img src="/assets/thub-tarjeta-benny.jpg" alt="T-Hub: gerencia Benny en madera clara" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; box-sizing: border-box; padding: 0">
-              
-            </div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">T-Hub · Nalsani</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Oficinas</span><span>Bogotá - Colombia</span><span>2025</span></span>
-          </div>
-        </a>
-        <div class="proximo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Corporativo" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="position: relative; aspect-ratio: 4 / 5; background: #F3EFE6; overflow: hidden">
-              <img src="/assets/lat21-tarjeta2.jpg" alt="Latitud 21: concepto en vidrio sobre fondo azul" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; box-sizing: border-box; padding: 0">
-              <div style="position: absolute; inset: 0; background: rgba(255,255,255,.45); display: flex; align-items: center; justify-content: center; font-size: 14.25px; font-weight: 500; color: #1E221D">Próximamente</div>
-            </div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Latitud 21 · Nalsani</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Oficinas</span><span>Bogotá - Colombia</span><span>2025</span></span>
-          </div>
-        </div>
-        <div class="proximo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Comercial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="aspect-ratio: 4 / 5; background: #F3EFE6 url(/assets/proximamente-11.jpg) center / cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 14.25px; font-weight: 500; color: #1E221D; text-align: center; padding: 24px; box-sizing: border-box">Próximamente</div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">L’Occitane Unicentro</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Comercial</span><span>Bogotá - Colombia</span><span>2024</span></span>
-          </div>
-        </div>
-        <a href="/encargos/topara-concept-store" data-sector="Comercial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="position: relative; aspect-ratio: 4 / 5; background: #F3EFE6; overflow: hidden">
-              <img src="/assets/tcs-tarjeta-portal.jpg" alt="Topara Concept Store: portal de madera y textura mineral" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; box-sizing: border-box; padding: 0">
-              
-            </div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Topara Concept Store</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Comercial</span><span>Colombia</span><span>2024 - 2025</span></span>
-          </div>
-        </a>
-        <a href="/encargos/totto-topara-flagship-store" data-sector="Comercial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="position: relative; aspect-ratio: 4 / 5; background: #F3EFE6; overflow: hidden">
-              <img src="/assets/tfs-tarjeta-fachada.jpg" alt="Totto Topara Flagship Store: entrada bajo la fachada verde de Totto" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; box-sizing: border-box; padding: 0">
-              
-            </div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Totto Topara Flagship Store</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Comercial</span><span>Bogotá - Colombia</span><span>2024</span></span>
-          </div>
-        </a>
-        <a href="/encargos/studio-aira-ultra" data-sector="Residencial" style="display: flex; flex-direction: column; gap: 18px">
-          <div style="position: relative; aspect-ratio: 4 / 5; background: #F3EFE6; overflow: hidden">
-              <img src="/assets/aira-tarjeta2.jpg" alt="Studio Aira Ultra: cocina en verde y madera" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block; box-sizing: border-box; padding: 0">
-              
-            </div>
-          <div style="display: flex; flex-direction: column; gap: 14px">
-            <span style="font-size: 17px; font-weight: 500; line-height: 1.2">Studio Aira Ultra</span>
-            <span style="display: flex; flex-direction: column; font-size: 14.25px; line-height: 1.5; color: #6B6B6B"><span>Residencial</span><span>Chía - Colombia</span><span>2023</span></span>
-          </div>
-        </a>
+    <div class="encargos-filtros-fila" role="group" aria-label="Filtrar por tipo">
+      <button class="filtro-activo" type="button" data-s="Todos" aria-pressed="true">Todos</button>
+        <button class="filtro" type="button" data-s="Residencial" aria-pressed="false">Residencial</button>
+        <button class="filtro" type="button" data-s="Comercial" aria-pressed="false">Comercial</button>
+        <button class="filtro" type="button" data-s="Corporativo" aria-pressed="false">Corporativo</button>
     </div>
   </section>
 
-
-  <footer style="max-width: 1344px; margin: 0 auto; padding: 40px clamp(20px, 3.3vw, 48px) 40px">
-    <div style="display: flex; flex-wrap: wrap; gap: 28px 48px; font-size: 14.25px; line-height: 1.7">
-      <div style="flex: 1 1 260px; display: flex; flex-direction: column"><span style="color: #6B6B6B">Hablemos de tu lugar</span><nav aria-label="Escríbenos" style="display: flex; gap: 8px; margin-left: -12px; margin-top: -4px"><a href="https://wa.me/573202150932" target="_blank" rel="noopener" aria-label="WhatsApp +57 320 215 0932" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E221D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><path d="M7.6 19.1A8.4 8.4 0 1 0 4.9 16.3L3.6 20.6Z" stroke-linejoin="round"></path><path fill="#1E221D" stroke="none" transform="translate(7.1 7.1) scale(.41)" d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"></path></svg></a><a href="mailto:info@regenerativo.co" aria-label="Correo info@regenerativo.co" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E221D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"></rect><path d="M4 7.5l8 5.6 8-5.6"></path></svg></a><a href="https://instagram.com/_regenerativo_" target="_blank" rel="noopener" aria-label="Instagram @_regenerativo_" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E221D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.1" cy="6.9" r="1" fill="#1E221D" stroke="none"></circle></svg></a></nav></div>
-      <div style="flex: 0 0 160px; display: flex; flex-direction: column"><span style="color: #6B6B6B">Estudio</span><span>Bogotá - Colombia</span></div>
-      <nav aria-label="Pie de página" style="flex: 0 0 160px; display: flex; flex-direction: column"><span style="color: #6B6B6B">Menú</span><a href="/encargos">Encargos</a><a href="/about">About</a><a href="/contacto">Contacto</a></nav>
-      <div style="flex: 0 0 auto; display: flex; flex-direction: column"><span style="color: #6B6B6B">Contacto</span><a href="mailto:info@regenerativo.co">info@regenerativo.co</a><a href="https://wa.me/573202150932" target="_blank" rel="noopener">+57 320 215 0932</a><a href="https://instagram.com/_regenerativo_" target="_blank" rel="noopener">@_regenerativo_</a></div>
+  <section class="contenido">
+    <div class="encargos-rejilla">
+      <div class="proximo tarjeta-encargo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Residencial">
+          <div class="tarjeta-proximo-1">Próximamente</div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Casa yh</span>
+            <span class="tarjeta-datos"><span>Residencial</span><span>Vélez - Colombia</span><span>En curso</span></span>
+          </div>
+        </div>
+        <div class="proximo tarjeta-encargo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Residencial">
+          <div class="tarjeta-proximo-2">Próximamente</div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Casa e</span>
+            <span class="tarjeta-datos"><span>Residencial</span><span>Paipa - Colombia</span><span>En curso</span></span>
+          </div>
+        </div>
+        <div class="proximo tarjeta-encargo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Residencial">
+          <div class="tarjeta-proximo-3">Próximamente</div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Casa t</span>
+            <span class="tarjeta-datos"><span>Residencial</span><span>Sotaquirá - Colombia</span><span>En curso</span></span>
+          </div>
+        </div>
+        <a class="tarjeta-encargo" href="/encargos/ciento-dos" data-sector="Residencial">
+          <div class="tarjeta-imagen">
+              <img class="tarjeta-foto" src="/assets/pub-ciento-dos.jpg" alt="Ciento dos: hall con muebles de madera clara e isla verde" loading="lazy">
+              
+            </div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Reforma Ciento dos</span>
+            <span class="tarjeta-datos"><span>Residencial</span><span>Bogotá - Colombia</span><span>2026</span></span>
+          </div>
+        </a>
+        <a class="tarjeta-encargo" href="/encargos/t-hub" data-sector="Corporativo">
+          <div class="tarjeta-imagen">
+              <img class="tarjeta-foto" src="/assets/thub-tarjeta-benny.jpg" alt="T-Hub: gerencia Benny en madera clara" loading="lazy">
+              
+            </div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">T-Hub · Nalsani</span>
+            <span class="tarjeta-datos"><span>Oficinas</span><span>Bogotá - Colombia</span><span>2025</span></span>
+          </div>
+        </a>
+        <div class="proximo tarjeta-encargo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Corporativo">
+          <div class="tarjeta-imagen">
+              <img class="tarjeta-foto" src="/assets/lat21-tarjeta2.jpg" alt="Latitud 21: concepto en vidrio sobre fondo azul" loading="lazy">
+              <div class="tarjeta-velo">Próximamente</div>
+            </div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Latitud 21 · Nalsani</span>
+            <span class="tarjeta-datos"><span>Oficinas</span><span>Bogotá - Colombia</span><span>2025</span></span>
+          </div>
+        </div>
+        <div class="proximo tarjeta-encargo" role="group" aria-label="Encargo en desarrollo, se publicará próximamente" data-sector="Comercial">
+          <div class="tarjeta-proximo-4">Próximamente</div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">L’Occitane Unicentro</span>
+            <span class="tarjeta-datos"><span>Comercial</span><span>Bogotá - Colombia</span><span>2024</span></span>
+          </div>
+        </div>
+        <a class="tarjeta-encargo" href="/encargos/topara-concept-store" data-sector="Comercial">
+          <div class="tarjeta-imagen">
+              <img class="tarjeta-foto" src="/assets/tcs-tarjeta-portal.jpg" alt="Topara Concept Store: portal de madera y textura mineral" loading="lazy">
+              
+            </div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Topara Concept Store</span>
+            <span class="tarjeta-datos"><span>Comercial</span><span>Colombia</span><span>2024 - 2025</span></span>
+          </div>
+        </a>
+        <a class="tarjeta-encargo" href="/encargos/totto-topara-flagship-store" data-sector="Comercial">
+          <div class="tarjeta-imagen">
+              <img class="tarjeta-foto" src="/assets/tfs-tarjeta-fachada.jpg" alt="Totto Topara Flagship Store: entrada bajo la fachada verde de Totto" loading="lazy">
+              
+            </div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Totto Topara Flagship Store</span>
+            <span class="tarjeta-datos"><span>Comercial</span><span>Bogotá - Colombia</span><span>2024</span></span>
+          </div>
+        </a>
+        <a class="tarjeta-encargo" href="/encargos/studio-aira-ultra" data-sector="Residencial">
+          <div class="tarjeta-imagen">
+              <img class="tarjeta-foto" src="/assets/aira-tarjeta2.jpg" alt="Studio Aira Ultra: cocina en verde y madera" loading="lazy">
+              
+            </div>
+          <div class="galeria-pie">
+            <span class="tarjeta-nombre">Studio Aira Ultra</span>
+            <span class="tarjeta-datos"><span>Residencial</span><span>Chía - Colombia</span><span>2023</span></span>
+          </div>
+        </a>
     </div>
-    <div style="display: grid; grid-template-columns: 1fr; align-items: baseline; gap: 16px; margin-top: 40px; font-size: 14.25px; line-height: 1.7">
-      <span class="porx" aria-label="Por regenerativo" style="font-size: 14.25px; line-height: 1.7; color: #1E221D; justify-self: start"><span class="p1">Por</span><span class="ln"></span><span class="p2">regenerativo</span><span style="color: #6B6B6B; margin-left: .6em">© 2020</span></span>
+  </section>
+
+
+  <footer class="pie">
+    <div class="pie-columnas">
+      <div class="pie-columna"><span class="texto-gris">Hablemos de tu lugar</span><nav class="pie-enlaces" aria-label="Escríbenos"><a class="red-icono" href="https://wa.me/573202150932" target="_blank" rel="noopener" aria-label="WhatsApp +57 320 215 0932"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E221D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><path d="M7.6 19.1A8.4 8.4 0 1 0 4.9 16.3L3.6 20.6Z" stroke-linejoin="round"></path><path fill="#1E221D" stroke="none" transform="translate(7.1 7.1) scale(.41)" d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"></path></svg></a><a class="red-icono" href="mailto:info@regenerativo.co" aria-label="Correo info@regenerativo.co"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E221D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2.5"></rect><path d="M4 7.5l8 5.6 8-5.6"></path></svg></a><a class="red-icono" href="https://instagram.com/_regenerativo_" target="_blank" rel="noopener" aria-label="Instagram @_regenerativo_"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1E221D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.1" cy="6.9" r="1" fill="#1E221D" stroke="none"></circle></svg></a></nav></div>
+      <div class="pie-bloque"><span class="texto-gris">Estudio</span><span>Bogotá - Colombia</span></div>
+      <nav class="pie-bloque" aria-label="Pie de página"><span class="texto-gris">Menú</span><a href="/encargos">Encargos</a><a href="/about">About</a><a href="/contacto">Contacto</a></nav>
+      <div class="pie-bloque-contacto"><span class="texto-gris">Contacto</span><a href="mailto:info@regenerativo.co">info@regenerativo.co</a><a href="https://wa.me/573202150932" target="_blank" rel="noopener">+57 320 215 0932</a><a href="https://instagram.com/_regenerativo_" target="_blank" rel="noopener">@_regenerativo_</a></div>
+    </div>
+    <div class="pie-rejilla">
+      <span class="porx pie-texto" aria-label="Por regenerativo"><span class="p1">Por</span><span class="ln"></span><span class="p2">regenerativo</span><span class="pie-año">© 2020</span></span>
     </div>
   </footer>
 
