@@ -16,6 +16,8 @@
 //   'explorar'         → {encargo_id, ruta}: carpetas y archivos de una carpeta del encargo
 //   'archivo_encargo'  → {encargo_id, carpeta, ruta, pdf?}: descarga uno
 //   'explorar_reg' / 'archivo_reg' → {ruta}: folders de toda la carpeta REG (solo administración)
+//   'aviso_respuesta' → {comentario_id}: correo al cliente con la respuesta de regenerativo
+//   'revisar_envios'  → {clave}: (cada hora, pg_cron) correo al cliente con los documentos nuevos de DOC _ ENV
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -393,6 +395,79 @@ async function avisoCliente(encargoId: string, accion: string, archivo: string) 
     <p style="color:#999;font-size:12px">Por — regenerativo</p></div>`;
   return correoProyectos(`${accion} · ${e?.nombre || ""}`, html);
 }
+// ---- Avisos al cliente por correo (desde la cuenta de regenerativo) ----
+async function tokenCorreo() {
+  const { data: ig } = await admin.from("integraciones").select("refresh_token").eq("id", "onedrive").maybeSingle();
+  if (!ig?.refresh_token) throw new Error("OneDrive no está conectado.");
+  const t = await token({ grant_type: "refresh_token", refresh_token: ig.refresh_token, scope: "offline_access Mail.Send" });
+  return t.access_token as string;
+}
+async function correosCliente(encargoId: string): Promise<string[]> {
+  const { data: e } = await admin.from("encargos").select("cliente:clientes(email)").eq("id", encargoId).maybeSingle();
+  const raw = String((e as any)?.cliente?.email || "");
+  return raw.split(/[,;\s]+/).map((x) => x.trim().toLowerCase()).filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+}
+function plantillaCliente(ceja: string, titulo: string, cuerpo: string) {
+  return `<div style="font-family:Arial,sans-serif;color:#1E221D;max-width:560px">
+    <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#999">${escH(ceja)}</p>
+    <h2 style="font-weight:400;margin:0 0 18px">${escH(titulo)}</h2>
+    ${cuerpo}
+    <p style="margin:22px 0"><a href="${PORTAL}" style="display:inline-block;background:#1E221D;color:#fff;text-decoration:none;border-radius:999px;padding:10px 20px">Ver en el portal</a></p>
+    <p style="color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.<br>Por — regenerativo</p></div>`;
+}
+async function enviarCorreo(at: string, para: string[], asunto: string, html: string) {
+  const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+    method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html }, toRecipients: para.map((a) => ({ emailAddress: { address: a } })) }, saveToSentItems: true }),
+  });
+  return r.ok;
+}
+// Cada hora: documentos nuevos en DOC _ ENV de cada encargo → correo al cliente. La primera vez solo toma la línea base.
+async function revisarEnvios() {
+  const at = await accesoGraph();
+  let atCorreo: string | null = null;
+  const { data: encs } = await admin.from("encargos").select("id,nombre,docs_avisados,onedrive_carpeta").not("onedrive_carpeta", "is", null);
+  const res: any[] = [];
+  for (const e of encs || []) {
+    let lista: any[];
+    try { lista = (await archivosEncargo(at, e.id, [CARPETAS_CLIENTE])).archivos.filter((a: any) => !/XXXX/.test(a.ruta)); } catch (_) { continue; }
+    const rutas = lista.map((a: any) => a.ruta);
+    const antes: string[] | null = Array.isArray(e.docs_avisados) ? e.docs_avisados : null;
+    const nuevos = antes ? lista.filter((a: any) => !antes.includes(a.ruta)) : [];
+    let enviado = false;
+    if (nuevos.length) {
+      const para = await correosCliente(e.id);
+      if (para.length) {
+        atCorreo = atCorreo || await tokenCorreo();
+        const items = nuevos.map((a: any) => `<li style="margin:4px 0">${escH(a.nombre)}</li>`).join("");
+        const html = plantillaCliente("Portal de encargos · nuevos documentos", e.nombre,
+          `<p style="font-size:15px;line-height:1.5">Hola, te compartimos ${nuevos.length === 1 ? "un documento nuevo" : nuevos.length + " documentos nuevos"} del proyecto:</p>
+           <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px">${items}</ul>`);
+        enviado = await enviarCorreo(atCorreo, para, `${nuevos.length === 1 ? "Nuevo documento" : "Nuevos documentos"} · ${e.nombre}`, html);
+        if (!enviado) continue;   // se reintenta en la próxima revisión
+      }
+    }
+    if (!antes || nuevos.length || rutas.length !== antes.length) await admin.from("encargos").update({ docs_avisados: rutas }).eq("id", e.id);
+    res.push({ encargo: e.nombre, base: !antes, nuevos: nuevos.length, enviado });
+  }
+  return { revisados: res.length, detalle: res };
+}
+// Cuando regenerativo responde una duda o comentario del cliente
+async function avisoRespuesta(id: string) {
+  const { data: c } = await admin.from("comentarios").select("id,texto,respuesta,respuesta_avisada,encargo_id,encargo:encargos(nombre)").eq("id", id).single();
+  if (!c?.respuesta) return { enviado: false, motivo: "Sin respuesta." };
+  if (c.respuesta_avisada) return { enviado: true, ya: true };
+  const para = await correosCliente(c.encargo_id);
+  if (!para.length) return { enviado: false, motivo: "El cliente no tiene correo para avisos (Ajustes del encargo)." };
+  const at = await tokenCorreo();
+  const nombre = (c as any).encargo?.nombre || "";
+  const html = plantillaCliente("Portal de encargos · respuesta de regenerativo", nombre,
+    `<p style="color:#999;margin:0 0 6px">Tu mensaje</p><p style="font-size:15px;line-height:1.5;margin:0 0 16px">${escH(c.texto).replace(/\n/g, "<br>")}</p>
+     <p style="color:#999;margin:0 0 6px">Respuesta</p><p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px;margin:0">${escH(c.respuesta).replace(/\n/g, "<br>")}</p>`);
+  const ok = await enviarCorreo(at, para, `regenerativo respondió · ${nombre}`, html);
+  if (ok) await admin.from("comentarios").update({ respuesta_avisada: new Date().toISOString() }).eq("id", id);
+  return { enviado: ok };
+}
 async function primeraCarpeta(at: string, base: string, opciones: string[]) {
   for (const c of opciones) {
     try { await graph(at, `/me/drive/root:/${enc(`${base}/${c}`)}?$select=id`); return c; } catch (_) { /* siguiente */ }
@@ -450,6 +525,11 @@ Deno.serve(async (req) => {
     const usuario = createClient(URL_SB, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
     const { data: esAdmin } = await usuario.rpc("es_admin");
     const b = await req.json();
+    if (b.accion === "revisar_envios") {
+      const { data: k } = await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle();
+      if (!k?.refresh_token || b.clave !== k.refresh_token) return json({ error: "Sin acceso." }, 403);
+      return json(await revisarEnvios());
+    }
     // Acciones que puede usar cualquier persona invitada al encargo (clientes incluidos)
     if (["aviso_comentario", "cli_enviados", "cli_archivo", "cli_recibidos", "cli_subir", "visor"].includes(b.accion)) {
       const { data: yo } = await usuario.auth.getUser();
@@ -488,6 +568,8 @@ Deno.serve(async (req) => {
       return json({ conectado: !!data?.refresh_token, cuenta: data?.cuenta, secreto: !!Deno.env.get("MS_CLIENT_SECRET") });
     }
     const at = await accesoGraph();
+    if (b.accion === "aviso_respuesta") return json(await avisoRespuesta(b.comentario_id));
+    if (b.accion === "revisar_envios_ya") return json(await revisarEnvios());
     if (b.accion === "despegar") return json(await despegar(at, b.encargo_id));
     if (b.accion === "propuesta_enviados") return json(await propuestaEnviados(at, b.encargo_id));
     if (b.accion === "subir_propuesta") return json(await subirPropuesta(at, b.propuesta_id, b.nombre, b.base64));

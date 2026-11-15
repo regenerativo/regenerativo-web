@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=93';
-import * as M from './modulos.js?v=93';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=93';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=93';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=93';
+import * as D from './datos.js?v=94';
+import * as M from './modulos.js?v=94';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=94';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=94';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=94';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -472,7 +472,7 @@ function vistaComentarios(ctx, coms, pintar) {
   document.querySelectorAll('.lv-resp-f').forEach(f => f.onsubmit = async ev => {
     ev.preventDefault();
     const b = f.querySelector('button'); b.disabled = true;
-    try { await D.responderComentario(f.dataset.id, { respuesta: f.respuesta.value.trim() || null, estado: f.resolver.checked ? 'resuelto' : 'abierto' }); ctx.recargar(); }
+    try { const r = await D.responderComentario(f.dataset.id, { respuesta: f.respuesta.value.trim() || null, estado: f.resolver.checked ? 'resuelto' : 'abierto' }); if (r && !r.enviado && r.motivo) alert('Respuesta guardada. No se envió el correo al cliente: ' + r.motivo); ctx.recargar(); }
     catch (err) { alert(msg(err)); b.disabled = false; }
   });
   document.querySelectorAll('.lv-reabrir').forEach(b => b.onclick = async () => { b.disabled = true; try { await D.responderComentario(b.dataset.id, { estado: 'abierto' }); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; } });
@@ -894,6 +894,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     D.docsEncargo(e.id).catch(() => []), D.ganttTareas(e.id).catch(() => []), D.hayPresupuesto(e.id).catch(() => 0),
     s.facturacion ? D.finMovimientosEncargo(e.id).catch(() => []) : [], D.propuestaDeEncargo(e.id), D.comentarios(e.id).catch(() => [])]);
   const adics = await D.adicionalesEncargo(e.id).catch(() => []);
+  const pagos = esCliente ? await D.pagosEncargo(e.id).catch(() => []) : [];
   const movsOk = movs.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const nTipo = t => docs.filter(d => d.tipo === t && (!esCliente || d.estado !== 'borrador')).length;
   const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length, comentarios: coms.filter(c => c.estado === 'abierto').length };
@@ -901,6 +902,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const n = k => (web[k] || 0) + (od[k] || 0);
   const visible = k => {
     if (k === 'resumen' || k === 'comentarios') return true;
+    if (!e.tiene_obra && (k === 'presupuesto' || k === 'obra')) return false;
+    if (e.tiene_diseno === false && k === 'tecnica') return false;
     if (k === 'resena') return esCliente;
     if (k === 'enviados' && esCliente) return true;
     if (k === 'recibidos' && esCliente) return false;
@@ -914,6 +917,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const pintaMenu = () => MODULOS.filter(([k]) => visible(k)).map(([k, nom]) => {
     if (esCliente && k === 'enviados') nom = 'Documentos';
     const c = SIN_CONTEO.includes(k) || (esCliente && k === 'enviados') ? null : n(k);
+    if (admin && c === 0 && k !== seccion && k !== 'comentarios') return '';
     return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${icoMenu(k)}<span>${nom}</span>${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
   }).join('');
   const tiles = () => {
@@ -950,6 +954,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         <dl class="datos datos-2c">
           <dt>Cliente</dt><dd>${xx(e.cliente?.nombre)}</dd>
           <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xx('')}</dd>
+          <dt>Alcance</dt><dd>${admin ? `<span class="alcance"><label class="lv-check"><input type="checkbox" data-alcance="tiene_diseno" ${e.tiene_diseno !== false ? 'checked' : ''}> Diseño</label><label class="lv-check"><input type="checkbox" data-alcance="tiene_obra" ${e.tiene_obra ? 'checked' : ''}> Obra</label></span>` : [e.tiene_diseno !== false ? 'Diseño' : '', e.tiene_obra ? 'Obra' : ''].filter(Boolean).join(' · ') || '—'}</dd>
           ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
           ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${admin || e.direccion ? xx(e.direccion) + (e.ciudad ? ', ' + esc(e.ciudad) : '') : (e.ciudad ? esc(e.ciudad) : '—')}</dd>`}
           ${prop?.codigo ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
@@ -960,13 +965,24 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     if (esCliente) {
       const DESC = { propuesta: 'Propuesta económica', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
       const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && !NO_DOC.includes(k) && n(k) > 0);
+      const conAvance = !!(e.tiene_obra && g?.filas.length);
+      const pagado = pagos.reduce((a, x) => a + Number(x.valor), 0);
+      const panelPagos = V || pagos.length ? `<section class="panel"><div class="lv-card-cab"><h3>Pagos</h3><span class="lv-cuenta">${pagos.length} abono${pagos.length === 1 ? '' : 's'}</span></div>
+          <div class="barra-apilada">${V ? `<i style="width:${Math.min(100, pagado / V * 100)}%;background:#0090B0"></i>` : ''}</div>
+          <ul class="leyenda-valor">
+            ${pagos.map(x => `<li><i style="background:#0090B0"></i>Abono del ${fecha(x.fecha)}<b>${cop(x.valor)}</b></li>`).join('')}
+            <li class="total">Pagado<b>${cop(pagado)}</b></li>
+            ${V ? `<li class="total">Pendiente<b>${cop(Math.max(0, V - pagado))}</b></li>` : ''}
+          </ul></section>` : '';
       const htmlCli = `
-        <div class="kpis ${g?.filas.length ? 'kpis-3' : 'kpis-2'}">
+        <div class="kpis ${conAvance ? 'kpis-4' : 'kpis-3'}">
           ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
+          ${kpi('Pagado', cop(pagado), V ? `Pendiente ${cop(Math.max(0, V - pagado))}` : 'Abonos registrados', V ? Math.min(1, pagado / V) : undefined)}
           ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (ESTADOS_ENCARGO[e.estado] && e.estado !== 'activo' ? ESTADOS_ENCARGO[e.estado] : 'En curso') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : (e.inicio ? `Desde el ${fecha(e.inicio)}` : 'Te avisamos la fecha de inicio'), t || 0)}
-          ${g?.filas.length ? kpi('Avance', pct(g.realTotal), `Esperado a la fecha ${pct(g.esperadoTotal)}`, g.realTotal) : ''}
+          ${conAvance ? kpi('Avance de la obra', pct(g.realTotal), `Esperado a la fecha ${pct(g.esperadoTotal)}`, g.realTotal) : ''}
         </div>
         ${detallesEnc}
+        ${panelPagos}
         <section class="panel"><h3>Tus documentos</h3>
           <div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}
             <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos</b><span class="sub">Enviados y recibidos del proyecto</span></span><span class="tc-flecha">›</span></a></div>
@@ -985,7 +1001,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         ${kpi('Valor del encargo', V ? cop(V) : '—', V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
         ${s.facturacion ? kpi('Recibido', cop(rec), V ? `${pct(rec / V)} del valor` : 'Ingresos registrados', V ? Math.min(1, rec / V) : undefined) : ''}
         ${s.facturacion ? kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', V ? 'Valor menos lo recibido' : '') : ''}
-        ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
+        ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${e.tiene_obra && g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
       </div>
       <div class="dos">
         <section class="panel">
@@ -1009,6 +1025,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     pintar(html, admin ? btnIco('editar', 'Editar datos del encargo', 'id="editar-enc"') : '');
     const be = $('#editar-enc'); if (be) be.onclick = () => modalEncargo(e);
     const bv = $('#editar-valor'); if (bv) bv.onclick = () => modalValores(e, prop, ir);
+    document.querySelectorAll('[data-alcance]').forEach(c => c.onchange = async () => {
+      c.disabled = true;
+      try { await D.actualizarEncargo(e.id, { [c.dataset.alcance]: c.checked }); ir(); } catch (err) { alert(msg(err)); c.checked = !c.checked; c.disabled = false; }
+    });
     return;
   }
 
@@ -1195,6 +1215,10 @@ function ajustesEncargo(s, e, pintarPag) {
             ${e.cliente_usuario_id ? '<button class="btn sec" id="quitar-clave">Quitar acceso</button>' : ''}
           </div>
           <div class="aviso" id="aviso-cli"></div>
+          <label style="margin-top:18px">Correo del cliente para avisos</label>
+          <p class="sub" style="margin:2px 0 8px">Le llega un correo cuando hay documentos nuevos en Enviados o cuando respondes su duda. Varios correos, separados por coma.</p>
+          <div class="fila-correo"><input id="correo-aviso" type="text" inputmode="email" autocomplete="off" value="${esc(e.cliente?.email || '')}" placeholder="correo@cliente.com"><button class="btn sec" id="guardar-correo" ${e.cliente?.id || e.cliente_id ? '' : 'disabled title="El encargo no tiene cliente"'}>Guardar</button></div>
+          <div class="aviso" id="aviso-correo"></div>
         </section>
         <section class="panel">
           <h3>Invitar equipo</h3>
@@ -1209,6 +1233,13 @@ function ajustesEncargo(s, e, pintarPag) {
       </div>`;
     pintarPag(html);
     $('#editar').onclick = () => modalEncargo(e);
+    $('#guardar-correo').onclick = async () => {
+      const v = $('#correo-aviso').value.split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(Boolean);
+      const mal = v.filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+      if (mal.length) { $('#aviso-correo').textContent = 'Revisa este correo: ' + mal.join(', '); return; }
+      try { await D.actualizarCliente(e.cliente?.id || e.cliente_id, { email: v.join(', ') || null }); $('#aviso-correo').textContent = v.length ? 'Guardado. Los avisos le llegarán a ' + v.join(', ') + '.' : 'Guardado. El cliente no recibirá avisos por correo.'; }
+      catch (err) { $('#aviso-correo').textContent = msg(err); }
+    };
     const copiarTxt = async (t, b) => { try { await navigator.clipboard.writeText(t); } catch (err) { const r = document.createRange(); const sp = document.createElement('span'); sp.textContent = t; document.body.append(sp); r.selectNodeContents(sp); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); sp.remove(); } const o = b.textContent; b.textContent = 'Copiado ✓'; setTimeout(() => b.textContent = o, 1600); };
     document.querySelectorAll('[data-copiar]').forEach(b => b.onclick = () => copiarTxt($('#' + b.dataset.copiar).textContent, b));
     const ct = $('#copiar-todo'); if (ct) ct.onclick = () => copiarTxt(`Portal de regenerativo: https://regenerativo.co/portal/\nPestaña: Clientes\nNombre del encargo: ${e.nombre}\nContraseña: ${e.acceso_clave}`, ct);

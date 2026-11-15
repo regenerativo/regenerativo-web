@@ -984,3 +984,13 @@ html body .lv-enc-cab .lv-ir-b{transform:translate(-120%,120%)}
 
 html body .lv .kpis.kpis-2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 html body .lv .lv-lado > .lv-nav.desborda{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to bottom,#000 calc(100% - 36px),transparent)}
+html body .lv .kpis.kpis-4{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media (max-width:1100px){html body .lv .kpis.kpis-4{grid-template-columns:1fr 1fr!important}}
+@media (max-width:560px){html body .lv .kpis.kpis-3>:nth-child(3):last-child{grid-column:1/-1}}
+html body .lv .alcance{display:inline-flex;gap:8px;flex-wrap:wrap}
+html body .lv .alcance .lv-check{margin:0}
+html body .lv .fila-correo{display:flex;gap:8px;align-items:center}html body .lv .fila-correo input{flex:1;min-width:0}
+/* Las cifras de los KPI se ajustan al ancho de su tarjeta (no se cortan con 4 tarjetas) */
+html body .lv .kpi{container-type:inline-size}
+@media (min-width:561px){@supports (font-size:1cqi){html body .lv .kpi .va{font-size:clamp(18px,12cqi,28px)!important;text-overflow:clip}}}
+html body .lv .alcance .lv-check{padding:3px 12px 3px 9px!important;font-size:14px;min-height:0;line-height:1.4}html body .lv dd .alcance{vertical-align:middle;margin-top:-4px}
