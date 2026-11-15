@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=99';
-import * as M from './modulos.js?v=99';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=99';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=99';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=99';
+import * as D from './datos.js?v=100';
+import * as M from './modulos.js?v=100';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=100';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=100';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=100';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1036,7 +1036,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           </ul></section>` : '';
       const htmlCli = `
         <div class="kpis ${conAvance ? 'kpis-4' : 'kpis-3'}">
-          ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
+          ${kpi('Valor del encargo', V || (e.valor_base != null && Number(e.valor_base) === 0 && !V) ? cop(V) : '—', e.valor_base != null && Number(e.valor_base) === 0 && !V ? 'Proyecto propio, sin costo' : valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
           ${kpi('Pagado hasta ahora', cop(pagado), !V ? 'Abonos registrados' : pagado >= V ? 'Encargo pagado' : e.pagado_total ? 'Saldado' : `Pendiente ${cop(V - pagado)}`, V ? Math.min(1, pagado / V) : undefined)}
           ${kpi('Tiempo transcurrido', e.estado !== 'activo' ? (ESTADOS_ENCARGO[e.estado] || 'Por iniciar') : t == null ? 'En curso' : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : (e.inicio ? `Desde el ${fecha(e.inicio)}` : 'Te avisamos la fecha de inicio'), t || 0)}
           ${conAvance ? kpi('Avance de la obra', pct(g.realTotal), `Esperado a la fecha ${pct(g.esperadoTotal)}`, g.realTotal) : ''}
@@ -1058,7 +1058,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     }
     const html = `
       <div class="kpis">
-        ${kpi('Valor del encargo', V ? cop(V) : '—', V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
+        ${kpi('Valor del encargo', V || (e.valor_base != null && Number(e.valor_base) === 0 && !V) ? cop(V) : '—', e.valor_base != null && Number(e.valor_base) === 0 && !V ? 'Proyecto propio, sin costo' : V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
         ${s.facturacion ? kpi('Recibido', cop(rec), V ? `${pct(rec / V)} del valor` : 'Ingresos registrados', V ? Math.min(1, rec / V) : undefined) : ''}
         ${s.facturacion ? kpi('Por cobrar', !V ? '—' : rec >= V ? cop(0) : e.pagado_total ? 'Saldado' : cop(V - rec), !V ? '' : rec < V && e.pagado_total ? 'Dado por saldado a mano, sin abono registrado' : 'Valor menos lo recibido') : ''}
         ${kpi('Tiempo transcurrido', e.estado !== 'activo' ? (ESTADOS_ENCARGO[e.estado] || 'Por iniciar') : t == null ? 'En curso' : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${e.tiene_obra && g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
@@ -1075,7 +1075,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
             ${valor.adic.length ? `<p class="nota-valor">El encargo tiene ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''} por ${cop(valor.sumaAdic)} sobre la propuesta.</p>` : ''}
             ${s.facturacion ? `<h4 class="sub-h">Pagos</h4><div class="barra-apilada">${seg(Math.min(rec, V), '#0090B0', 'Recibido ' + cop(rec))}</div>
               <ul class="leyenda-valor"><li><i style="background:#0090B0"></i>Recibido<b>${cop(rec)}</b></li><li><i style="background:#E6E6E6"></i>Por cobrar<b>${cop(Math.max(0, V - rec))}</b></li></ul>` : ''}`
-          : `<p class="sub">No hay valor registrado.${admin ? ' Usa «Editar valor, adicionales e ingresos» para escribirlo.' : ''}</p>`}
+          : e.valor_base != null && Number(e.valor_base) === 0 && !V ? '<p class="sub">Proyecto propio, sin costo (valor 0 COP).</p>' : `<p class="sub">No hay valor registrado.${admin ? ' Usa «Editar valor, adicionales e ingresos» para escribirlo.' : ''}</p>`}
         </section>
         ${admin ? `<section class="panel folder-proy"><h3>Folder del proyecto</h3>
           ${webCarpeta(e) ? `<a class="folder-link" href="${esc(webCarpeta(e))}" target="_blank" rel="noopener"><span class="folder-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></span><span><b>${esc(e.nombre)}</b><small>Abrir en OneDrive</small></span><span class="folder-flecha">↗</span></a>` : '<p class="sub">El encargo aún no tiene carpeta conectada.</p>'}
