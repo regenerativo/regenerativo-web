@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=92';
-import * as M from './modulos.js?v=92';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=92';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=92';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=92';
+import * as D from './datos.js?v=93';
+import * as M from './modulos.js?v=93';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=93';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=93';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=93';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -157,6 +157,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   $('#salir').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
   armarIsla();
+  const navL = $('.lv-lado > .lv-nav'); if (navL) { const mira = () => navL.classList.toggle('desborda', navL.scrollHeight - navL.scrollTop > navL.clientHeight + 4); mira(); navL.onscroll = mira; addEventListener('resize', mira, { passive: true }); }
   $('#salir2').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
   moverIndicador();
 }
@@ -192,7 +193,7 @@ function armarTabs() {
   const prim = com ? [...enl.filter(a => a !== com).slice(0, 3), com] : enl.slice(0, 4);
   const resto = enl.filter(a => !prim.includes(a));
   const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
-  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Comentarios$/, 'Dudas')}</span></a>`).join('')}
+  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados')}</span></a>`).join('')}
     <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu im-mas" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
   const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
   $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
@@ -912,7 +913,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   };
   const pintaMenu = () => MODULOS.filter(([k]) => visible(k)).map(([k, nom]) => {
     if (esCliente && k === 'enviados') nom = 'Documentos';
-    const c = SIN_CONTEO.includes(k) ? null : n(k);
+    const c = SIN_CONTEO.includes(k) || (esCliente && k === 'enviados') ? null : n(k);
     return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${icoMenu(k)}<span>${nom}</span>${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
   }).join('');
   const tiles = () => {
@@ -950,7 +951,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           <dt>Cliente</dt><dd>${xx(e.cliente?.nombre)}</dd>
           <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xx('')}</dd>
           ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
-          ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${xx(e.direccion)}${e.ciudad ? ', ' + esc(e.ciudad) : ''}</dd>`}
+          ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${admin || e.direccion ? xx(e.direccion) + (e.ciudad ? ', ' + esc(e.ciudad) : '') : (e.ciudad ? esc(e.ciudad) : '—')}</dd>`}
           ${prop?.codigo ? `<dt>Código</dt><dd>${esc(prop.codigo)}</dd>` : ''}
           <dt class="dt-fechas">Fechas</dt><dd class="dd-fechas"><span><small>Propuesta preliminar</small>${admin && prop?.id ? fechaProp(prop) : prop?.fecha_envio || prop?.fecha ? fecha(prop.fecha_envio || prop.fecha) : 'Sin fecha'}</span><span><small>Inicio</small>${fechaEnc(e, 'inicio', 'Sin fecha', admin)}</span><span><small>Entrega</small>${fechaEnc(e, 'fin', 'Sin fecha', admin)}</span></dd>
           <dt>Responsables</dt><dd>${e.responsables.length ? e.responsables.map(r => esc(r.nombre)).join(', ') : (admin ? xxx('') : 'regenerativo')}</dd>
@@ -960,10 +961,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
       const DESC = { propuesta: 'Propuesta económica', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
       const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && !NO_DOC.includes(k) && n(k) > 0);
       const htmlCli = `
-        <div class="kpis kpis-3">
+        <div class="kpis ${g?.filas.length ? 'kpis-3' : 'kpis-2'}">
           ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
-          ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : '', t || 0)}
-          ${kpi('Avance de la obra', g?.filas.length ? pct(g.realTotal) : '—', g?.filas.length ? `Esperado al corte ${pct(g.esperadoTotal)}` : 'Aún sin cronograma', g?.filas.length ? g.realTotal : undefined)}
+          ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (ESTADOS_ENCARGO[e.estado] && e.estado !== 'activo' ? ESTADOS_ENCARGO[e.estado] : 'En curso') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : (e.inicio ? `Desde el ${fecha(e.inicio)}` : 'Te avisamos la fecha de inicio'), t || 0)}
+          ${g?.filas.length ? kpi('Avance', pct(g.realTotal), `Esperado a la fecha ${pct(g.esperadoTotal)}`, g.realTotal) : ''}
         </div>
         ${detallesEnc}
         <section class="panel"><h3>Tus documentos</h3>
