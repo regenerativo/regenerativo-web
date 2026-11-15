@@ -53,7 +53,7 @@ html,body{overflow-x:clip}
 html{scroll-behavior:auto}
 header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0 !important;padding:8px 24px 16px;background:rgba(255,255,255,.96);border-radius:0 0 18px 18px}
 </style>
-<link rel="stylesheet" href="/assets/vivo.css?v=24">
+<link rel="stylesheet" href="/assets/vivo.css?v=25">
 <style>.err{display:block;min-height:0;font-size:13px;color:#8C1C13;line-height:1.4}.err:empty{display:none}.err-general{margin:0}.trampa{position:absolute!important;left:-9999px!important;width:1px;height:1px;overflow:hidden}[aria-invalid=true]{border-bottom-color:#8C1C13!important}</style>
 </head>
 <body>
@@ -92,13 +92,13 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
     <div style="display: flex; flex-direction: column; gap: 22px">
       <div style="display: flex; flex-direction: column; gap: 20px">
         <h1 style="margin: 0; font-size: clamp(34px, 4.25vw, 54px); font-weight: 300; line-height: 1; letter-spacing: -0.025em">Hablemos de tu lugar.</h1>
-        <p style="margin: 0; font-size: 14.25px; line-height: 1.65; color: #999999; max-width: 440px">Cuéntanos qué tienes en mente. Te respondemos para agendar una primera conversación.</p>
+        <p style="margin: 0; font-size: 14.25px; line-height: 1.65; color: #6B6B6B; max-width: 440px">Cuéntanos qué tienes en mente. Te respondemos para agendar una primera conversación.</p>
       </div>
 
       <div data-if="sent" style="display:none">
         <div style="; padding-top: 28px; display: flex; flex-direction: column; gap: 12px">
           <span style="font-size: 17px; font-weight: 400">Gracias. Ya recibimos tu mensaje.</span>
-          <span style="font-size: 14.25px; line-height: 1.6; color: #999999">Te escribiremos pronto a tu correo.</span>
+          <span style="font-size: 14.25px; line-height: 1.6; color: #6B6B6B">Te escribiremos pronto a tu correo.</span>
           <button type="button" id="reset" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; margin-top: 8px; background: transparent; border: 0; padding: 0; font-size: 14.25px; font-weight: 500; min-height: 44px; cursor: pointer">Enviar otro mensaje <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true" style="flex: none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button>
         </div>
       </div>
@@ -106,7 +106,7 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
       <div data-if="editing" style="display:contents">
         <form style="display: flex; flex-direction: column; gap: 32px" id="form" novalidate>
           <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px">
-            <legend style="font-size: 14.25px; font-weight: 500; letter-spacing: 0.12em; color: #999999; padding: 0; margin-bottom: 14px">¿QUÉ NECESITAS?</legend>
+            <legend style="font-size: 14.25px; font-weight: 500; letter-spacing: 0.12em; color: #6B6B6B; padding: 0; margin-bottom: 14px">¿QUÉ NECESITAS?</legend>
             <div style="display: flex; flex-wrap: wrap; gap: 0 24px">
               <button type="button" data-svc="Arquitectura" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">Arquitectura</button>
                 <button type="button" data-svc="Diseño de espacios" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">Diseño de espacios</button>
@@ -117,7 +117,7 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
             <span class="err" id="err-servicios" role="alert"></span>
           </fieldset>
           <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px">
-            <legend style="font-size: 14.25px; font-weight: 500; letter-spacing: 0.12em; color: #999999; padding: 0; margin-bottom: 14px">MODALIDAD</legend>
+            <legend style="font-size: 14.25px; font-weight: 500; letter-spacing: 0.12em; color: #6B6B6B; padding: 0; margin-bottom: 14px">MODALIDAD</legend>
             <div style="display: flex; flex-wrap: wrap; gap: 0 24px">
               <button type="button" data-mode="Remoto" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">Remoto</button>
                 <button type="button" data-mode="In situ" aria-pressed="false" style="font-size: 14.25px; min-height: 44px; padding: 0; cursor: pointer; background: transparent; border: 0; color: #1E221D; font-weight: 300">In situ</button>
@@ -125,12 +125,12 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
             <span class="err" id="err-modalidad" role="alert"></span>
           </fieldset>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 24px 32px">
-            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #999999">Nombre<input type="text" name="nombre" autocomplete="name" required aria-describedby="err-nombre"><span class="err" id="err-nombre" role="alert"></span></label>
-            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #999999">Correo<input type="email" name="correo" autocomplete="email" required aria-describedby="err-correo"><span class="err" id="err-correo" role="alert"></span></label>
-            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #999999">Ciudad - País<input type="text" name="ciudad" autocomplete="address-level2" required aria-describedby="err-ciudad"><span class="err" id="err-ciudad" role="alert"></span></label>
-            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #999999">Teléfono (opcional)<input type="tel" name="telefono" autocomplete="tel"></label>
+            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #6B6B6B">Nombre<input type="text" name="nombre" autocomplete="name" required aria-describedby="err-nombre"><span class="err" id="err-nombre" role="alert"></span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #6B6B6B">Correo<input type="email" name="correo" autocomplete="email" required aria-describedby="err-correo"><span class="err" id="err-correo" role="alert"></span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #6B6B6B">Ciudad - País<input type="text" name="ciudad" autocomplete="address-level2" required aria-describedby="err-ciudad"><span class="err" id="err-ciudad" role="alert"></span></label>
+            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #6B6B6B">Teléfono (opcional)<input type="tel" name="telefono" autocomplete="tel"></label>
           </div>
-          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #999999">Cuéntanos qué tienes en mente<textarea name="mensaje" rows="4" style="resize: vertical" required aria-describedby="err-mensaje"></textarea><span class="err" id="err-mensaje" role="alert"></span></label>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14.25px; color: #6B6B6B">Cuéntanos qué tienes en mente<textarea name="mensaje" rows="4" style="resize: vertical" required aria-describedby="err-mensaje"></textarea><span class="err" id="err-mensaje" role="alert"></span></label>
           <label class="trampa" aria-hidden="true">Sitio web<input type="text" name="web" tabindex="-1" autocomplete="off"></label>
           <p class="err err-general" id="err-general" role="alert"></p>
           <button type="submit" style="align-self: flex-start; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px; background: #1E221D; color: #FFFFFF; border: 0; font-size: 14.25px; font-weight: 500; letter-spacing: 0.04em; padding: 16px 28px; min-height: 44px; cursor: pointer">Enviar mensaje <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" shape-rendering="geometricPrecision" aria-hidden="true" style="flex: none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button>
@@ -150,12 +150,12 @@ header.open .navfull{display:flex !important;position:absolute;top:100%;left:0;r
   <footer style="max-width: 1344px; margin: 0 auto; padding: 40px clamp(20px, 3.3vw, 48px) 40px">
     <div style="display: flex; flex-wrap: wrap; gap: 28px 48px; font-size: 14.25px; line-height: 1.7">
       <div style="flex: 1 1 260px" aria-hidden="true"></div>
-      <div style="flex: 0 0 160px; display: flex; flex-direction: column"><span style="color: #999999">Estudio</span><span>Bogotá - Colombia</span></div>
-      <nav aria-label="Pie de página" style="flex: 0 0 160px; display: flex; flex-direction: column"><span style="color: #999999">Menú</span><a href="/encargos">Encargos</a><a href="/about">About</a><a href="/contacto">Contacto</a></nav>
-      <div style="flex: 0 0 auto; display: flex; flex-direction: column"><span style="color: #999999">Contacto</span><a href="mailto:info@regenerativo.co">info@regenerativo.co</a><a href="https://wa.me/573202150932" target="_blank" rel="noopener">+57 320 215 0932</a><a href="https://instagram.com/_regenerativo_" target="_blank" rel="noopener">@_regenerativo_</a></div>
+      <div style="flex: 0 0 160px; display: flex; flex-direction: column"><span style="color: #6B6B6B">Estudio</span><span>Bogotá - Colombia</span></div>
+      <nav aria-label="Pie de página" style="flex: 0 0 160px; display: flex; flex-direction: column"><span style="color: #6B6B6B">Menú</span><a href="/encargos">Encargos</a><a href="/about">About</a><a href="/contacto">Contacto</a></nav>
+      <div style="flex: 0 0 auto; display: flex; flex-direction: column"><span style="color: #6B6B6B">Contacto</span><a href="mailto:info@regenerativo.co">info@regenerativo.co</a><a href="https://wa.me/573202150932" target="_blank" rel="noopener">+57 320 215 0932</a><a href="https://instagram.com/_regenerativo_" target="_blank" rel="noopener">@_regenerativo_</a></div>
     </div>
     <div style="display: grid; grid-template-columns: 1fr; align-items: baseline; gap: 16px; margin-top: 40px; font-size: 14.25px; line-height: 1.7">
-      <span class="porx" aria-label="Por regenerativo" style="font-size: 14.25px; line-height: 1.7; color: #1E221D; justify-self: start"><span class="p1">Por</span><span class="ln"></span><span class="p2">regenerativo</span><span style="color: #999999; margin-left: .6em">© 2020</span></span>
+      <span class="porx" aria-label="Por regenerativo" style="font-size: 14.25px; line-height: 1.7; color: #1E221D; justify-self: start"><span class="p1">Por</span><span class="ln"></span><span class="p2">regenerativo</span><span style="color: #6B6B6B; margin-left: .6em">© 2020</span></span>
     </div>
   </footer>
 
@@ -204,6 +204,6 @@ document.querySelectorAll('[data-svc]').forEach(b=>b.addEventListener('click',()
 mb.forEach(b=>b.addEventListener('click',()=>marcar('modalidad','')));
 document.getElementById('reset').addEventListener('click',()=>{form.reset();document.querySelectorAll('[data-svc],[data-mode]').forEach(b=>{b.setAttribute('aria-pressed','false');b.style.fontWeight='300'});Object.keys(ERR).forEach(k=>marcar(k,''));sent.style.display='none';ed.style.display='contents';});
 </script>
-<script src="/assets/vivo.js?v=18" defer></script>
+<script src="/assets/vivo.js?v=19" defer></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=98';
-import { cop, fecha, iso } from './formato.js?v=98';
-import { btnIco } from './iconos.js?v=98';
-import { leerMonai } from './monai.js?v=98';
+import * as D from './datos.js?v=99';
+import { cop, fecha, iso } from './formato.js?v=99';
+import { btnIco } from './iconos.js?v=99';
+import { leerMonai } from './monai.js?v=99';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -63,7 +63,6 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const ing = suma(delMes, 'ingreso'), gas = suma(delMes.filter(x => !esSal(x)), 'gasto'), sal = suma(delMes.filter(esSal), 'gasto');
 
   // Valor de cada encargo: honorarios de la propuesta (o del documento web) + adendas aprobadas; menos lo recibido
-  const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
   const porEnc = encargos.map(e => ({ e, ...cuentasEncargo(e, { props, docs, adics: adicsMan, movs }) }));
   const porCobrar = porEnc.reduce((s, r) => s + r.porCobrar, 0);
 

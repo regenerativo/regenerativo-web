@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=98';
-import * as M from './modulos.js?v=98';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=98';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=98';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=98';
+import * as D from './datos.js?v=99';
+import * as M from './modulos.js?v=99';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=99';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=99';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=99';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -384,8 +384,6 @@ async function vistaInicio(s) {
   const hoy = new Date().toISOString().slice(0, 10), mes = hoy.slice(0, 7);
   const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
   const espera = props.filter(p => p.estado === 'en_espera'), borrador = props.filter(p => p.estado === 'borrador');
-  const dia = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-  const V = VERSICULOS.find(v => /G[ée]nesis/.test(v.cita)) || VERSICULOS[0]; // el de Génesis queda fijo en el principal
   const h = new Date().getHours();
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
   // Cifras de la empresa
@@ -393,7 +391,6 @@ async function vistaInicio(s) {
   const pend = movs.filter(x => x.estado === 'por_confirmar');
   const suma = (l, t) => l.filter(x => x.tipo === t).reduce((a, x) => a + Number(x.valor), 0);
   const delMes = ok.filter(x => x.fecha.slice(0, 7) === mes);
-  const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
   // Mismo cálculo que Finanzas (función común): así Inicio y Finanzas muestran el mismo por cobrar
   const porCobrar = lista.reduce((t, e) => t + cuentasEncargo(e, { props: honor, docs, adics: adicsMan, movs: ok }).porCobrar, 0);
   const enEspera = espera.reduce((a, p) => a + (Number(p.honorarios) || 0), 0);
@@ -669,7 +666,6 @@ async function vistaEncargos(s) {
   const fest = new Set((await D.festivos()).map(f => f.fecha));
   const abiertos = admin ? await D.comentariosAbiertos() : [];
   const conTiempo = lista.map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest), dudas: abiertos.filter(c => c.encargo?.id === e.id).length }));
-  const hoyE = new Date().toISOString().slice(0, 10);
   const fase = faseEncargo;
   const F = [['todos', 'Todos'], ['por-iniciar', 'Por iniciar'], ['en-curso', 'En curso'], ['pausado', 'Pausados'], ['finalizado', 'Finalizados'], ['cerrado', 'Cancelados']]
     .map(([k, l]) => [k, l, k === 'todos' ? lista.length : conTiempo.filter(e => fase(e) === k).length]).filter(([k, , n]) => k === 'todos' || n);
@@ -1362,11 +1358,9 @@ function ajustesEncargo(s, e, pintarPag) {
 
 // ---------------- Ajustes generales ----------------
 async function vistaAjustes(s, qs) {
-  const [svc, cli, fest, us, encs, od] = await Promise.all([D.servicios(), D.clientes(), D.festivos(), D.usuarios().catch(() => []), D.encargos(),
+  const [fest, us, encs, od] = await Promise.all([D.festivos(), D.usuarios().catch(() => []), D.encargos(),
     D.MODO_DEMO ? { conectado: false } : D.onedrive('estado').catch(e => ({ error: e.message }))]);
   const msjOd = { ok: 'OneDrive quedó conectado.', error: 'No se pudo conectar OneDrive. Vuelve a intentar.', expirado: 'La autorización tardó demasiado. Vuelve a intentar.' }[qs?.get('onedrive')] || '';
-  const anio = String(new Date().getFullYear());
-  const nEnc = id => encs.filter(e => e.cliente_id === id).length;
   const ROL = { admin: 'Administración', facturacion: 'Facturación', equipo: 'Equipo', cliente: 'Cliente' };
   const html = `
     ${msjOd ? `<div class="aviso-ej">${msjOd}</div>` : ''}
@@ -1419,31 +1413,6 @@ function calendarioFestivos(el, fest) {
     el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { m += Number(b.dataset.d); if (m < 0) { m = 11; a--; } if (m > 11) { m = 0; a++; } pintar(); });
   };
   pintar();
-}
-
-function modalCliente(c) {
-  const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
-  const campo = (k, t, cls = '') => `<div class="${cls}"><label>${t}</label><input name="${k}" value="${esc(c?.[k] || '')}"></div>`;
-  fondo.innerHTML = `<form class="modal" id="fcli"><h2>${c ? 'Editar cliente' : 'Nuevo cliente'}</h2>
-    <div class="grilla-form">
-      <div class="ancho"><label>Nombre o razón social</label><input name="nombre" required value="${esc(c?.nombre || '')}" style="text-transform:uppercase"></div>
-      <div><label>Tipo</label><select name="tipo"><option value="empresa" ${c?.tipo === 'empresa' ? 'selected' : ''}>Empresa</option><option value="persona" ${c?.tipo === 'persona' ? 'selected' : ''}>Persona</option></select></div>
-      ${campo('tipo_documento', 'Tipo de documento')}${campo('documento', 'Documento')}
-      ${campo('representante', 'Representante')}${campo('documento_representante', 'Documento del representante')}
-      ${campo('email', 'Correo')}${campo('telefono', 'Teléfono')}
-      ${campo('direccion', 'Dirección', 'ancho')}${campo('ciudad', 'Ciudad')}
-    </div><div class="aviso" id="aviso"></div>
-    <div class="pie-modal"><button type="button" class="btn sec" id="cancelar">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`;
-  document.body.appendChild(fondo);
-  $('#cancelar', fondo).onclick = () => fondo.remove();
-  $('#fcli', fondo).onsubmit = async ev => {
-    ev.preventDefault();
-    const v = Object.fromEntries(new FormData(ev.target));
-    for (const k in v) v[k] = v[k].trim() || null;
-    v.nombre = (v.nombre || '').toUpperCase();
-    try { c ? await D.actualizarCliente(c.id, v) : await D.crearCliente(v); fondo.remove(); ir(); }
-    catch (err) { $('#aviso', fondo).textContent = msg(err); }
-  };
 }
 
 function modalUsuario(u) {

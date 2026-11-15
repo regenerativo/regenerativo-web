@@ -195,3 +195,24 @@ input:focus,textarea:focus{border-color:#1E221D!important;outline:none}
 .linea-bajar.bob{animation:lb 2.8s ease-in-out infinite alternate}
 @keyframes lb{0%{transform:translateY(-2.5px)}100%{transform:translateY(2.5px)}}
 @media (prefers-reduced-motion:reduce){.linea-bajar.bob{animation:none}}
+
+/* ===== Anclas: los títulos no quedan bajo el menú fijo ===== */
+html{scroll-padding-top:120px}
+section,[id]{scroll-margin-top:120px}
+
+/* ===== Encargos «Próximamente»: no son enlaces ===== */
+.proximo{cursor:default}
+.proximo:hover *{transform:none!important}
+
+/* ===== Textos dinámicos: todo texto que se puede tocar se pone gris al pasar el cursor, lento y sin subrayado =====
+   (los !important son necesarios porque los colores base están escritos en cada elemento) */
+a,button,summary,[role=button],[data-svc],[data-mode],[data-s]{transition:color .6s ease,background-color .6s ease,opacity .6s ease}
+a *,button *{transition:color .6s ease,stroke .6s ease,fill .6s ease}
+@media (hover:hover){
+  a:not([style*="background: #1E221D"]):not(.proximo):hover,
+  a:not([style*="background: #1E221D"]):not(.proximo):hover *:not(img):not(picture):not(video),
+  button:not([type=submit]):hover,button:not([type=submit]):hover *,summary:hover,[role=button]:hover{color:#999999!important;text-decoration:none!important}
+  /* botones oscuros: fondo gris y texto blanco */
+  a[style*="background: #1E221D"]:hover,button[style*="background: #1E221D"]:hover:not(:disabled){background:#999999!important;color:#FFFFFF!important}
+  a[style*="background: #1E221D"]:hover *,button[style*="background: #1E221D"]:hover *{color:#FFFFFF!important}
+}

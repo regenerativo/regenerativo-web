@@ -1,15 +1,14 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=98';
-import { descargarPDF } from './pdf.js?v=98';
-import { btnIco } from './iconos.js?v=98';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO, TIPOS } from './formato.js?v=98';
+import * as D from './datos.js?v=99';
+import { descargarPDF } from './pdf.js?v=99';
+import { btnIco } from './iconos.js?v=99';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=99';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const xxx = v => (v === null || v === undefined || v === '' || v === 'XXX') ? '<span class="xxx">XXX</span>' : esc(v);
 const ESTADOS_DOC = { borrador: 'Borrador', enviado: 'Enviado', aprobado: 'Aprobado', firmado: 'Firmado' };
 const NOMBRE_DOC = { brief: 'BRIEF', propuesta: 'PROPUESTA', contrato: 'CONTRATO', adenda: 'ADENDA', informe: 'INFORME DE AVANCE' };
-const nombreSinAnio = e => e.nombre.replace(/^\s*\d{2}\s+I\s+/, '');
 
 // ---------------- Nombres de archivo (regla de regenerativo) ----------------
 export function nombreArchivo(e, tipo, doc, ext) {
