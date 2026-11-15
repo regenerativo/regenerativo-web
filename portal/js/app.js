@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=101';
-import * as M from './modulos.js?v=101';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=101';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=101';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=101';
+import * as D from './datos.js?v=102';
+import * as M from './modulos.js?v=102';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=102';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=102';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=102';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -119,7 +119,7 @@ async function irSeguro() {
       finAntes = pedido;
       const v = await vistaFinanzas(p[1], p[2]);
       if (location.hash !== pedido) return;   // si ya se pidió otro mes, esta respuesta vieja no se pinta
-      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, eyebrow: v.mesTxt.replace(/ (\d{4})$/, ' de $1').replace(/^./, c => c.toUpperCase()) });
+      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, acciones: btnIco('ajustes', 'Ajustes de finanzas', 'id="fin-ajustes"'), eyebrow: v.mesTxt.replace(/ (\d{4})$/, ' de $1').replace(/^./, c => c.toUpperCase()) });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
@@ -851,7 +851,7 @@ const MODULOS = [
   ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
   ['informes', 'Coordinación administrativa'], ['tecnica', 'Coordinación técnica'], ['obra', 'Coordinación de obra'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
-  ['comentarios', 'Comentarios'], ['resena', 'Reseña del proyecto'], ['ajustes', 'Ajustes'],
+  ['comentarios', 'Comentarios'], ['resena', 'Reseña del proyecto'],
 ];
 // Carpetas de OneDrive de cada módulo (plantilla REG_TEM DOCUMENTAL y, como respaldo, los nombres viejos).
 // Cada grupo usa la primera carpeta que exista. "RUTA#0" = solo los archivos sueltos de esa carpeta.
@@ -909,7 +909,7 @@ async function modalValores(e, prop, onListo) {
     fondo.innerHTML = `<div class="modal ancho modal-valores">
       <h2>Valor del encargo</h2><p class="sub">${esc(e.nombre)} · todo se edita aquí, sin cargar documentos.</p>
       <h3>Valor base</h3>
-      <form class="mv-fila" id="f-base"><input name="base" inputmode="numeric" placeholder="Valor del encargo en COP" value="${fmtCOP(v.base)}"><span class="sub">COP</span><button class="btn sec">Guardar</button></form>
+      <form class="mv-fila" id="f-base"><input name="base" inputmode="numeric" placeholder="Valor del encargo en COP" value="${v.base ? fmtCOP(v.base) : (e.valor_base != null && Number(e.valor_base) === 0) || (prop?.honorarios != null && Number(prop.honorarios) === 0) ? '0' : ''}"><span class="sub">COP</span><button class="btn sec">Guardar</button></form>
       <p class="sub mv-nota">${prop?.id ? 'Se guarda también como honorarios de la propuesta preliminar.' : 'Este encargo no tiene propuesta: el valor queda guardado en el encargo.'}</p>
       <h3>Adicionales</h3>
       <div class="mv-lista">
@@ -928,10 +928,10 @@ async function modalValores(e, prop, onListo) {
     </div>`;
     const avisar = t => { $('#mv-aviso', fondo).textContent = t; };
     $('#f-base', fondo).onsubmit = async ev => {
-      ev.preventDefault(); const n = numCOP(ev.target.base.value);
+      ev.preventDefault(); const crudo = ev.target.base.value.trim(); const n = crudo === '' ? null : numCOP(crudo);  // «0» es proyecto sin costo; vacío borra el valor
       try {
-        if (prop?.id) { await D.actualizarPropuesta(prop.id, { honorarios: n || null }); prop.honorarios = n || null; if (e.valor_base != null) { await D.actualizarEncargo(e.id, { valor_base: null }); e.valor_base = null; } }
-        else { await D.actualizarEncargo(e.id, { valor_base: n || null }); e.valor_base = n || null; }
+        if (prop?.id) { await D.actualizarPropuesta(prop.id, { honorarios: n }); prop.honorarios = n; if (e.valor_base != null) { await D.actualizarEncargo(e.id, { valor_base: null }); e.valor_base = null; } }
+        else { await D.actualizarEncargo(e.id, { valor_base: n }); e.valor_base = n; }
         pintarM();
       } catch (err) { avisar(msg(err)); }
     };
@@ -995,8 +995,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   };
   const nombreSec = esCliente && seccion === 'enviados' ? 'Documentos' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
-  const pintar = (html, acciones = '') => {
+  const engranaje = admin ? btnIco('ajustes', 'Ajustes del encargo', 'id="ajustes-enc"') : '';
+  const pintar = (html, acciones = engranaje) => {
     marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, eyebrow: seccion === 'resumen' ? ([e.cliente?.nombre, ...servs(e)].filter(Boolean).join(' · ') || 'Encargo') : e.nombre, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
+    const bg = $('#ajustes-enc'); if (bg) bg.onclick = () => modalAjustesEncargo(e, prop);
     if (admin && !D.MODO_DEMO && !conteoGuardado(e.id)) {
       D.onedrive('conteos_encargo', { encargo_id: e.id, modulos: FUENTES }).then(c => {
         guardarConteo(e.id, c);
@@ -1005,6 +1007,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
       }).catch(() => {});
     }
   };
+  const abrirAjustes = seccion === 'ajustes' && admin;
+  if (seccion === 'ajustes') { seccion = 'resumen'; history.replaceState(null, '', base); }
   const ctx = { e, s, admin, rol, esCliente, fest, base, sub, recargar: ir };
   const valor = valorEncargo(prop, docs, e, adics);
 
@@ -1015,6 +1019,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const g = tareas.length ? await M.datosGantt(ctx).catch(() => null) : null;
     const rec = movsOk.filter(x => x.tipo === 'ingreso').reduce((a, x) => a + Number(x.valor), 0);
     const V = valor.total;
+    // Proyecto propio: valor 0 escrito en el encargo o en la propuesta (0 no es «sin valor»)
+    const sinCosto = !V && ((e.valor_base != null && e.valor_base !== '' && Number(e.valor_base) === 0) || (prop?.honorarios != null && prop.honorarios !== '' && Number(prop.honorarios) === 0));
     const seg = (v, c, tip) => v > 0 && V > 0 ? `<i style="width:${v / V * 100}%;background:${c}" title="${esc(tip)}"></i>` : '';
     const COL_AD = ['#7FC4D6', '#B9DDE7', '#5AA9BE', '#D4ECF2'];
     const xx = admin ? xxx : (v => v ? esc(v) : '—');  // el cliente no ve los XXX de datos pendientes
@@ -1046,7 +1052,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           </ul></section>` : '';
       const htmlCli = `
         <div class="kpis ${conAvance ? 'kpis-4' : 'kpis-3'}">
-          ${kpi('Valor del encargo', V || (e.valor_base != null && Number(e.valor_base) === 0 && !V) ? cop(V) : '—', e.valor_base != null && Number(e.valor_base) === 0 && !V ? 'Proyecto propio, sin costo' : valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
+          ${kpi('Valor del encargo', V || (sinCosto) ? cop(V) : '—', sinCosto ? 'Proyecto propio, sin costo' : valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
           ${kpi('Pagado hasta ahora', cop(pagado), !V ? 'Abonos registrados' : pagado >= V ? 'Encargo pagado' : e.pagado_total ? 'Saldado' : `Pendiente ${cop(V - pagado)}`, V ? Math.min(1, pagado / V) : undefined)}
           ${kpi('Tiempo transcurrido', e.estado !== 'activo' ? (ESTADOS_ENCARGO[e.estado] || 'Por iniciar') : t == null ? 'En curso' : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : (e.inicio ? `Desde el ${fecha(e.inicio)}` : 'Te avisamos la fecha de inicio'), t || 0)}
           ${conAvance ? kpi('Avance de la obra', pct(g.realTotal), `Esperado a la fecha ${pct(g.esperadoTotal)}`, g.realTotal) : ''}
@@ -1068,7 +1074,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     }
     const html = `
       <div class="kpis">
-        ${kpi('Valor del encargo', V || (e.valor_base != null && Number(e.valor_base) === 0 && !V) ? cop(V) : '—', e.valor_base != null && Number(e.valor_base) === 0 && !V ? 'Proyecto propio, sin costo' : V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
+        ${kpi('Valor del encargo', V || (sinCosto) ? cop(V) : '—', sinCosto ? 'Proyecto propio, sin costo' : V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
         ${s.facturacion ? kpi('Recibido', cop(rec), V ? `${pct(rec / V)} del valor` : 'Ingresos registrados', V ? Math.min(1, rec / V) : undefined) : ''}
         ${s.facturacion ? kpi('Por cobrar', !V ? '—' : rec >= V ? cop(0) : e.pagado_total ? 'Saldado' : cop(V - rec), !V ? '' : rec < V && e.pagado_total ? 'Dado por saldado a mano, sin abono registrado' : 'Valor menos lo recibido') : ''}
         ${kpi('Tiempo transcurrido', e.estado !== 'activo' ? (ESTADOS_ENCARGO[e.estado] || 'Por iniciar') : t == null ? 'En curso' : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${e.tiene_obra && g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
@@ -1085,15 +1091,15 @@ async function vistaExpediente(s, codigo, seccion, sub) {
             ${valor.adic.length ? `<p class="nota-valor">El encargo tiene ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''} por ${cop(valor.sumaAdic)} sobre la propuesta.</p>` : ''}
             ${s.facturacion ? `<h4 class="sub-h">Pagos</h4><div class="barra-apilada">${seg(Math.min(rec, V), '#0090B0', 'Recibido ' + cop(rec))}</div>
               <ul class="leyenda-valor"><li><i style="background:#0090B0"></i>Recibido<b>${cop(rec)}</b></li><li><i style="background:#E6E6E6"></i>Por cobrar<b>${cop(Math.max(0, V - rec))}</b></li></ul>` : ''}`
-          : e.valor_base != null && Number(e.valor_base) === 0 && !V ? '<p class="sub">Proyecto propio, sin costo (valor 0 COP).</p>' : `<p class="sub">No hay valor registrado.${admin ? ' Usa «Editar valor, adicionales e ingresos» para escribirlo.' : ''}</p>`}
+          : sinCosto ? '<p class="sub">Proyecto propio, sin costo (valor 0 COP).</p>' : `<p class="sub">No hay valor registrado.${admin ? ' Usa «Editar valor, adicionales e ingresos» para escribirlo.' : ''}</p>`}
         </section>
         ${admin ? `<section class="panel folder-proy"><h3>Folder del proyecto</h3>
           ${webCarpeta(e) ? `<a class="folder-link" href="${esc(webCarpeta(e))}" target="_blank" rel="noopener"><span class="folder-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></span><span><b>${esc(e.nombre)}</b><small>Abrir en OneDrive</small></span><span class="folder-flecha">↗</span></a>` : '<p class="sub">El encargo aún no tiene carpeta conectada.</p>'}
         </section>` : `<section class="panel"><h3>Documentos</h3><div class="tiles" id="tiles">${tiles()}</div></section>`}
       </div>
       ${detallesEnc}`;
-    pintar(html, admin ? btnIco('editar', 'Editar datos del encargo', 'id="editar-enc"') : '');
-    const be = $('#editar-enc'); if (be) be.onclick = () => modalEncargo(e);
+    pintar(html);
+    if (abrirAjustes) modalAjustesEncargo(e, prop);
     const bv = $('#editar-valor'); if (bv) bv.onclick = () => modalValores(e, prop, ir);
     document.querySelectorAll('[data-etapa]').forEach(b => b.onclick = async () => {
       if (b.dataset.etapa === e.estado) return;
@@ -1121,7 +1127,6 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     return panelOneDrive($('#od'), e, FUENTES[seccion], { titulo: seccion === 'enviados' ? 'Enviados al cliente · DOC _ ENV' : 'Recibidos del cliente · DOC _ REC', envios: true });
   }
   if (seccion === 'finanzas' && s.facturacion) return finanzasEncargo(ctx, movsOk, valor, pintar);
-  if (seccion === 'ajustes' && admin) return ajustesEncargo(s, e, pintar);
   if ((seccion === 'obra' || seccion === 'tecnica') && admin) {
     pintar('<section class="panel od" id="od"></section>');
     return panelOneDrive($('#od'), e, FUENTES[seccion], { titulo: seccion === 'obra' ? 'Coordinación de obra · 00 INFORMES OBRA y personal' : 'Coordinación técnica · 00 INFORMES TÉCNICOS, ARQ, MEP y STR' });
@@ -1274,14 +1279,20 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
 }
 
 // ---------------- Ajustes del encargo ----------------
-function ajustesEncargo(s, e, pintarPag) {
-    const html = `
+function modalAjustesEncargo(e, prop) {
+    document.querySelector('.modal-ajustes')?.closest('.modal-fondo')?.remove();
+    const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
+    const $f = sel => fondo.querySelector(sel);
+    const cerrar = () => { fondo.remove(); removeEventListener('hashchange', cerrar); };
+    addEventListener('hashchange', cerrar);   // al cambiar de página se cierra
+    const recargar = () => { cerrar(); ir(); };
+    const html = `<div class="modal ancho modal-ajustes" role="dialog" aria-label="Ajustes del encargo">
+      <div class="aj-cab"><div><h2>Ajustes del encargo</h2><p class="sub">${esc(e.nombre)}</p></div>${btnIco('x', 'Cerrar', 'id="aj-cerrar"')}</div>
+      <div class="aj-rapidos">
+        <button type="button" class="aj-rap" id="editar"><span>${ico('editar')}</span><b>Datos generales</b><small>Nombre, cliente, servicios, etapa, alcance, fechas y días de trabajo</small></button>
+        <button type="button" class="aj-rap" id="aj-valor"><span>${ico('excel')}</span><b>Valor del encargo</b><small>Valor, adicionales e ingresos</small></button>
+      </div>
       <div class="dos">
-        <section class="panel">
-          <h3>Datos generales</h3>
-          <p class="sub" style="margin-top:-6px">Nombre, cliente, fechas, días de trabajo y fecha de corte.</p>
-          <button class="btn sec" id="editar">Editar datos generales</button>
-        </section>
         <section class="panel">
           <h3>Responsables</h3>
           <p class="sub" style="margin-top:-6px">El Gantt elige al responsable por su número; si cambias un nombre aquí, se actualiza en todo el encargo.</p>
@@ -1319,50 +1330,53 @@ function ajustesEncargo(s, e, pintarPag) {
           <button class="btn" id="invitar" style="margin-top:14px">Enviar invitación</button>
           <div class="aviso" id="aviso-inv"></div>
         </section>
-      </div>`;
-    pintarPag(html);
-    $('#editar').onclick = () => modalEncargo(e);
-    $('#guardar-correo').onclick = async () => {
-      const v = $('#correo-aviso').value.split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(Boolean);
+      </div></div>`;
+    fondo.innerHTML = html; document.body.appendChild(fondo);
+    fondo.onclick = ev => { if (ev.target === fondo) cerrar(); };
+    $f('#aj-cerrar').onclick = cerrar;
+    $f('#editar').onclick = () => { cerrar(); modalEncargo(e); };
+    $f('#aj-valor').onclick = () => { cerrar(); modalValores(e, prop, ir); };
+    $f('#guardar-correo').onclick = async () => {
+      const v = $f('#correo-aviso').value.split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(Boolean);
       const mal = v.filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
-      if (mal.length) { $('#aviso-correo').textContent = 'Revisa este correo: ' + mal.join(', '); return; }
-      try { await D.actualizarCliente(e.cliente?.id || e.cliente_id, { email: v.join(', ') || null }); $('#aviso-correo').textContent = v.length ? 'Guardado. Los avisos le llegarán a ' + v.join(', ') + '.' : 'Guardado. El cliente no recibirá avisos por correo.'; }
-      catch (err) { $('#aviso-correo').textContent = msg(err); }
+      if (mal.length) { $f('#aviso-correo').textContent = 'Revisa este correo: ' + mal.join(', '); return; }
+      try { await D.actualizarCliente(e.cliente?.id || e.cliente_id, { email: v.join(', ') || null }); $f('#aviso-correo').textContent = v.length ? 'Guardado. Los avisos le llegarán a ' + v.join(', ') + '.' : 'Guardado. El cliente no recibirá avisos por correo.'; }
+      catch (err) { $f('#aviso-correo').textContent = msg(err); }
     };
     const copiarTxt = async (t, b) => { try { await navigator.clipboard.writeText(t); } catch (err) { const r = document.createRange(); const sp = document.createElement('span'); sp.textContent = t; document.body.append(sp); r.selectNodeContents(sp); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy'); sp.remove(); } const o = b.textContent; b.textContent = 'Copiado ✓'; setTimeout(() => b.textContent = o, 1600); };
-    document.querySelectorAll('[data-copiar]').forEach(b => b.onclick = () => copiarTxt($('#' + b.dataset.copiar).textContent, b));
-    const ct = $('#copiar-todo'); if (ct) ct.onclick = () => copiarTxt(`Portal de regenerativo: https://regenerativo.co/portal/\nPestaña: Clientes\nNombre del encargo: ${e.nombre}\nContraseña: ${e.acceso_clave}`, ct);
+    fondo.querySelectorAll('[data-copiar]').forEach(b => b.onclick = () => copiarTxt($f('#' + b.dataset.copiar).textContent, b));
+    const ct = $f('#copiar-todo'); if (ct) ct.onclick = () => copiarTxt(`Portal de regenerativo: https://regenerativo.co/portal/\nPestaña: Clientes\nNombre del encargo: ${e.nombre}\nContraseña: ${e.acceso_clave}`, ct);
     let resp = e.responsables.map(r => ({ ...r }));
     const pintar = () => {
-      $('#resp').innerHTML = resp.length ? resp.map((r, i) => `<tr>
+      $f('#resp').innerHTML = resp.length ? resp.map((r, i) => `<tr>
         <td>${i + 1}</td>
         <td><input data-i="${i}" data-k="nombre" value="${esc(r.nombre || '')}" placeholder="Nombre"></td>
         <td class="col-opc"><input data-i="${i}" data-k="cargo" value="${esc(r.cargo || '')}" placeholder="Cargo"></td>
         <td><button class="btn sec" data-quitar="${i}" title="Quitar" style="padding:6px 10px">×</button></td></tr>`).join('')
         : `<tr><td colspan="4" class="sub">Sin responsables todavía.</td></tr>`;
-      document.querySelectorAll('#resp input').forEach(inp => inp.oninput = () => resp[inp.dataset.i][inp.dataset.k] = inp.value);
-      document.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { resp.splice(+b.dataset.quitar, 1); pintar(); });
+      fondo.querySelectorAll('#resp input').forEach(inp => inp.oninput = () => resp[inp.dataset.i][inp.dataset.k] = inp.value);
+      fondo.querySelectorAll('[data-quitar]').forEach(b => b.onclick = () => { resp.splice(+b.dataset.quitar, 1); pintar(); });
     };
     pintar();
-    $('#agregar').onclick = () => { resp.push({ nombre: '', cargo: '' }); pintar(); };
-    $('#guardar-resp').onclick = async () => {
-      try { await D.guardarResponsables(e.id, resp.filter(r => r.nombre.trim())); $('#aviso-resp').style.color = 'var(--petroleo)'; $('#aviso-resp').textContent = 'Responsables guardados.'; }
-      catch (err) { $('#aviso-resp').textContent = msg(err); }
+    $f('#agregar').onclick = () => { resp.push({ nombre: '', cargo: '' }); pintar(); };
+    $f('#guardar-resp').onclick = async () => {
+      try { await D.guardarResponsables(e.id, resp.filter(r => r.nombre.trim())); $f('#aviso-resp').style.color = 'var(--petroleo)'; $f('#aviso-resp').textContent = 'Responsables guardados.'; }
+      catch (err) { $f('#aviso-resp').textContent = msg(err); }
     };
-    $('#asignar-clave').onclick = async () => {
-      const clave = $('#clave-cliente').value;
-      if (clave.length < 8) { $('#aviso-cli').textContent = 'La contraseña debe tener al menos 8 caracteres.'; return; }
-      try { await D.asignarAccesoCliente(e.id, clave); ir(); }
-      catch (err) { $('#aviso-cli').textContent = msg(err); }
+    $f('#asignar-clave').onclick = async () => {
+      const clave = $f('#clave-cliente').value;
+      if (clave.length < 8) { $f('#aviso-cli').textContent = 'La contraseña debe tener al menos 8 caracteres.'; return; }
+      try { await D.asignarAccesoCliente(e.id, clave); recargar(); }
+      catch (err) { $f('#aviso-cli').textContent = msg(err); }
     };
-    const q = $('#quitar-clave');
+    const q = $f('#quitar-clave');
     if (q) q.onclick = async () => {
-      try { await D.asignarAccesoCliente(e.id, null, true); ir(); }
-      catch (err) { $('#aviso-cli').textContent = msg(err); }
+      try { await D.asignarAccesoCliente(e.id, null, true); recargar(); }
+      catch (err) { $f('#aviso-cli').textContent = msg(err); }
     };
-    $('#invitar').onclick = async () => {
-      try { await D.invitar($('#inv-email').value.trim(), e.id, $('#inv-rol').value); $('#aviso-inv').style.color = 'var(--petroleo)'; $('#aviso-inv').textContent = 'Invitación enviada.'; }
-      catch (err) { $('#aviso-inv').style.color = ''; $('#aviso-inv').textContent = msg(err); }
+    $f('#invitar').onclick = async () => {
+      try { await D.invitar($f('#inv-email').value.trim(), e.id, $f('#inv-rol').value); $f('#aviso-inv').style.color = 'var(--petroleo)'; $f('#aviso-inv').textContent = 'Invitación enviada.'; }
+      catch (err) { $f('#aviso-inv').style.color = ''; $f('#aviso-inv').textContent = msg(err); }
     };
 }
 
@@ -1377,7 +1391,7 @@ async function vistaAjustes(s, qs) {
     <div class="estado-od ${od?.conectado ? 'ok' : 'no'}"><span class="punto"></span>${od?.conectado ? `OneDrive conectado · ${esc(od.cuenta || '')}` : 'OneDrive sin conectar'}
       <button class="btn sec mini" id="od-conectar">${od?.conectado ? 'Volver a conectar' : 'Conectar'}</button></div>
     <section class="panel">
-      <div class="od-cab"><h3>Usuarios</h3><span class="sub">${us.length} · las invitaciones se envían desde Ajustes de cada encargo</span></div>
+      <div class="od-cab"><h3>Usuarios</h3><span class="sub">${us.length} · las invitaciones se envían desde el engranaje de cada encargo</span></div>
       <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Usuario</th><th>Rol</th><th class="col-opc">Encargos</th><th></th></tr></thead>
       <tbody>${us.map(u => `<tr><td><b>${esc(u.nombre || u.email)}</b><div class="sub">${esc(u.email || '')}${u.telefono ? ' · ' + esc(u.telefono) : ''}</div></td>
         <td>${u.roles.length ? u.roles.map(r => `<span class="etiqueta">${ROL[r] || esc(r)}</span>`).join(' ') : u.encargos.length ? `<span class="etiqueta">${ROL[u.encargos[0].rol] || esc(u.encargos[0].rol)}</span>` : '—'}</td>
@@ -1429,7 +1443,7 @@ function modalUsuario(u) {
   const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
   fondo.innerHTML = `<form class="modal" id="fus"><h2>Usuario</h2><p class="sub">${esc(u.email || '')}</p>
     <div class="grilla-form"><div><label>Nombre</label><input name="nombre" value="${esc(u.nombre || '')}"></div><div><label>Teléfono</label><input name="telefono" value="${esc(u.telefono || '')}"></div></div>
-    <p class="sub" style="margin-top:14px">Para dar acceso a un encargo, invita a la persona desde Ajustes del encargo.</p>
+    <p class="sub" style="margin-top:14px">Para dar acceso a un encargo, invita a la persona desde el engranaje (Ajustes) del encargo.</p>
     <div class="aviso" id="aviso"></div>
     <div class="pie-modal"><button type="button" class="btn sec" id="cancelar">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`;
   document.body.appendChild(fondo);

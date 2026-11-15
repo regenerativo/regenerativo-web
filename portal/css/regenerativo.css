@@ -9480,3 +9480,85 @@ html body .lv .lv-tabs-in > a {
     color: #999999 !important;
   }
 }
+
+/* Ajustes en ventana (engranaje de la cabecera) */
+.modal.modal-ajustes {
+  max-width: 980px;
+}
+.aj-cab {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.aj-rapidos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.aj-rap {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  text-align: left;
+  font: inherit;
+  color: var(--lv-tinta, #1e221d);
+  background: var(--lv-fondo, #f6f6f4);
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: color 0.6s ease, border-color 0.3s;
+}
+.aj-rap span {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--blanco);
+}
+.aj-rap b {
+  font-weight: 500;
+}
+.aj-rap small {
+  color: var(--lv-gris, #6b6b6b);
+}
+.aj-rap:hover {
+  color: #999999;
+}
+.modal-ajustes .panel {
+  box-shadow: none;
+  border: 1px solid rgba(30, 34, 29, 0.08);
+}
+.modal-opciones {
+  max-width: 460px;
+}
+.modal-opciones .aj-rapidos {
+  grid-template-columns: 1fr;
+}
+.modal-ajustes .dos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.modal-ajustes .panel {
+  min-width: 0;
+  margin: 0;
+}
+.modal-ajustes .panel > div[style*="display:flex"] {
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .modal.modal-ajustes .panel {
+    padding: 16px;
+  }
+  .modal-ajustes .col-opc {
+    display: none;
+  }
+}

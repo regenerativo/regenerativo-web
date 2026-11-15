@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=101';
-import { cop, fecha, iso } from './formato.js?v=101';
-import { btnIco } from './iconos.js?v=101';
-import { leerMonai } from './monai.js?v=101';
+import * as D from './datos.js?v=102';
+import { cop, fecha, iso } from './formato.js?v=102';
+import { btnIco, ico } from './iconos.js?v=102';
+import { leerMonai } from './monai.js?v=102';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -126,8 +126,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
             <div class="mon-nom">${esc(c.nombre)}</div></button>`;
         }).join('')}</div>
         ${desglose.length ? `<div class="mon-sub">${desglose.map(d => `<div class="ms-fila"><span class="ms-cat">${icoCat(d.nombre)} ${esc(d.nombre)}</span><span class="ms-chips">${d.subs.map(([n, v]) => `<span class="ms-chip">${esc(n)} <b>${compacto(v)}</b></span>`).join('')}</span></div>`).join('')}</div>` : ''}
-        <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <a href="#" id="editar-pres">Editar presupuesto</a> &nbsp;·&nbsp; <a href="#" id="editar-cats">Editar categorías</a>${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
-        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" title="Subir la exportación CSV de MONAI">Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
+        <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
+        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" hidden>Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
       </section>
       <section class="panel fin-lado">
         <div class="od-cab"><h3>Movimientos del mes</h3><span class="sub">${delMes.length}</span></div>
@@ -184,8 +184,24 @@ export async function vistaFinanzas(mesSel, listaSel) {
       fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); recargar(); };
     });
     const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
-    $('#editar-pres').onclick = ev => { ev.preventDefault(); modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar); };
-    $('#editar-cats').onclick = ev => { ev.preventDefault(); modalCategorias(recargar); };
+    // Engranaje de la cabecera: presupuesto del mes, categorías e importación de MONAI
+    const bg = $('#fin-ajustes'); if (bg) bg.onclick = () => {
+      const f = document.createElement('div'); f.className = 'modal-fondo';
+      f.innerHTML = `<div class="modal modal-opciones" role="dialog" aria-label="Ajustes de finanzas"><div class="aj-cab"><div><h2>Ajustes de finanzas</h2><p class="sub">${esc(mesTxt)}</p></div>${btnIco('x', 'Cerrar', 'data-cerrar')}</div>
+        <div class="aj-rapidos">
+          <button type="button" class="aj-rap" data-op="pres"><span>${ico('excel')}</span><b>Presupuesto del mes</b><small>Cuánto se planea gastar en cada categoría</small></button>
+          <button type="button" class="aj-rap" data-op="cats"><span>${ico('editar')}</span><b>Categorías</b><small>Nombres y subcategorías de ingresos y gastos</small></button>
+          <button type="button" class="aj-rap" data-op="monai"><span>${ico('subir')}</span><b>Importar MONAI</b><small>Subir la exportación CSV de MONAI</small></button>
+        </div></div>`;
+      const cerrar = () => { f.remove(); removeEventListener('hashchange', cerrar); };
+      addEventListener('hashchange', cerrar);
+      f.onclick = ev => { if (ev.target === f || ev.target.closest('[data-cerrar]')) return cerrar();
+        const op = ev.target.closest('[data-op]')?.dataset.op; if (!op) return; cerrar();
+        if (op === 'pres') modalPresupuesto(cats.filter(c => c.tipo === 'gasto'), recargar);
+        if (op === 'cats') modalCategorias(recargar);
+        if (op === 'monai') $('#importar-monai')?.click(); };
+      document.body.appendChild(f);
+    };
     $('#importar-monai').onclick = () => modalMonai(recargar);
     const bm = $('#buscar-mov'); if (bm) bm.oninput = () => { const t = bm.value.toLowerCase().trim(); document.querySelectorAll('.mov-fila[data-buscar]').forEach(f => { f.hidden = !!t && !f.dataset.buscar.includes(t); }); };
     document.querySelectorAll('[data-cat]').forEach(x => x.onclick = () => {
