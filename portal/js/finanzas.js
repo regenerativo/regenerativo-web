@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=100';
-import { cop, fecha, iso } from './formato.js?v=100';
-import { btnIco } from './iconos.js?v=100';
-import { leerMonai } from './monai.js?v=100';
+import * as D from './datos.js?v=101';
+import { cop, fecha, iso } from './formato.js?v=101';
+import { btnIco } from './iconos.js?v=101';
+import { leerMonai } from './monai.js?v=101';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=100';
-import * as M from './modulos.js?v=100';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=100';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=100';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=100';
+import * as D from './datos.js?v=101';
+import * as M from './modulos.js?v=101';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=101';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=101';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=101';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -411,6 +411,14 @@ async function vistaInicio(s) {
   activos.filter(e => e.fin && e.fin >= hoy && e.fin.slice(0, 7) === mes).forEach(e => rec('medio', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} termina el ${fecha(e.fin)}`, 'Fecha de fin este mes', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.fin && e.fin < hoy).forEach(e => rec('alto', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} pasó su fecha de fin`, `Terminaba el ${fecha(e.fin)}`, `#/${D.slugEncargo(e)}`));
   const prox = festLista.filter(f => f.fecha >= hoy).slice(0, 1)[0];
+  // Recordatorio semanal fijo: comité regenerativo, todos los lunes a las 8:00 a. m. (hora local)
+  const comite = (() => {
+    const d = new Date(), h = d.getHours() * 60 + d.getMinutes();
+    const dias = d.getDay() === 1 && h < 9 * 60 ? 0 : (8 - d.getDay()) % 7 || 7;
+    d.setDate(d.getDate() + dias);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { hoy: dias === 0, txt: dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `el lunes ${fecha(iso)}`, festivo: fest.has(iso) };
+  })();
   const orden = { alto: 0, medio: 1, bajo: 2 };
   R.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
   // Seis meses de ingresos y gastos confirmados
@@ -434,9 +442,11 @@ async function vistaInicio(s) {
       </section>
       <section class="lv-card lv-recs">
         <div class="lv-card-cab"><h3>Recordatorios</h3><span class="lv-cuenta">${R.length} pendiente${R.length === 1 ? '' : 's'}</span></div>
-        <ul>${R.map(r => `<li><a class="lv-rec ${r.nivel}" href="${r.href}"><span class="lv-circ"></span><span class="lv-rec-t">${esc(r.txt)}</span><span class="lv-flecha">${ico('ver')}</span></a></li>`).join('')}
+        <ul>
+          <li><span class="lv-rec festivo"><span class="lv-punto comite${comite.hoy ? ' hoy' : ''}"></span><span class="lv-rec-t">Comité regenerativo ${comite.txt}, 8:00 a. m.${comite.festivo ? ' (es festivo)' : ''}<small>Todos los lunes</small></span></span></li>
+          ${R.map(r => `<li><a class="lv-rec ${r.nivel}" href="${r.href}"><span class="lv-circ"></span><span class="lv-rec-t">${esc(r.txt)}</span><span class="lv-flecha">${ico('ver')}</span></a></li>`).join('')}
           ${prox ? `<li><span class="lv-rec festivo"><span class="lv-punto lima"></span><span class="lv-rec-t">Próximo festivo: ${fecha(prox.fecha)} — ${esc(prox.nombre)}</span></span></li>` : ''}
-          ${!R.length && !prox ? '<li class="lv-vacio">Todo al día.</li>' : ''}</ul>
+          </ul>
       </section>
     </div>
     <div class="bento-kpis">

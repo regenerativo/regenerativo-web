@@ -5022,6 +5022,20 @@ html.mov .anillos {
   height: 8px;
   margin: 6px 6px 0;
 }
+.lv-punto.comite {
+  background: var(--lv-azul);
+  width: 8px;
+  height: 8px;
+  margin: 6px 6px 0;
+}
+.lv-punto.comite.hoy {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lv-azul) 25%, transparent);
+}
+.lv-rec-t small {
+  display: block;
+  color: var(--lv-gris);
+  font-size: 0.85em;
+}
 .lv-punto.ing {
   background: var(--lv-azul);
   margin: 0;
