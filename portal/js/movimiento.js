@@ -25,6 +25,8 @@ function contar(base) {
     const fin = Number(m[0].replace(/\./g, ''));
     if (!fin || fin < 2) return;
     el.dataset.contado = '1';
+    if (document.hidden) return;   // en segundo plano no se anima: queda la cifra exacta
+    el.setAttribute('aria-label', el.textContent.trim());   // los lectores de pantalla leen la cifra final
     const fmt = n => Math.round(n).toLocaleString('es-CO').replace(/,/g, '.');
     const antes = txt.slice(0, m.index), despues = txt.slice(m.index + m[0].length);
     const t0 = performance.now(), dur = 900;
@@ -34,6 +36,7 @@ function contar(base) {
       if (p < 1) requestAnimationFrame(paso); else nodo.textContent = txt;
     };
     requestAnimationFrame(paso);
+    setTimeout(() => { nodo.textContent = txt; }, dur + 150);   // siempre termina en la cifra exacta, aunque el navegador pause la animación
   });
 }
 

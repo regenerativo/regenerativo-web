@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=96';
-import * as M from './modulos.js?v=96';
-import { vistaFinanzas, modalMov, icoCat as icoCatF } from './finanzas.js?v=96';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=96';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=96';
+import * as D from './datos.js?v=97';
+import * as M from './modulos.js?v=97';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=97';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=97';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=97';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -41,7 +41,17 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const xxx = v => (v === null || v === undefined || v === '' || v === 'XXX') ? '<span class="xxx">XXX</span>' : esc(v);
 const raiz = $('#raiz');
+// Mensajes de validación del navegador en español (el navegador los muestra en su idioma por defecto)
+document.addEventListener('invalid', ev => {
+  const el = ev.target, v = el.validity; if (!v) return;
+  el.setCustomValidity(v.valueMissing ? (el.type === 'file' ? 'Elige un archivo.' : el.tagName === 'SELECT' ? 'Elige una opción.' : 'Completa este campo.')
+    : v.typeMismatch && el.type === 'email' ? 'Escribe un correo válido, por ejemplo nombre@dominio.com.'
+    : v.rangeUnderflow || v.rangeOverflow ? 'El valor está fuera del rango permitido.' : v.tooShort ? `Escribe al menos ${el.minLength} caracteres.` : v.patternMismatch ? 'Revisa el formato de este campo.' : v.badInput ? 'Revisa este dato.' : '');
+}, true);
+document.addEventListener('input', ev => { if (ev.target.setCustomValidity) ev.target.setCustomValidity(''); }, true);
+document.addEventListener('change', ev => { if (ev.target.setCustomValidity) ev.target.setCustomValidity(''); }, true);
 let cargando = null;
+let finAntes = '';
 
 // ---------------- Router ----------------
 window.addEventListener('hashchange', ir);
@@ -104,8 +114,12 @@ async function irSeguro() {
     const RESERVADAS = ['folders', 'finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
     if (p[0] === 'finanzas' && s.facturacion) {
+      const pedido = location.hash;
+      const caja = $('.cont'); if (caja && location.hash !== finAntes) caja.classList.add('fin-cargando');   // al cambiar de mes se ve que está cargando, no los datos viejos
+      finAntes = pedido;
       const v = await vistaFinanzas(p[1], p[2]);
-      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, eyebrow: new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase()) });
+      if (location.hash !== pedido) return;   // si ya se pidió otro mes, esta respuesta vieja no se pinta
+      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, eyebrow: v.mesTxt.replace(/ (\d{4})$/, ' de $1').replace(/^./, c => c.toUpperCase()) });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
@@ -364,8 +378,9 @@ const VERSICULOS = [   // tal como están en regenerativo.co/about
 async function vistaInicio(s) {
   const festLista = await D.festivos();
   const fest = new Set(festLista.map(f => f.fecha));
-  const [lista, props, movs, honor, docs, coms] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
-    s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : [], s.admin ? D.comentariosAbiertos() : []]);
+  const [lista, props, movs, honor, docs, coms, adicsMan] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
+    s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : [], s.admin ? D.comentariosAbiertos() : [],
+    s.facturacion ? D.adicionalesTodos().catch(() => []) : []]);
   const hoy = new Date().toISOString().slice(0, 10), mes = hoy.slice(0, 7);
   const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
   const espera = props.filter(p => p.estado === 'en_espera'), borrador = props.filter(p => p.estado === 'borrador');
@@ -379,10 +394,8 @@ async function vistaInicio(s) {
   const suma = (l, t) => l.filter(x => x.tipo === t).reduce((a, x) => a + Number(x.valor), 0);
   const delMes = ok.filter(x => x.fecha.slice(0, 7) === mes);
   const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
-  const porCobrar = lista.reduce((t, e) => {
-    const v = (Number(honor.find(p => p.encargo_id === e.id)?.honorarios) || 0) + docs.filter(d => d.encargo_id === e.id && d.tipo === 'adenda' && aprob(d)).reduce((a, d) => a + (Number(d.contenido?.valor) || 0), 0);
-    return t + Math.max(0, v - suma(ok.filter(x => x.encargo_id === e.id), 'ingreso'));
-  }, 0);
+  // Mismo cálculo que Finanzas (función común): así Inicio y Finanzas muestran el mismo por cobrar
+  const porCobrar = lista.reduce((t, e) => t + cuentasEncargo(e, { props: honor, docs, adics: adicsMan, movs: ok }).porCobrar, 0);
   const enEspera = espera.reduce((a, p) => a + (Number(p.honorarios) || 0), 0);
   // Recordatorios: lo que pide una acción
   const R = [];
@@ -501,6 +514,18 @@ function vistaComentarios(ctx, coms, pintar) {
   document.querySelectorAll('.lv-reabrir').forEach(b => b.onclick = async () => { b.disabled = true; try { await D.responderComentario(b.dataset.id, { estado: 'abierto' }); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; } });
 }
 // Documentos del cliente: Enviados (DOC _ ENV) y Recibidos (DOC _ REC), cada uno con su explicación, agrupados por carpeta
+// Toda carga de documentos del cliente termina: con la lista, vacía o con error y «Reintentar» (nunca queda cargando)
+const conLimite = (p, ms = 25000) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('OneDrive tardó demasiado en responder.')), ms))]);
+const _docsCli = new Map();   // lo enviado al cliente se guarda 2 minutos: Propuesta y Documentos usan la misma lectura
+function enviadosDe(encId, fresco = false) {
+  const c = _docsCli.get(encId);
+  if (!fresco && c && Date.now() - c.t < 120000) return c.p;
+  const p = conLimite(D.onedrive('cli_enviados', { encargo_id: encId })).then(r => r.archivos || []);
+  _docsCli.set(encId, { t: Date.now(), p }); p.catch(() => _docsCli.delete(encId));
+  return p;
+}
+const cargandoCli = t => `<p class="sub cargando-cli" role="status"><span class="giro" aria-hidden="true"></span>${t}</p>`;
+const errorCli = (t, id) => `<div class="error-cli" role="alert"><p class="sub">${t}</p><button type="button" class="btn sec mini" data-reintentar="${id}">Reintentar</button></div>`;
 const listaDocsCli = (l, pref) => {
   if (!l.length) return '';
   l.sort(porLlegada);  // se ordena la misma lista que usan los botones de descarga (los índices coinciden)
@@ -516,49 +541,61 @@ const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
       <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-${pref}="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-${pref}="${i}">Descargar</button></span></li>`).join('')}</ul>` : '';
 async function enviadosCliente(ctx, pintar) {
-  pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>
+  pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>
     <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos que tú o el personal requerido han compartido con nuestro equipo regenerativo.</p></div>
-      <label class="btn mini cli-subir"><span class="mas">+</span> Compartir un documento<input type="file" id="cli-arch" multiple hidden></label><div class="aviso" id="cli-aviso"></div><div class="cli-docs-l"><p class="sub">Cargando documentos…</p></div></section>`);
+      <button type="button" class="btn mini cli-subir" id="cli-subir"><span class="mas">+</span> Compartir un documento</button><input type="file" id="cli-arch" multiple hidden aria-hidden="true" tabindex="-1"><p class="sub cli-subir-ayuda">PDF, imágenes, Word, Excel o planos, hasta 25 MB cada uno.</p><div class="aviso" id="cli-aviso" role="status" aria-live="polite"></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`);
   const bajar = (l, pref, caja) => caja.querySelectorAll(`[data-${pref}]`).forEach(b => b.onclick = async () => {
     const a = l[+b.dataset[pref]]; const t = b.textContent; b.disabled = true; b.textContent = '…';
-    try { const d = await D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta, pdf: !!b.dataset.pdf }); bajarBase64(d.base64, d.nombre); }
-    catch (err) { alert(msg(err)); }
+    try { const d = await conLimite(D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta, pdf: !!b.dataset.pdf }), 60000); bajarBase64(d.base64, d.nombre); }
+    catch (err) { alert('No se pudo descargar: ' + msg(err)); }
     b.disabled = false; b.textContent = t;
   });
-  const cargar = async (accion, id, pref, vacio) => {
-    const caja = $(`#${id} .cli-docs-l`);
-    try { const r = await D.onedrive(accion, { encargo_id: ctx.e.id }); const l = r.archivos || []; caja.innerHTML = listaDocsCli(l, pref) || `<p class="sub">${vacio}</p>`; bajar(l, pref, caja); }
-    catch (err) { caja.innerHTML = '<p class="sub">No se pudieron cargar los documentos en este momento. Intenta de nuevo más tarde.</p>'; }
+  const cargar = async (accion, id, pref, vacio, fresco = false) => {
+    const caja = $(`#${id} .cli-docs-l`); if (!caja) return;
+    caja.innerHTML = cargandoCli('Cargando documentos…');
+    try { const l = accion === 'cli_enviados' ? await enviadosDe(ctx.e.id, fresco) : ((await conLimite(D.onedrive(accion, { encargo_id: ctx.e.id }))).archivos || []);
+      if (!document.body.contains(caja)) return;
+      caja.innerHTML = listaDocsCli(l, pref) || `<p class="sub">${vacio}</p>`; bajar(l, pref, caja); }
+    catch (err) { if (!document.body.contains(caja)) return; caja.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', id); caja.querySelector('[data-reintentar]').onclick = () => cargar(accion, id, pref, vacio, true); }
   };
   cargar('cli_enviados', 'cli-env', 'ie', 'Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.');
   cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
+  $('#cli-subir').onclick = () => $('#cli-arch').click();
   $('#cli-arch').onchange = async ev => {
-    const av = $('#cli-aviso'); const fs = [...ev.target.files]; if (!fs.length) return;
-    for (const f of fs) {
-      if (f.size > 25e6) { av.textContent = `${f.name} supera 25 MB: compártelo por correo.`; continue; }
-      av.textContent = `Subiendo ${f.name}…`;
-      try { const b64 = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(f); });
-        await D.onedrive('cli_subir', { encargo_id: ctx.e.id, nombre: f.name, base64: b64 }); }
-      catch (err) { av.textContent = msg(err); return; }
+    const av = $('#cli-aviso'); const fs = [...ev.target.files]; if (!fs.length) return;   // si cancela, no pasa nada
+    const btn = $('#cli-subir'); btn.disabled = true; let ok = 0; const malos = [];
+    for (const [i, f] of fs.entries()) {
+      if (f.size > 25e6) { malos.push(`${f.name} supera 25 MB (compártelo por correo)`); continue; }
+      av.textContent = `Subiendo ${fs.length > 1 ? `${i + 1} de ${fs.length}: ` : ''}${f.name}…`;
+      try { const b64 = await new Promise((ok2, no) => { const r = new FileReader(); r.onload = () => ok2(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(f); });
+        await conLimite(D.onedrive('cli_subir', { encargo_id: ctx.e.id, nombre: f.name, base64: b64 }), 120000); ok++; }
+      catch (err) { malos.push(`${f.name}: ${msg(err)}`); }
     }
-    av.textContent = 'Listo, ya lo recibimos.'; ev.target.value = '';
+    btn.disabled = false; ev.target.value = '';
+    av.textContent = [ok ? `Listo: ${ok === 1 ? 'recibimos tu documento' : `recibimos ${ok} documentos`}. Ya aparece${ok === 1 ? '' : 'n'} en Recibidos.` : '', malos.length ? `No se pudo subir ${malos.join(' · ')}.` : ''].filter(Boolean).join(' ');
     cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
   };
 }
 
 // Propuesta para el cliente: el PDF que se le envió (carpeta Enviados); si no hay, el documento del portal
-async function propuestaCliente(ctx, pintar, html) {
-  pintar('<section class="panel" id="cli-prop"><p class="sub">Cargando la propuesta…</p></section>');
-  let l = [];
-  try { l = ((await D.onedrive('cli_enviados', { encargo_id: ctx.e.id })).archivos || []).filter(a => /\.pdf$/i.test(a.nombre) && (/propuesta/i.test(a.nombre) || /SCREG_/i.test(a.nombre))).sort((x, y) => (y.fecha || '').localeCompare(x.fecha || '')).slice(0, 1); } catch (_) {}
-  if (!l.length) return html ? pintar(html.html) || html.montar?.() : pintar('<div class="vacio">Todavía no hay una propuesta para mostrar.</div>');
-  // Si mientras cargaba se cambió de sección, no hay caja: no se pinta nada (antes rompía la página)
+async function propuestaCliente(ctx, pintar, html, fresco = false) {
+  pintar(`<section class="panel" id="cli-prop">${cargandoCli('Cargando la propuesta…')}</section>`);
+  let l;
+  try { l = (await enviadosDe(ctx.e.id, fresco)).filter(a => /\.pdf$/i.test(a.nombre) && (/propuesta/i.test(a.nombre) || /SCREG_/i.test(a.nombre))).sort((x, y) => (y.fecha || '').localeCompare(x.fecha || '')).slice(0, 1); }
+  catch (err) {
+    const c = $('#cli-prop'); if (!c) return;
+    c.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta económica</h3></div>${errorCli('No pudimos traer la propuesta en este momento. Puedes reintentar o buscarla en Documentos.', 'prop')}<p><a class="btn sec mini" href="${ctx.base}/enviados">Ir a Documentos</a></p>`;
+    c.querySelector('[data-reintentar]').onclick = () => propuestaCliente(ctx, pintar, html, true);
+    return;
+  }
+  // Si mientras cargaba se cambió de sección, no hay caja: no se pinta nada
   const caja = $('#cli-prop');
   if (!caja) return;
+  if (!l.length) { if (html) { pintar(html.html); html.montar?.(); return; } caja.innerHTML = '<div class="cli-docs-cab"><h3>Propuesta económica</h3></div><p class="sub">Todavía no hay una propuesta para mostrar. Cuando te la enviemos aparecerá aquí y en Documentos.</p>'; return; }
   caja.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta económica</h3><p class="sub">El documento que te enviamos.</p></div>${listaDocsCli(l, 'ip')}`;
   caja.querySelectorAll('[data-ip]').forEach(b => b.onclick = async () => {
-    const a = l[+b.dataset.ip]; const t = b.textContent; b.disabled = true; b.textContent = '…';
-    try { const d = await D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta }); bajarBase64(d.base64, d.nombre); } catch (err) { alert(msg(err)); }
+    const a = l[+b.dataset.ip]; const t = b.textContent; b.disabled = true; b.textContent = 'Descargando…';
+    try { const d = await conLimite(D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta }), 60000); bajarBase64(d.base64, d.nombre); } catch (err) { alert('No se pudo descargar: ' + msg(err)); }
     b.disabled = false; b.textContent = t;
   });
 }
@@ -633,8 +670,8 @@ async function vistaEncargos(s) {
   const abiertos = admin ? await D.comentariosAbiertos() : [];
   const conTiempo = lista.map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest), dudas: abiertos.filter(c => c.encargo?.id === e.id).length }));
   const hoyE = new Date().toISOString().slice(0, 10);
-  const fase = e => e.estado !== 'activo' ? e.estado : (!e.inicio || e.inicio > hoyE) ? 'por-iniciar' : 'en-curso';
-  const F = [['todos', 'Todos'], ['en-curso', 'En curso'], ['por-iniciar', 'Por iniciar'], ['pausado', 'Pausados'], ['finalizado', 'Finalizados'], ['cerrado', 'Cerrados']]
+  const fase = faseEncargo;
+  const F = [['todos', 'Todos'], ['por-iniciar', 'Por iniciar'], ['en-curso', 'En curso'], ['pausado', 'Pausados'], ['finalizado', 'Finalizados'], ['cerrado', 'Cancelados']]
     .map(([k, l]) => [k, l, k === 'todos' ? lista.length : conTiempo.filter(e => fase(e) === k).length]).filter(([k, , n]) => k === 'todos' || n);
   let filtro = 'todos';
   const html = `
@@ -644,7 +681,7 @@ async function vistaEncargos(s) {
   marco(s, { titulo: 'Encargos', ruta: 'Portal', activo: 'encargos', html, eyebrow: `${lista.length} encargo${lista.length === 1 ? '' : 's'}`,
     acciones: admin ? '<button class="btn" id="nuevo"><span class="mas">+</span> Nuevo encargo</button>' : '' });
   const ini = n => (n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
-  const chip = e => { const f = fase(e); return `<span class="lv-chip ${f}"><i></i>${f === 'en-curso' ? 'En curso' : f === 'por-iniciar' ? 'Por iniciar' : ESTADOS_ENCARGO[e.estado]}</span>`; };
+  const chip = e => { const f = fase(e); return `<span class="lv-chip ${f}"><i></i>${ESTADOS_ENCARGO[e.estado] || 'Por iniciar'}</span>`; };
   const pintar = () => {
     const q = $('#buscar').value.toLowerCase();
     const f = conTiempo.filter(e => (filtro === 'todos' || fase(e) === filtro) &&
@@ -758,7 +795,8 @@ async function modalEncargo(e = null) {
       <div><label>Cliente</label><select name="cliente_id"><option value="">— Elegir —</option>${op(cli, e?.cliente_id)}<option value="__nuevo">+ Nuevo cliente…</option></select></div>
       ${checksServicios(svc, e)}
       <input type="hidden" name="tipo" value="${e?.tipo || 'ambos'}">
-      <div><label>Estado</label><select name="estado">${opMap(ESTADOS_ENCARGO, e?.estado || 'activo')}</select></div>
+      <div><label>Etapa</label><select name="estado">${Object.entries(ESTADOS_ENCARGO).map(([k, l]) => `<option value="${k}" ${k === (e?.estado || 'por_iniciar') ? 'selected' : ''}>${l} · ${AYUDA_ESTADOS[k]}</option>`).join('')}</select></div>
+      <div><label>Alcance</label><span class="alcance alcance-modal"><label class="lv-check"><input type="checkbox" name="tiene_diseno" ${e?.tiene_diseno !== false ? 'checked' : ''}> Diseño</label><label class="lv-check"><input type="checkbox" name="tiene_obra" ${e?.tiene_obra ? 'checked' : ''}> Obra</label></span></div>
       <div class="ancho"><label>Dirección</label><input name="direccion" value="${esc(e?.direccion || '')}"></div>
       <div><label>Ciudad</label><input name="ciudad" value="${esc(e?.ciudad || 'Bogotá')}"></div>
       <div><label>Área m²</label><input name="area_m2" type="number" step="0.01" value="${e?.area_m2 ?? ''}"></div>
@@ -784,7 +822,9 @@ async function modalEncargo(e = null) {
   f.onsubmit = async ev => {
     ev.preventDefault();
     const v = Object.fromEntries(new FormData(f)); leerServicios(f, v);
+    v.tiene_diseno = f.tiene_diseno.checked; v.tiene_obra = f.tiene_obra.checked;
     for (const k of ['area_m2', 'inicio', 'fin', 'fecha_corte', 'cliente_id']) if (v[k] === '') v[k] = null;
+    if (v.estado === 'activo' && !v.inicio) v.inicio = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });  // En curso sin fecha: empieza hoy
     if (v.area_m2 !== null) v.area_m2 = Number(v.area_m2);
     if (v.inicio && v.fin && v.fin < v.inicio) { $('#aviso', fondo).textContent = 'La fecha de fin no puede ser anterior al inicio.'; return; }
     try {
@@ -876,7 +916,7 @@ async function modalValores(e, prop, onListo) {
         ${ingresos.map(m => `<button type="button" class="mv-item clic" data-mov="${m.id}"><span><b>${esc(m.descripcion || m.categoria?.nombre || 'Ingreso')}</b><small>${fecha(m.fecha)}${m.medio ? ' · ' + esc(m.medio) : ''}</small></span><b class="num">${cop(m.valor)}</b><span class="mv-ed">${ico('editar')}</span></button>`).join('') || '<p class="sub">Todavía no hay ingresos registrados para este encargo.</p>'}
         <div class="mv-pie"><button type="button" class="btn mini" id="nuevo-ing"><span class="mas">+</span> Ingreso</button></div>
       </div>
-      <ul class="leyenda-valor mv-resumen"><li>Valor total<b>${cop(v.total)}</b></li><li>Recibido<b>${cop(rec)}</b></li><li class="total">Por cobrar<b>${cop(e.pagado_total ? 0 : Math.max(0, v.total - rec))}</b></li></ul>
+      <ul class="leyenda-valor mv-resumen"><li>Valor total<b>${cop(v.total)}</b></li><li>Recibido<b>${cop(rec)}</b></li><li class="total">Por cobrar<b>${rec >= v.total && v.total > 0 ? cop(0) : e.pagado_total ? 'Saldado a mano' : cop(Math.max(0, v.total - rec))}</b></li></ul>
       <div class="aviso" id="mv-aviso"></div>
       <div class="pie-modal"><button type="button" class="btn" id="mv-cerrar">Listo</button></div>
     </div>`;
@@ -977,6 +1017,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         <dl class="datos datos-2c">
           <dt>Cliente</dt><dd>${xx(e.cliente?.nombre)}</dd>
           <dt>Servicios</dt><dd>${servs(e).length ? servs(e).map(esc).join(' · ') : xx('')}</dd>
+          <dt class="dt-fechas">Etapa</dt><dd class="dd-ancho">${admin ? `<span class="etapas" role="radiogroup" aria-label="Etapa del encargo">${Object.entries(ESTADOS_ENCARGO).map(([k, l]) => `<button type="button" role="radio" aria-checked="${k === e.estado}" class="etapa ${faseEncargo({ estado: k })}${k === e.estado ? ' activa' : ''}" data-etapa="${k}" title="${AYUDA_ESTADOS[k]}">${l}</button>`).join('')}</span>` : `<span class="lv-chip ${faseEncargo(e)}"><i></i>${ESTADOS_ENCARGO[e.estado] || 'Por iniciar'}</span>`}</dd>
           <dt>Alcance</dt><dd>${admin ? `<span class="alcance"><label class="lv-check"><input type="checkbox" data-alcance="tiene_diseno" ${e.tiene_diseno !== false ? 'checked' : ''}> Diseño</label><label class="lv-check"><input type="checkbox" data-alcance="tiene_obra" ${e.tiene_obra ? 'checked' : ''}> Obra</label></span>` : [e.tiene_diseno !== false ? 'Diseño' : '', e.tiene_obra ? 'Obra' : ''].filter(Boolean).join(' · ') || '—'}</dd>
           ${DETALLES_PROPUESTA.filter(([k]) => prop?.[k]).map(([k, tt]) => `<dt>${tt.replace(' del encargo', '')}</dt><dd>${esc(prop[k])}</dd>`).join('')}
           ${prop?.ubicacion ? '' : `<dt>Ubicación</dt><dd>${admin || e.direccion ? xx(e.direccion) + (e.ciudad ? ', ' + esc(e.ciudad) : '') : (e.ciudad ? esc(e.ciudad) : '—')}</dd>`}
@@ -995,13 +1036,13 @@ async function vistaExpediente(s, codigo, seccion, sub) {
           <ul class="leyenda-valor">
             ${pagos.map(x => `<li><i style="background:#0090B0"></i>Abono del ${fecha(x.fecha)}<b>${cop(x.valor)}</b></li>`).join('')}
             <li class="total">Pagado<b>${cop(pagado)}</b></li>
-            ${V ? `<li class="total">Pendiente<b>${cop(Math.max(0, V - pagado))}</b></li>` : ''}
+            ${V ? `<li class="total">Pendiente<b>${pagado >= V || e.pagado_total ? cop(0) : cop(V - pagado)}</b></li>` : ''}
           </ul></section>` : '';
       const htmlCli = `
         <div class="kpis ${conAvance ? 'kpis-4' : 'kpis-3'}">
           ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada')}
-          ${kpi('Pagado', cop(pagado), V ? `Pendiente ${cop(Math.max(0, V - pagado))}` : 'Abonos registrados', V ? Math.min(1, pagado / V) : undefined)}
-          ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (ESTADOS_ENCARGO[e.estado] && e.estado !== 'activo' ? ESTADOS_ENCARGO[e.estado] : 'En curso') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : (e.inicio ? `Desde el ${fecha(e.inicio)}` : 'Te avisamos la fecha de inicio'), t || 0)}
+          ${kpi('Pagado hasta ahora', cop(pagado), !V ? 'Abonos registrados' : pagado >= V ? 'Encargo pagado' : e.pagado_total ? 'Saldado' : `Pendiente ${cop(V - pagado)}`, V ? Math.min(1, pagado / V) : undefined)}
+          ${kpi('Tiempo transcurrido', e.estado !== 'activo' ? (ESTADOS_ENCARGO[e.estado] || 'Por iniciar') : t == null ? 'En curso' : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes` : (e.inicio ? `Desde el ${fecha(e.inicio)}` : 'Te avisamos la fecha de inicio'), t || 0)}
           ${conAvance ? kpi('Avance de la obra', pct(g.realTotal), `Esperado a la fecha ${pct(g.esperadoTotal)}`, g.realTotal) : ''}
         </div>
         ${detallesEnc}
@@ -1023,8 +1064,8 @@ async function vistaExpediente(s, codigo, seccion, sub) {
       <div class="kpis">
         ${kpi('Valor del encargo', V ? cop(V) : '—', V ? (valor.adic.length ? `Propuesta + ${valor.adic.length} adicional${valor.adic.length > 1 ? 'es' : ''}` : 'Propuesta aprobada') : 'Sin valor registrado')}
         ${s.facturacion ? kpi('Recibido', cop(rec), V ? `${pct(rec / V)} del valor` : 'Ingresos registrados', V ? Math.min(1, rec / V) : undefined) : ''}
-        ${s.facturacion ? kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', V ? 'Valor menos lo recibido' : '') : ''}
-        ${kpi('Tiempo transcurrido', !e.inicio ? 'Por iniciar' : t == null ? (e.estado === 'activo' ? 'En curso' : '—') : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${e.tiene_obra && g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
+        ${s.facturacion ? kpi('Por cobrar', !V ? '—' : rec >= V ? cop(0) : e.pagado_total ? 'Saldado' : cop(V - rec), !V ? '' : rec < V && e.pagado_total ? 'Dado por saldado a mano, sin abono registrado' : 'Valor menos lo recibido') : ''}
+        ${kpi('Tiempo transcurrido', e.estado !== 'activo' ? (ESTADOS_ENCARGO[e.estado] || 'Por iniciar') : t == null ? 'En curso' : pct(t), total ? `${Math.max(0, total - hechos)} días de trabajo restantes${e.tiene_obra && g?.filas.length ? ' · avance real ' + pct(g.realTotal) : ''}` : (e.inicio ? `Desde el ${fecha(e.inicio)} · falta la fecha de entrega` : 'Falta la fecha de entrega'), t || 0)}
       </div>
       <div class="dos">
         <section class="panel">
@@ -1048,6 +1089,13 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     pintar(html, admin ? btnIco('editar', 'Editar datos del encargo', 'id="editar-enc"') : '');
     const be = $('#editar-enc'); if (be) be.onclick = () => modalEncargo(e);
     const bv = $('#editar-valor'); if (bv) bv.onclick = () => modalValores(e, prop, ir);
+    document.querySelectorAll('[data-etapa]').forEach(b => b.onclick = async () => {
+      if (b.dataset.etapa === e.estado) return;
+      const cambio = { estado: b.dataset.etapa };
+      if (cambio.estado === 'activo' && !e.inicio) cambio.inicio = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+      document.querySelectorAll('[data-etapa]').forEach(x => x.disabled = true);
+      try { await D.actualizarEncargo(e.id, cambio); ir(); } catch (err) { alert(msg(err)); document.querySelectorAll('[data-etapa]').forEach(x => x.disabled = false); }
+    });
     document.querySelectorAll('[data-alcance]').forEach(c => c.onchange = async () => {
       c.disabled = true;
       try { await D.actualizarEncargo(e.id, { [c.dataset.alcance]: c.checked }); ir(); } catch (err) { alert(msg(err)); c.checked = !c.checked; c.disabled = false; }
@@ -1137,7 +1185,7 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
   const html = `
     <div class="kpis">
       ${kpi('Recibido', cop(rec), V ? `${pct(rec / V)} de ${cop(V)}` : 'Ingresos del encargo', V ? Math.min(1, rec / V) : undefined)}
-      ${kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', V ? 'Valor menos lo recibido' : '')}
+      ${kpi('Por cobrar', !V ? '—' : rec >= V ? cop(0) : e.pagado_total ? 'Saldado' : cop(V - rec), !V ? '' : rec < V && e.pagado_total ? 'Dado por saldado a mano, sin abono registrado' : 'Valor menos lo recibido')}
       ${kpi('Gastos del encargo', cop(gas), rec ? `${pct(gas / rec)} de lo recibido` : `${gass.length} gasto${gass.length === 1 ? '' : 's'}`, rec ? Math.min(1, gas / rec) : undefined)}
       ${kpi('Utilidad', cop(rec - gas), V ? `Si se cobra todo: ${cop(V - gas)}` : 'Recibido menos gastos')}
     </div>
@@ -1146,8 +1194,8 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
         <div class="gc-barra"><i style="width:${gas ? g.total / gas * 100 : 0}%"></i></div>
         <div class="gc-subs">${Object.entries(g.subs).sort((a, b) => b[1] - a[1]).map(([n, v]) => `<span>${esc(n)} <b>${cop(v)}</b></span>`).join('')}</div></div>`).join('')}</div></section>` : ''}
     <div class="dos">
-      <section class="panel"><div class="od-cab"><h3>Ingresos</h3><button class="btn sec mini" data-nuevo="ingreso"><span class="mas">+</span> Ingreso</button></div>${tabla(ings, 'ingreso')}</section>
-      <section class="panel"><div class="od-cab"><h3>Gastos</h3><button class="btn sec mini" data-nuevo="gasto"><span class="mas">+</span> Gasto</button></div>${tabla(gass, 'gasto')}</section>
+      <section class="panel"><div class="od-cab"><h3 class="tit-ing">Ingresos</h3><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button></div>${tabla(ings, 'ingreso')}</section>
+      <section class="panel"><div class="od-cab"><h3 class="tit-gas">Gastos</h3><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>${tabla(gass, 'gasto')}</section>
     </div>
     ${admin ? '<section class="panel od" id="od"></section>' : ''}`;
   pintar(html);

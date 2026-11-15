@@ -1015,3 +1015,62 @@ html body .lv .dos>*{min-width:0}
 @media (max-width:560px){html body .lv .t-fin-enc th:first-child,html body .lv .t-fin-enc td:first-child{display:none}
   html body .lv .t-fin-enc .fin-fecha{display:block;font-size:12.5px;margin-top:2px}
   html body .lv .t-fin-enc td.num{font-size:13.5px}}
+/* Etapa del encargo en Resumen (equipo): botones claros, la activa con el color de su etapa */
+html body .lv .etapas{display:inline-flex;flex-wrap:wrap;gap:6px}
+html body .lv .etapa{border:1px solid var(--lv-tabla);background:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-size:13.5px;color:#5c5c5c;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+html body .lv .etapa:hover{border-color:var(--lv-tinta);color:var(--lv-tinta)}
+html body .lv .etapa:focus-visible{outline:2px solid var(--lv-azul);outline-offset:2px}
+html body .lv .etapa.activa{border-color:transparent;font-weight:500}
+html body .lv .etapa.activa.por-iniciar{background:#EFEDE8;color:var(--lv-tinta)}
+html body .lv .etapa.activa.en-curso{background:rgba(0,163,203,.14);color:var(--lv-petroleo)}
+html body .lv .etapa.activa.pausado{background:var(--lv-crema);color:var(--lv-tinta)}
+html body .lv .etapa.activa.finalizado{background:#E6F3F6;color:#00758F}
+html body .lv .etapa.activa.cerrado{background:var(--lv-suave);color:#5c5c5c}
+html body .lv .alcance-modal{display:flex;gap:8px;padding-top:6px}
+/* Finanzas del encargo: Ingresos en azul y Gastos en vino, como en Finanzas generales */
+html body .lv h3.tit-ing,html body .lv h3.tit-gas{display:flex;align-items:center;gap:10px}
+html body .lv h3.tit-ing::before,html body .lv h3.tit-gas::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--lv-azul)}
+html body .lv h3.tit-gas::before{background:var(--lv-vino)}
+/* Hoja del menú en celular y tableta: pie limpio y aireado, sin el botón flotante encima */
+@media (max-width:1023px){
+  html body .lv .lv-lado{padding-bottom:calc(max(env(safe-area-inset-bottom),14px) + 14px)!important}
+  html body .lv .lv-lado > .lv-web{margin:10px 0 0!important;padding:10px 12px!important;gap:6px!important;font-size:16px}
+  html body .lv .lv-pie-lado{background:transparent!important;margin:8px 0 0;padding:14px 12px 0 18px!important;gap:6px;width:100%;box-sizing:border-box}
+  html body .lv .lv-pie-lado .pie-correo{padding:0 0 4px;font-size:13px;color:#6f6f6f}
+  html body .lv .lv-pie-lado a,html body .lv .lv-pie-lado button{padding:10px 0!important;margin:0!important;gap:6px!important;font-size:16px}
+  body:has(.lado.abierto) .lv-circulo,body:has(.lado.abierto) .lv-claude{opacity:0!important;pointer-events:none!important;transform:scale(.8)}
+  /* En la hoja se desplaza todo el menú (no solo la lista) y nada queda escondido */
+  html body .lv .lado{max-height:92dvh!important}
+  html body .lv .lv-lado{overflow-y:auto;overscroll-behavior:contain}
+  html body .lv .lv-lado > .lv-nav{flex:0 0 auto!important;overflow:visible!important}
+  html body .lv .lv-lado > .lv-nav.desborda{-webkit-mask-image:none!important;mask-image:none!important}
+  html body .lv .lv-nav a{padding:11px 12px!important}
+}
+/* Cargas del cliente: indicador y error con reintento */
+html body .lv .cargando-cli{display:flex;align-items:center;gap:10px}
+html body .lv .giro{width:16px;height:16px;border-radius:50%;border:2px solid var(--lv-tabla);border-top-color:var(--lv-azul);animation:lv-giro .8s linear infinite;flex:none}
+@keyframes lv-giro{to{transform:rotate(360deg)}}
+html body .lv .error-cli{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;background:var(--lv-crema)}
+html body .lv .error-cli p{margin:0}
+html body .lv .cli-subir-ayuda{margin:6px 0 0;font-size:12.5px}
+html body .lv .cli-subir:focus-visible{outline:2px solid var(--lv-azul);outline-offset:2px}
+html body .lv .etiqueta.saldado{background:var(--lv-crema);color:#6b5d2e;white-space:normal;line-height:1.3;text-align:right}
+html body .lv .cont.fin-cargando{opacity:.35;pointer-events:none;transition:opacity .15s}
+/* Legibilidad: textos secundarios con contraste suficiente (≥ 4,5:1 sobre blanco) sin perder la jerarquía */
+html body .lv{--lv-gris-texto:#6B6B6B}
+html body .lv .sub,html body .lv p.sub,html body .lv span.sub,html body .lv .lv-cuenta,html body .lv .pie-correo,html body .lv .lv-top-sub,
+html body .lv .kpi .su,html body .lv .kpi .et,html body .lv dl.datos dt,html body .lv .dd-fechas small,html body .lv label,html body .lv .lv-ceja,
+html body .lv .lv-doc-t .sub,html body .lv .cli-docs-cab .sub,html body .lv .gc-subs,html body .lv .fin-det,html body .lv .fin-fecha,html body .lv .od-meta,
+html body .lv th{color:var(--lv-gris-texto)}
+html body .lv .lv-nav a:not(.activo){color:rgba(30,34,29,.74)}
+html body .lv .lv-nav a .cuenta{color:#5c5c5c}
+html body .lv ::placeholder{color:#8a8a8a}
+/* Detalles del encargo: la columna de etiquetas con espacio para no partir palabras */
+html body .lv dl.datos{grid-template-columns:minmax(120px,max-content) minmax(0,1fr)}
+@media (min-width:900px){html body .lv dl.datos.datos-2c{grid-template-columns:minmax(130px,max-content) minmax(0,1fr) minmax(130px,max-content) minmax(0,1fr)}}
+html body .lv dl.datos dt{white-space:nowrap}
+@media (max-width:560px){html body .lv dl.datos{grid-template-columns:1fr}html body .lv dl.datos dt{margin-top:8px}}
+html body .lv label.lv-check,html body .lv label.btn,html body .lv label.monai-arch{color:var(--lv-tinta)}
+html body .lv .folder-link small{color:var(--lv-gris-texto)}
+html body .lv .datos-2c .dd-ancho{grid-column:2 / -1}
+@media (max-width:600px){html body .lv .datos-2c .dd-ancho{grid-column:auto}}

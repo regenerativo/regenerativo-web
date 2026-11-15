@@ -2,6 +2,12 @@
 (function(){
 var d=document,H=d.documentElement,rm=matchMedia('(prefers-reduced-motion: reduce)').matches,fino=matchMedia('(hover:hover) and (pointer:fine)').matches;
 H.classList.add('vivo');
+/* legibilidad y anclas: textos secundarios con contraste suficiente; los títulos no quedan bajo el menú fijo; encargos «Próximamente» sin apariencia de enlace */
+var st=d.createElement('style');
+st.textContent='html{scroll-padding-top:120px}section,[id]{scroll-margin-top:120px}'
+ +'[style*="color: #999999"]:not(img):not(svg),[style*="color:#999999"]:not(img):not(svg){color:#6B6B6B!important}'
+ +'.proximo{cursor:default}.proximo:hover *{transform:none!important}';
+d.head.appendChild(st);
 var fuera=function(el){return el.closest('#hero,.stage,header,.v-gal,.v-mq,nav[aria-label="Redes"]')};
 
 var pub=d.getElementById('publicaciones');

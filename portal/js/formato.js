@@ -66,7 +66,11 @@ export function fechaCorte(corte) {
 
 export const DIAS_TRABAJO = { lv: 'Lunes a viernes', ls: 'Lunes a sábado', todos: 'Todos los días' };
 export const TIPOS = { diseno: 'Solo diseño', obra: 'Obra', ambos: 'Diseño y obra' };
-export const ESTADOS_ENCARGO = { activo: 'Activo', pausado: 'Pausado', finalizado: 'Finalizado', cerrado: 'Cerrado' };  // Finalizado: entregado. Cerrado: archivado sin terminar (cancelado)
+// Etapas del encargo (una sola fuente para Ajustes, Resumen, el cuadro de Encargos y sus filtros)
+export const ESTADOS_ENCARGO = { por_iniciar: 'Por iniciar', activo: 'En curso', pausado: 'Pausado', finalizado: 'Finalizado', cerrado: 'Cancelado' };
+export const AYUDA_ESTADOS = { por_iniciar: 'Aprobado, aún sin empezar', activo: 'Se está trabajando', pausado: 'Detenido por un tiempo', finalizado: 'Entregado', cerrado: 'Se canceló sin terminar' };
+// Clase y filtro de cada etapa en el cuadro de Encargos
+export const faseEncargo = e => ({ por_iniciar: 'por-iniciar', activo: 'en-curso' })[e?.estado] || e?.estado || 'por-iniciar';
 
 /** Fecha en que termina una actividad que arranca en `inicio` y dura `n` días de trabajo. */
 export function finDeTrabajo(inicio, n, modo = 'lv', festivos = new Set()) {

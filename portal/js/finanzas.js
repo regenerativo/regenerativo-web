@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=96';
-import { cop, fecha, iso } from './formato.js?v=96';
-import { btnIco } from './iconos.js?v=96';
-import { leerMonai } from './monai.js?v=96';
+import * as D from './datos.js?v=97';
+import { cop, fecha, iso } from './formato.js?v=97';
+import { btnIco } from './iconos.js?v=97';
+import { leerMonai } from './monai.js?v=97';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -27,6 +27,21 @@ const ICAT = {
 const claveCat = n => { n = (n || '').toLowerCase();
   return /honorario/.test(n) && !/n[óo]mina/.test(n) ? 'honorario' : /otro.*ingreso|otros/.test(n) ? 'otros' : /ingreso/.test(n) ? 'ingreso' : /n[óo]mina|recurso|salari/.test(n) ? 'nomina'
     : /herramienta/.test(n) ? 'herramienta' : /transporte/.test(n) ? 'transporte' : /vi[áa]tico|aliment/.test(n) ? 'viatico' : /deuda|banco|impuesto|cr[ée]dito/.test(n) ? 'deuda' : /suscrip/.test(n) ? 'suscripcion' : 'base'; };
+// Una sola regla para el valor y el saldo de un encargo (Inicio, Finanzas, el encargo y el cliente usan esta misma):
+// valor = valor base escrito en el portal (o honorarios de la propuesta) + adendas aprobadas + adicionales a mano
+// recibido = ingresos confirmados del encargo · por cobrar = valor − recibido
+// «Dar por saldado» es una marca a mano: deja el por cobrar en 0 pero NO es dinero recibido y se muestra distinto
+export function cuentasEncargo(e, { props = [], docs = [], adics = [], movs = [] }) {
+  const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
+  const suma = t => movs.filter(x => x.encargo_id === e.id && x.tipo === t && (x.estado || 'confirmado') === 'confirmado').reduce((a, x) => a + Number(x.valor), 0);
+  const hon = e.valor_base != null ? Number(e.valor_base) : Number(props.find(p => p.encargo_id === e.id)?.honorarios) || Number(docs.filter(d => d.encargo_id === e.id && d.tipo === 'propuesta' && aprob(d)).at(-1)?.contenido?.honorarios) || 0;
+  const adic = docs.filter(d => d.encargo_id === e.id && d.tipo === 'adenda' && aprob(d)).reduce((s, d) => s + (Number(d.contenido?.valor) || 0), 0)
+    + adics.filter(a => a.encargo_id === e.id).reduce((s, a) => s + (Number(a.valor) || 0), 0);
+  const esperado = Math.round(hon + adic), recibido = Math.round(suma('ingreso')), gastos = Math.round(suma('gasto'));
+  const pagado = esperado > 0 && recibido >= esperado;
+  const saldado = !pagado && !!e.pagado_total;
+  return { esperado, adic, recibido, gastos, pagado, saldado, porCobrar: pagado || saldado ? 0 : Math.max(0, esperado - recibido) };
+}
 export const icoCat = n => `<svg class="ico-cat ic-${claveCat(n)}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICAT[claveCat(n)]}</svg>`;
 
 const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
@@ -49,17 +64,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
 
   // Valor de cada encargo: honorarios de la propuesta (o del documento web) + adendas aprobadas; menos lo recibido
   const aprob = d => ['aprobado', 'firmado'].includes(d.estado);
-  const porEnc = encargos.map(e => {
-    // Mismo cálculo que el encargo: valor escrito en el portal, o honorarios de la propuesta; + adendas aprobadas + adicionales a mano
-    const hon = e.valor_base != null ? Number(e.valor_base) : Number(props.find(p => p.encargo_id === e.id)?.honorarios) || Number(docs.filter(d => d.encargo_id === e.id && d.tipo === 'propuesta' && aprob(d)).at(-1)?.contenido?.honorarios) || 0;
-    const adic = docs.filter(d => d.encargo_id === e.id && d.tipo === 'adenda' && aprob(d)).reduce((s, d) => s + (Number(d.contenido.valor) || 0), 0)
-      + adicsMan.filter(a => a.encargo_id === e.id).reduce((s, a) => s + (Number(a.valor) || 0), 0);
-    const esperado = hon + adic;
-    const recibido = suma(movs.filter(x => x.encargo_id === e.id), 'ingreso');
-    const gastos = suma(movs.filter(x => x.encargo_id === e.id), 'gasto');
-    const pagado = !!e.pagado_total;
-    return { e, esperado, adic, recibido, gastos, pagado, porCobrar: pagado ? 0 : Math.max(0, esperado - recibido) };
-  });
+  const porEnc = encargos.map(e => ({ e, ...cuentasEncargo(e, { props, docs, adics: adicsMan, movs }) }));
   const porCobrar = porEnc.reduce((s, r) => s + r.porCobrar, 0);
 
   // Últimos 6 meses
@@ -138,12 +143,12 @@ export async function vistaFinanzas(mesSel, listaSel) {
     <div class="fin-grid">
       <section class="panel"><h3>Ingresos y gastos · 6 meses</h3>${barras(serie)}</section>
       <section class="panel"><h3>Por cobrar</h3><div class="cifra-grande">${cop(porCobrar)}</div><p class="sub">${porEnc.filter(r => r.porCobrar > 0).length} encargos con saldo · valor de propuestas y adicionales menos lo recibido</p>
-        <div class="lista-filas">${porEnc.filter(r => r.esperado && !r.pagado).map(r => `<button class="mov-fila" data-lista="${r.e.id}"><span class="mov-txt"><b>${esc(r.e.nombre)}</b><span class="barra"><i style="width:${Math.min(100, r.recibido / r.esperado * 100)}%"></i></span></span><span class="mov-val">${cop(r.porCobrar)}</span></button>`).join('')}</div>
+        <div class="lista-filas">${porEnc.filter(r => r.esperado && !r.pagado && !r.saldado).map(r => `<button class="mov-fila" data-lista="${r.e.id}"><span class="mov-txt"><b>${esc(r.e.nombre)}</b><span class="barra"><i style="width:${Math.min(100, r.recibido / r.esperado * 100)}%"></i></span></span><span class="mov-val">${cop(r.porCobrar)}</span></button>`).join('')}</div>
       </section>
     </div>
     <section class="panel"><h3>Encargos</h3>
       ${porEnc.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Encargo</th><th class="num">Valor</th><th class="num">Recibido</th><th class="num">Por cobrar</th><th class="num col-opc">Gastos</th><th class="col-opc">Pago</th></tr></thead><tbody>
-      ${porEnc.map(r => `<tr class="clic" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b>${r.adic ? `<div class="sub">Incluye ${cop(r.adic)} en adicionales</div>` : ''}<div class="solo-movil"><button type="button" class="btn mini pago-tog${r.pagado ? ' on' : ''}" data-pagado="${r.e.id}">${r.pagado ? '✓ Pagado total' : 'Marcar pagado'}</button></div></td><td class="num"><button type="button" class="valor-ed" data-valor="${r.e.id}" title="Editar valor, adicionales e ingresos">${r.esperado ? cop(r.esperado) : 'Escribir valor'}<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg></button></td><td class="num">${cop(r.recibido)}</td><td class="num">${r.pagado ? '<span class="etiqueta despego">Pagado</span>' : cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td><td class="col-opc"><button type="button" class="btn mini pago-tog${r.pagado ? ' on' : ''}" data-pagado="${r.e.id}" title="${r.pagado ? 'Quitar la marca de pagado' : 'Marcar como pagado en su totalidad (no crea un ingreso)'}">${r.pagado ? '✓ Pagado total' : 'Marcar pagado'}</button></td></tr>`).join('')}
+      ${porEnc.map(r => `<tr class="clic" data-lista="${r.e.id}"><td><b>${esc(r.e.nombre)}</b>${r.adic ? `<div class="sub">Incluye ${cop(r.adic)} en adicionales</div>` : ''}${r.pagado ? '' : `<div class="solo-movil"><button type="button" class="btn mini pago-tog${r.saldado ? ' on' : ''}" data-pagado="${r.e.id}">${r.saldado ? '✓ Saldado' : 'Dar por saldado'}</button></div>`}</td><td class="num"><button type="button" class="valor-ed" data-valor="${r.e.id}" title="Editar valor, adicionales e ingresos">${r.esperado ? cop(r.esperado) : 'Escribir valor'}<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg></button></td><td class="num">${cop(r.recibido)}</td><td class="num">${r.pagado ? '<span class="etiqueta despego">Pagado</span>' : r.saldado ? `<span class="etiqueta saldado" title="Se dio por saldado a mano: faltan ${cop(r.esperado - r.recibido)} por registrar como ingreso">Saldado sin abono registrado</span>` : cop(r.porCobrar)}</td><td class="num col-opc">${cop(r.gastos)}</td><td class="col-opc">${r.pagado ? '<span class="sub">Cobrado completo</span>' : `<button type="button" class="btn mini pago-tog${r.saldado ? ' on' : ''}" data-pagado="${r.e.id}" title="${r.saldado ? 'Quitar la marca: vuelve a contar lo que falta por cobrar' : 'Dar por saldado sin registrar ingreso (por ejemplo, un pago que no pasó por las cuentas). No crea un ingreso.'}">${r.saldado ? '✓ Saldado' : 'Dar por saldado'}</button>`}</td></tr>`).join('')}
       <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td><td class="col-opc"></td></tr>
       </tbody></table></div>` : '<p class="sub">Sin encargos.</p>'}
     </section>
@@ -163,7 +168,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       ${pend.length > 6 ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
     </section>` : ''}`;
 
-  return { html, montar: recargar => {
+  return { html, mes, mesTxt, montar: recargar => {
     document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
     const pm = $('#pend-mas'); if (pm) pm.onclick = () => { document.querySelectorAll('.pend-oculta').forEach(f => f.classList.remove('pend-oculta')); pm.remove(); };
@@ -242,7 +247,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
       <div><label>Fecha</label><input name="fecha" type="date" required value="${m.fecha || ''}"></div>
       ${m.tipo === 'socio' ? '' : `<div><label>Categoría</label><select name="categoria_id">${opsCat(m.tipo)}</select></div>
       <div><label>Subcategoría</label><select name="subcategoria"></select></div>`}
-      <div class="ancho"><label>Pertenece a</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${encargos.filter(e => e.estado !== 'cerrado' || e.id === m.encargo_id).map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select>
+      <div class="ancho"><label>Pertenece a</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${[['Encargos vigentes', encargos.filter(e => !['finalizado', 'cerrado'].includes(e.estado))], ['Finalizados y cancelados', encargos.filter(e => ['finalizado', 'cerrado'].includes(e.estado))]].filter(([, l]) => l.length).map(([g, l]) => `<optgroup label="${g}">${l.map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>
         <p class="sub" style="margin:4px 0 0">${m.tipo === 'gasto' ? 'Si el gasto es de un proyecto, elígelo: se descuenta de ese encargo y aparece en su módulo de Finanzas.' : 'Si el ingreso es de un proyecto, elígelo: cuenta como abono de ese encargo.'}</p></div>
       <div class="ancho"><label>Concepto</label><input name="descripcion" value="${esc(m.descripcion || '')}" placeholder="${m.tipo === 'ingreso' ? 'Pago 50% al iniciar' : 'Taxi visita de obra'}"></div>
       <div><label>Medio de pago</label><input name="medio" list="medios" value="${esc(m.medio || '')}" placeholder="Transferencia, efectivo…"><datalist id="medios"><option value="Transferencia"><option value="Efectivo"><option value="Consignación"><option value="Tarjeta"><option value="Nequi"><option value="Daviplata"></datalist></div>
@@ -257,12 +262,14 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
   document.body.appendChild(fondo);
   const f = $('#fm', fondo);
   // Subcategorías de la categoría elegida (las mismas de MONAI); se conserva la que ya tenía aunque no esté en la lista
-  const pintarSubs = () => { const sel = f.subcategoria; if (!sel) return; const c = cats.find(x => x.id === f.categoria_id.value); const l = [...(c?.subcategorias || [])];
-    const actual = sel.value || m.subcategoria || '';
-    if (actual && !l.includes(actual)) l.push(actual);
-    sel.innerHTML = '<option value="">Sin subcategoría</option>' + l.map(n => `<option value="${esc(n)}" ${n === actual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  // Subcategorías de la categoría elegida (las mismas de MONAI). Al cambiar de categoría se reinicia a una válida.
+  const subsDe = () => cats.find(x => x.id === f.categoria_id.value)?.subcategorias || [];
+  const pintarSubs = (inicial = false) => { const sel = f.subcategoria; if (!sel) return; const l = [...subsDe()];
+    const actual = inicial ? (m.subcategoria || '') : '';
+    if (inicial && actual && !l.includes(actual)) l.push(actual);   // un movimiento viejo conserva la suya hasta que la cambies
+    sel.innerHTML = (l.length ? '' : '<option value="">Sin subcategoría</option>') + l.map(n => `<option value="${esc(n)}" ${n === actual ? 'selected' : ''}>${esc(n)}</option>`).join('');
     if (!actual && l.length) sel.value = l[0]; };
-  if (f.categoria_id) { f.categoria_id.onchange = pintarSubs; pintarSubs(); }
+  if (f.categoria_id) { f.categoria_id.onchange = () => pintarSubs(false); pintarSubs(true); }
   f.valor.oninput = () => { const n = f.valor.value.replace(/\D/g, ''); f.valor.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
   $('#cancelar', fondo).onclick = () => { fondo.remove(); alCancelar?.(); };
   if (m.id) {
@@ -285,6 +292,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
     const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
     if (m.id) reg.id = m.id;
     const sub = m.tipo === 'socio' ? '' : (v.subcategoria || '').trim();
+    if (sub && f.categoria_id && subsDe().length && !subsDe().includes(sub) && sub !== m.subcategoria) { $('#aviso', fondo).textContent = 'Revisa la subcategoría: no pertenece a la categoría elegida.'; return; }
     if (sub || m.subcategoria) reg.subcategoria = sub || null;   // solo si hay subcategoría (columna nueva)
     try { await D.finGuardarMovimiento(reg); fondo.remove(); recargar(); } catch (err) { $('#aviso', fondo).textContent = err.message; }
   };
