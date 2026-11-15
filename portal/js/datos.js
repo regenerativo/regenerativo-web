@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=91';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=92';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -393,7 +393,7 @@ export const finBorrarMovimiento = id => q(c => c.from('fin_movimientos').delete
 export const finBorrarEjemplos = () => q(c => c.from('fin_movimientos').delete().eq('ejemplo', true)).then(ok);
 export const finActualizarCategoria = (id, cambios) => q(c => c.from('fin_categorias').update(cambios).eq('id', id)).then(ok);
 export const finMovimientosEncargo = encargoId => q(c => c.from('fin_movimientos').select('*, categoria:fin_categorias(nombre,icono)').eq('encargo_id', encargoId).order('fecha', { ascending: false })).then(ok);
-export const finPropuestasEncargos = () => q(c => c.from('propuestas').select('encargo_id, honorarios').not('encargo_id', 'is', null)).then(ok);
+export const finPropuestasEncargos = () => q(c => c.from('propuestas').select('id, encargo_id, honorarios').not('encargo_id', 'is', null)).then(ok);
 export const finDocumentosCobro = () => q(c => c.from('documentos').select('encargo_id, tipo, estado, contenido').in('tipo', ['propuesta', 'adenda'])).then(ok);
 
 // Soportes contables (PDF, XML, fotos) por movimiento — bucket privado "soportes"
@@ -450,3 +450,13 @@ export async function responderComentario(id, cambios) {
   const { error } = await c.from('comentarios').update({ ...cambios, ...extra }).eq('id', id);
   if (error) throw error;
 }
+
+// Adicionales del encargo registrados a mano en el portal (además de las adendas aprobadas)
+export const adicionalesEncargo = encargoId => q(c => c.from('encargo_adicionales').select('*').eq('encargo_id', encargoId).order('fecha')).then(ok);
+export const adicionalesTodos = () => q(c => c.from('encargo_adicionales').select('*')).then(ok);
+export const guardarAdicional = a => q(c => a.id ? c.from('encargo_adicionales').update(a).eq('id', a.id) : c.from('encargo_adicionales').insert(a)).then(ok);
+export const borrarAdicional = id => q(c => c.from('encargo_adicionales').delete().eq('id', id)).then(ok);
+export const finTodasCategorias = () => q(c => c.from('fin_categorias').select('*').order('tipo').order('orden')).then(ok);
+export const finCrearCategoria = cat => q(c => c.from('fin_categorias').insert(cat)).then(ok);
+// MONAI: vista previa (aplicar = false) o importación (true) de la exportación CSV
+export const finImportarMonai = (filas, aplicar) => q(c => c.rpc('importar_monai', { p_filas: filas, p_aplicar: aplicar })).then(ok);
