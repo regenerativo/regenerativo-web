@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=94';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=95';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -465,3 +465,18 @@ export const finTodasCategorias = () => q(c => c.from('fin_categorias').select('
 export const finCrearCategoria = cat => q(c => c.from('fin_categorias').insert(cat)).then(ok);
 // MONAI: vista previa (aplicar = false) o importación (true) de la exportación CSV
 export const finImportarMonai = (filas, aplicar) => q(c => c.rpc('importar_monai', { p_filas: filas, p_aplicar: aplicar })).then(ok);
+
+// Tiempo real: avisa cuando cambia algo en la base de datos (propuestas, encargos, finanzas, comentarios…)
+let _canal = null;
+export async function escucharCambios(cb) {
+  if (MODO_DEMO || _canal) return;
+  const c = await cliente();
+  const { data } = await c.auth.getSession();
+  if (!data?.session) return;
+  c.realtime.setAuth(data.session.access_token);
+  _canal = c.channel('portal-cambios');
+  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables']
+    .forEach(t => _canal.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => cb(t)));
+  _canal.subscribe();
+}
+export async function dejarDeEscuchar() { if (_canal) { const c = await cliente(); await c.removeChannel(_canal); _canal = null; } }

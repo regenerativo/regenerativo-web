@@ -994,3 +994,7 @@ html body .lv .fila-correo{display:flex;gap:8px;align-items:center}html body .lv
 html body .lv .kpi{container-type:inline-size}
 @media (min-width:561px){@supports (font-size:1cqi){html body .lv .kpi .va{font-size:clamp(18px,12cqi,28px)!important;text-overflow:clip}}}
 html body .lv .alcance .lv-check{padding:3px 12px 3px 9px!important;font-size:14px;min-height:0;line-height:1.4}html body .lv dd .alcance{vertical-align:middle;margin-top:-4px}
+/* Documentos de la propuesta: nombre completo visible */
+html body .prop-docs .od-fila{grid-template-columns:minmax(0,1fr) auto!important;padding:8px 6px!important}
+html body .prop-docs .od-nom{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;display:flex;flex-direction:column;gap:2px}
+html body .prop-docs .od-nom b{overflow-wrap:anywhere;font-weight:500}

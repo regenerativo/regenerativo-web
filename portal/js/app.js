@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=94';
-import * as M from './modulos.js?v=94';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=94';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=94';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=94';
+import * as D from './datos.js?v=95';
+import * as M from './modulos.js?v=95';
+import { vistaFinanzas, modalMov } from './finanzas.js?v=95';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=95';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=95';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -46,6 +46,28 @@ let cargando = null;
 // ---------------- Router ----------------
 window.addEventListener('hashchange', ir);
 ir();
+
+// ---------------- Sincronización en tiempo real ----------------
+// Cualquier cambio en la base de datos (desde otro equipo, el cliente o Claude) vuelve a pintar la página sola.
+// Si hay un formulario abierto o se está escribiendo, espera a que termine para no borrar lo que se escribe.
+let refrescoPendiente = false, tRefresco = null, ocultaDesde = 0;
+const ocupado = () => !!document.querySelector('.modal-fondo') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || document.body.classList.contains('ingreso') || document.hidden;
+async function refrescar() {
+  if (ocupado()) { refrescoPendiente = true; return; }
+  refrescoPendiente = false;
+  const y = scrollY;
+  await ir();
+  scrollTo(0, y);
+}
+const programarRefresco = () => { clearTimeout(tRefresco); tRefresco = setTimeout(refrescar, 700); };
+const olvidarConteos = () => { try { Object.keys(sessionStorage).filter(k => k.startsWith('reg-conteo-')).forEach(k => sessionStorage.removeItem(k)); } catch (_) {} };
+setInterval(() => { if (refrescoPendiente && !ocupado()) refrescar(); }, 1500);
+// OneDrive no avisa sus cambios: se vuelve a leer al regresar a la pestaña y cada 3 minutos con la página abierta
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { ocultaDesde = Date.now(); return; }
+  if (ocultaDesde && Date.now() - ocultaDesde > 20000) { olvidarConteos(); programarRefresco(); }
+});
+setInterval(() => { if (!document.hidden && !document.body.classList.contains('ingreso')) { olvidarConteos(); if (!ocupado()) refrescar(); } }, 180000);
 
 async function ir() {
   clearTimeout(cargando);
@@ -102,6 +124,7 @@ async function irSeguro() {
 
 // ---------------- Marco general ----------------
 function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '', eyebrow = '' }) {
+  D.escucharCambios(programarRefresco).catch(() => {});
   document.body.classList.remove('ingreso');  // el pie del ingreso (Por regenerativo fijo abajo) no debe quedar encima del menú
   const esCli = s.email.endsWith('@clientes.portal.regenerativo.co');
   const enlacesGen = esCli || enc ? '' : `
@@ -154,11 +177,11 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     <div class="lv-velo" id="lv-velo"></div>
     ${s.admin ? `<a class="lv-claude" href="https://claude.ai/project/01a07ee0-6e6e-76ae-8f6f-875a422348d9" target="_blank" rel="noopener" title="Abrir el chat de regenerativo con Claude" aria-label="Abrir el chat de regenerativo con Claude"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg><span>Claude</span></a>` : ''}
   </div>`;
-  $('#salir').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
+  $('#salir').onclick = async () => { await D.dejarDeEscuchar(); await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
   armarIsla();
   const navL = $('.lv-lado > .lv-nav'); if (navL) { const mira = () => navL.classList.toggle('desborda', navL.scrollHeight - navL.scrollTop > navL.clientHeight + 4); mira(); navL.onscroll = mira; addEventListener('resize', mira, { passive: true }); }
-  $('#salir2').onclick = async () => { await D.salir(); location.hash = '#/acceso'; };
+  $('#salir2').onclick = async () => { await D.dejarDeEscuchar(); await D.salir(); location.hash = '#/acceso'; };
   moverIndicador();
 }
 
@@ -1594,7 +1617,7 @@ async function modalPropuesta(p = null) {
     const tipo = n => /\.pdf$/i.test(n) ? 'PDF' : /\.xlsx?$/i.test(n) ? 'Excel' : 'Word';
     const pintarDocs = lista => {
       docs.innerHTML = `<h3 style="margin:8px 0 6px">Documentos de la propuesta</h3>
-        <div class="od-lista">${lista.map((a, i) => `<div class="od-fila"><div class="od-nom"><b>${esc(a.nombre)}</b><span class="sub">${tipo(a.nombre)}</span></div>
+        <div class="od-lista prop-docs">${lista.map((a, i) => `<div class="od-fila"><div class="od-nom"><b>${esc(a.nombre)}</b><span class="sub">${tipo(a.nombre)}</span></div>
           <div class="od-acc">${a.web ? enlaceIco('abrir', 'Abrir en OneDrive', esc(a.web)) : ''}${btnIco('descargar', 'Descargar ' + tipo(a.nombre), `data-bajar="${i}"`)}</div></div>`).join('')}</div>
         <p class="sub" id="sinc" style="margin-top:8px"></p>`;
       const bajar = async (b, pdf) => {
