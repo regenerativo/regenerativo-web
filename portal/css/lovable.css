@@ -1074,3 +1074,10 @@ html body .lv label.lv-check,html body .lv label.btn,html body .lv label.monai-a
 html body .lv .folder-link small{color:var(--lv-gris-texto)}
 html body .lv .datos-2c .dd-ancho{grid-column:2 / -1}
 @media (max-width:600px){html body .lv .datos-2c .dd-ancho{grid-column:auto}}
+/* Textos dinámicos (igual que regenerativo.co): menús, filtros y enlaces de texto se ponen grises al pasar el cursor, con cambio lento */
+html body .lv .lv-nav a,html body .lv .lv-isla-in a,html body .lv .lv-seg button,html body .lv .lv-web,html body .lv .lv-salir,html body .lv a.texto,html body .lv p a,html body .lv .sub a,html body .lv .mon-ley a,html body .lv .lv-tabs-in>a{transition:color .6s ease}
+@media (hover:hover){
+  html body .lv .lv-nav a:not(.activo):hover,html body .lv .lv-isla-in a:not(.activo):hover,html body .lv .lv-seg button:not(.activo):hover,
+  html body .lv .lv-web:hover,html body .lv .lv-salir:hover,html body .lv p a:hover,html body .lv .sub a:hover,html body .lv .mon-ley a:hover{color:#999999!important;text-decoration:none!important}
+  html body .lv .lv-nav a:not(.activo):hover *,html body .lv .lv-web:hover *,html body .lv .lv-salir:hover *{color:#999999!important}
+}

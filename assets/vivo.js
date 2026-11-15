@@ -6,7 +6,16 @@ H.classList.add('vivo');
 var st=d.createElement('style');
 st.textContent='html{scroll-padding-top:120px}section,[id]{scroll-margin-top:120px}'
  +'[style*="color: #999999"]:not(img):not(svg),[style*="color:#999999"]:not(img):not(svg){color:#6B6B6B!important}'
- +'.proximo{cursor:default}.proximo:hover *{transform:none!important}';
+ +'.proximo{cursor:default}.proximo:hover *{transform:none!important}'
+ /* textos dinámicos: todo texto que se puede tocar se pone gris al pasar el cursor, con un cambio lento (sin subrayado) */
+ +'a,button,summary,[role=button],[data-svc],[data-mode],[data-f],[data-filter],[data-sector-btn]{transition:color .6s ease,background-color .6s ease,opacity .6s ease}'
+ +'a *,button *{transition:color .6s ease,stroke .6s ease,fill .6s ease}'
+ +'@media (hover:hover){'
+ +'a:not([style*="background: #1E221D"]):not(.proximo):hover,a:not([style*="background: #1E221D"]):not(.proximo):hover *:not(img):not(picture):not(video),'
+ +'button:not([type=submit]):hover,button:not([type=submit]):hover *,summary:hover,[role=button]:hover{color:#999999!important;text-decoration:none!important}'
+ +'html body a[style*="background: #1E221D"]:hover,html body button[style*="background: #1E221D"]:hover:not(:disabled){background:#999999!important;color:#FFFFFF!important}'
+ +'html body a[style*="background: #1E221D"]:hover *,html body button[style*="background: #1E221D"]:hover *{color:#FFFFFF!important}'
+ +'}';
 d.head.appendChild(st);
 var fuera=function(el){return el.closest('#hero,.stage,header,.v-gal,.v-mq,nav[aria-label="Redes"]')};
 
