@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=95';
-import * as M from './modulos.js?v=95';
-import { vistaFinanzas, modalMov } from './finanzas.js?v=95';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=95';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=95';
+import * as D from './datos.js?v=96';
+import * as M from './modulos.js?v=96';
+import { vistaFinanzas, modalMov, icoCat as icoCatF } from './finanzas.js?v=96';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, TIPOS, ESTADOS_ENCARGO } from './formato.js?v=96';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=96';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1073,8 +1073,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     return panelOneDrive($('#od'), e, FUENTES[seccion], { titulo: seccion === 'obra' ? 'Coordinación de obra · 00 INFORMES OBRA y personal' : 'Coordinación técnica · 00 INFORMES TÉCNICOS, ARQ, MEP y STR' });
   }
   if (seccion === 'legales' && admin) {
-    const enlaces = [['propuesta', 'Propuesta del portal'], ['contrato', 'Contrato del portal'], ['adendas', 'Adendas del portal']].filter(([k]) => web[k] > 0);
-    pintar(`<section class="panel od" id="od"></section>${enlaces.length ? `<section class="panel"><h3>Documentos hechos en el portal</h3><div class="tiles">${enlaces.map(([k, t]) => `<a class="tile" href="${base}/${k}"><b>${web[k]}</b><span>${t}</span></a>`).join('')}</div></section>` : ''}`);
+    pintar('<section class="panel od" id="od"></section>');
     return panelOneDrive($('#od'), e, FUENTES.legales, { titulo: 'Legales · propuesta, contratos, adendas, actas, cobros y facturación' });
   }
   if (seccion === 'resena') {
@@ -1122,21 +1121,34 @@ async function vistaExpediente(s, codigo, seccion, sub) {
 async function finanzasEncargo(ctx, movs, valor, pintar) {
   const { e, admin } = ctx;
   const [cats, encs] = await Promise.all([D.finCategorias(), D.encargos()]);
-  const suma = t => movs.filter(x => x.tipo === t).reduce((a, x) => a + Number(x.valor), 0);
-  const rec = suma('ingreso'), gas = suma('gasto'), V = valor.total;
+  const de = t => movs.filter(x => x.tipo === t);
+  const suma = l => l.reduce((a, x) => a + Number(x.valor), 0);
+  const ings = de('ingreso'), gass = de('gasto');
+  const rec = suma(ings), gas = suma(gass), V = valor.total;
+  // Gastos por categoría y subcategoría (las de MONAI)
+  const grupos = {};
+  gass.forEach(x => { const c = x.categoria?.nombre || 'Sin categoría'; const sc = x.subcategoria || 'Sin subcategoría'; (grupos[c] ||= { total: 0, subs: {} }).total += Number(x.valor); grupos[c].subs[sc] = (grupos[c].subs[sc] || 0) + Number(x.valor); });
+  const ordenG = Object.entries(grupos).sort((a, b) => b[1].total - a[1].total);
+  const tabla = (l, tipo) => l.length ? `<div class="tabla-cont"><table class="t-compacta t-fin-enc"><thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Valor</th></tr></thead><tbody>
+      ${l.map(x => `<tr class="clic" data-mov="${x.id}"><td>${fecha(x.fecha)}</td><td>${esc(x.descripcion || '')}<span class="sub fin-fecha">${fecha(x.fecha)}</span><span class="sub fin-det">${tipo === 'gasto' ? esc([x.categoria?.nombre, x.subcategoria].filter(Boolean).join(' · ')) : esc(x.medio || '')}</span></td>
+        <td class="num ${x.tipo}">${x.tipo === 'ingreso' ? '+' : '−'}&nbsp;${cop(x.valor)}</td></tr>`).join('')}
+      <tr class="total"><td></td><td>Total</td><td class="num">${cop(suma(l))}</td></tr></tbody></table></div>`
+    : `<p class="sub">${tipo === 'gasto' ? 'Sin gastos asignados a este encargo. En Finanzas, al registrar o editar un gasto, elige «Pertenece a» este encargo; o agrégalo aquí.' : 'Sin ingresos registrados para este encargo.'}</p>`;
   const html = `
     <div class="kpis">
-      ${kpi('Valor del encargo', V ? cop(V) : '—', valor.adic.length ? `Incluye ${cop(valor.sumaAdic)} en adicionales` : 'Propuesta aprobada')}
-      ${kpi('Recibido', cop(rec), V ? pct(rec / V) + ' del valor' : '', V ? Math.min(1, rec / V) : undefined)}
-      ${kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', '')}
-      ${kpi('Gastos del encargo', cop(gas), rec ? `Neto ${cop(rec - gas)}` : '')}
+      ${kpi('Recibido', cop(rec), V ? `${pct(rec / V)} de ${cop(V)}` : 'Ingresos del encargo', V ? Math.min(1, rec / V) : undefined)}
+      ${kpi('Por cobrar', V ? cop(Math.max(0, V - rec)) : '—', V ? 'Valor menos lo recibido' : '')}
+      ${kpi('Gastos del encargo', cop(gas), rec ? `${pct(gas / rec)} de lo recibido` : `${gass.length} gasto${gass.length === 1 ? '' : 's'}`, rec ? Math.min(1, gas / rec) : undefined)}
+      ${kpi('Utilidad', cop(rec - gas), V ? `Si se cobra todo: ${cop(V - gas)}` : 'Recibido menos gastos')}
     </div>
-    <section class="panel"><div class="od-cab"><h3>Movimientos</h3><div class="barra-acc">${btnIco('mas', 'Agregar ingreso', 'data-nuevo="ingreso"', '')}<button class="btn sec mini" data-nuevo="gasto"><span class="mas">+</span> Gasto</button></div></div>
-      ${movs.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Fecha</th><th>Concepto</th><th class="col-opc">Categoría</th><th class="num">Valor</th></tr></thead><tbody>
-        ${movs.map(x => `<tr class="clic" data-mov="${x.id}"><td>${fecha(x.fecha)}</td><td>${esc(x.descripcion || '')}</td><td class="col-opc sub">${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}</td>
-          <td class="num ${x.tipo}">${x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : ''} ${cop(x.valor)}</td></tr>`).join('')}</tbody></table></div>`
-      : '<p class="sub">Sin ingresos ni gastos registrados para este encargo.</p>'}
-    </section>
+    ${ordenG.length ? `<section class="panel"><h3>Gastos por categoría</h3>
+      <div class="gastos-cat">${ordenG.map(([c, g]) => `<div class="gc-fila"><div class="gc-cab"><span class="mov-ico gasto">${icoCatF(c)}</span><b>${esc(c)}</b><span class="num">${cop(g.total)}</span></div>
+        <div class="gc-barra"><i style="width:${gas ? g.total / gas * 100 : 0}%"></i></div>
+        <div class="gc-subs">${Object.entries(g.subs).sort((a, b) => b[1] - a[1]).map(([n, v]) => `<span>${esc(n)} <b>${cop(v)}</b></span>`).join('')}</div></div>`).join('')}</div></section>` : ''}
+    <div class="dos">
+      <section class="panel"><div class="od-cab"><h3>Ingresos</h3><button class="btn sec mini" data-nuevo="ingreso"><span class="mas">+</span> Ingreso</button></div>${tabla(ings, 'ingreso')}</section>
+      <section class="panel"><div class="od-cab"><h3>Gastos</h3><button class="btn sec mini" data-nuevo="gasto"><span class="mas">+</span> Gasto</button></div>${tabla(gass, 'gasto')}</section>
+    </div>
     ${admin ? '<section class="panel od" id="od"></section>' : ''}`;
   pintar(html);
   document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: new Date().toISOString().slice(0, 10), encargo_id: e.id }, cats, encs, ir));

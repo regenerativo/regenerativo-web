@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=95';
-import { cop, fecha, iso } from './formato.js?v=95';
-import { btnIco } from './iconos.js?v=95';
-import { leerMonai } from './monai.js?v=95';
+import * as D from './datos.js?v=96';
+import { cop, fecha, iso } from './formato.js?v=96';
+import { btnIco } from './iconos.js?v=96';
+import { leerMonai } from './monai.js?v=96';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -241,8 +241,9 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
       <div><label>Valor (COP)</label><input name="valor" inputmode="numeric" required value="${m.valor ? Number(m.valor).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></div>
       <div><label>Fecha</label><input name="fecha" type="date" required value="${m.fecha || ''}"></div>
       ${m.tipo === 'socio' ? '' : `<div><label>Categoría</label><select name="categoria_id">${opsCat(m.tipo)}</select></div>
-      <div><label>Subcategoría</label><input name="subcategoria" list="subcats" value="${esc(m.subcategoria || '')}" placeholder="Suscripciones, Banco, Transporte…"><datalist id="subcats"></datalist></div>`}
-      <div><label>Encargo</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select></div>
+      <div><label>Subcategoría</label><select name="subcategoria"></select></div>`}
+      <div class="ancho"><label>Pertenece a</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${encargos.filter(e => e.estado !== 'cerrado' || e.id === m.encargo_id).map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select>
+        <p class="sub" style="margin:4px 0 0">${m.tipo === 'gasto' ? 'Si el gasto es de un proyecto, elígelo: se descuenta de ese encargo y aparece en su módulo de Finanzas.' : 'Si el ingreso es de un proyecto, elígelo: cuenta como abono de ese encargo.'}</p></div>
       <div class="ancho"><label>Concepto</label><input name="descripcion" value="${esc(m.descripcion || '')}" placeholder="${m.tipo === 'ingreso' ? 'Pago 50% al iniciar' : 'Taxi visita de obra'}"></div>
       <div><label>Medio de pago</label><input name="medio" list="medios" value="${esc(m.medio || '')}" placeholder="Transferencia, efectivo…"><datalist id="medios"><option value="Transferencia"><option value="Efectivo"><option value="Consignación"><option value="Tarjeta"><option value="Nequi"><option value="Daviplata"></datalist></div>
     </div>
@@ -255,7 +256,12 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
   </form>`;
   document.body.appendChild(fondo);
   const f = $('#fm', fondo);
-  const pintarSubs = () => { const dl = $('#subcats', fondo); if (!dl) return; const c = cats.find(x => x.id === f.categoria_id.value); dl.innerHTML = (c?.subcategorias || []).map(n => `<option value="${esc(n)}">`).join(''); };
+  // Subcategorías de la categoría elegida (las mismas de MONAI); se conserva la que ya tenía aunque no esté en la lista
+  const pintarSubs = () => { const sel = f.subcategoria; if (!sel) return; const c = cats.find(x => x.id === f.categoria_id.value); const l = [...(c?.subcategorias || [])];
+    const actual = sel.value || m.subcategoria || '';
+    if (actual && !l.includes(actual)) l.push(actual);
+    sel.innerHTML = '<option value="">Sin subcategoría</option>' + l.map(n => `<option value="${esc(n)}" ${n === actual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+    if (!actual && l.length) sel.value = l[0]; };
   if (f.categoria_id) { f.categoria_id.onchange = pintarSubs; pintarSubs(); }
   f.valor.oninput = () => { const n = f.valor.value.replace(/\D/g, ''); f.valor.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
   $('#cancelar', fondo).onclick = () => { fondo.remove(); alCancelar?.(); };
