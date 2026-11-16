@@ -174,10 +174,25 @@ async function propuestaEnviados(at: string, encargoId: string, ap?: Awaited<Ret
 }
 
 async function carpetaPropuesta(at: string, propuestaId: string) {
-  const { data: p } = await admin.from("propuestas").select("codigo,nombre").eq("id", propuestaId).single();
+  const { data: p } = await admin.from("propuestas").select("codigo,nombre,archivo_ruta").eq("id", propuestaId).single();
   if (!p) throw new Error("Propuesta no encontrada");
   const ruta = `${PROPUESTAS}/${p.codigo.toUpperCase()}_${p.nombre.toUpperCase()}`;
   await asegurarCarpeta(at, ruta);
+  // Propuesta nueva sin Word: se crea su Word desde la plantilla SCREG_2XXXX_PROPUESTA.docx
+  if (!p.archivo_ruta) {
+    const t = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${PROPUESTAS}/SCREG_2XXXX_PROPUESTA.docx`)}:/content`, { headers: { Authorization: `Bearer ${at}` } });
+    if (t.ok) {
+      const nombre = `${p.codigo.toUpperCase()}_${p.nombre.toUpperCase()}.docx`;
+      const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${ruta}/${nombre}`)}:/content?@microsoft.graph.conflictBehavior=fail`, {
+        method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/octet-stream" }, body: await t.arrayBuffer(),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok || r.status === 409) {   // 409: ya había un Word con ese nombre; se enlaza sin pisarlo
+        await admin.from("propuestas").update({ archivo_ruta: `${ruta}/${nombre}`, archivo_web: d.webUrl, archivo_nombre: nombre }).eq("id", propuestaId);
+        return { carpeta: ruta, ruta: `${ruta}/${nombre}`, word: true };
+      }
+    }
+  }
   return { carpeta: ruta };
 }
 
@@ -528,6 +543,9 @@ Deno.serve(async (req) => {
     if (b.accion === "revisar_envios") {
       const { data: k } = await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle();
       if (!k?.refresh_token || b.clave !== k.refresh_token) return json({ error: "Sin acceso." }, 403);
+      // Propuestas sin Word (creadas por fuera del formulario): carpeta y Word desde la plantilla
+      const { data: sin } = await admin.from("propuestas").select("id").is("archivo_ruta", null).gte("creado", "2026-11-01");
+      if (sin?.length) { const at0 = await accesoGraph(); for (const p of sin) { try { await carpetaPropuesta(at0, p.id); } catch (_) { /* siguiente */ } } }
       return json(await revisarEnvios());
     }
     // Acciones que puede usar cualquier persona invitada al encargo (clientes incluidos)

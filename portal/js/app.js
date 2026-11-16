@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=120';
-import * as M from './modulos.js?v=120';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=120';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=120';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=120';
+import * as D from './datos.js?v=121';
+import * as M from './modulos.js?v=121';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=121';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=121';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=121';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1788,7 +1788,17 @@ async function modalPropuesta(p = null) {
             const base64 = await escribirPropuestaWord(w.base64, Object.fromEntries(DETALLES_PROPUESTA.map(([k]) => [k, v[k]])));
             r = await D.onedrive('subir_propuesta', { propuesta_id: n.id, nombre: w.nombre, base64 });
             alert('Propuesta guardada y Word actualizado en OneDrive.');
-          } else r = await D.onedrive('propuesta', { propuesta_id: n.id });
+          } else {
+            r = await D.onedrive('propuesta', { propuesta_id: n.id });
+            // Word nuevo desde la plantilla: se le escriben los detalles de la página 2 que ya se llenaron
+            if (r.word && DETALLES_PROPUESTA.some(([k]) => v[k])) {
+              try {
+                const w = await D.onedrive('descargar_propuesta', { propuesta_id: n.id });
+                const base64 = await escribirPropuestaWord(w.base64, Object.fromEntries(DETALLES_PROPUESTA.map(([k]) => [k, v[k]])));
+                await D.onedrive('subir_propuesta', { propuesta_id: n.id, nombre: w.nombre, base64 });
+              } catch (_) { /* el Word queda con la plantilla tal cual */ }
+            }
+          }
           if (!p || archivoWord) alert(`Propuesta guardada.\nOneDrive: ${r.ruta || r.carpeta}`);
         } catch (e2) { alert('La propuesta se guardó, pero no se pudo guardar en OneDrive: ' + msg(e2)); }
       }
