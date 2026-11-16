@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=108';
-import { cop, fecha, iso } from './formato.js?v=108';
-import { btnIco, ico } from './iconos.js?v=108';
-import { leerMonai } from './monai.js?v=108';
+import * as D from './datos.js?v=109';
+import { cop, fecha, iso } from './formato.js?v=109';
+import { btnIco, ico } from './iconos.js?v=109';
+import { leerMonai } from './monai.js?v=109';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -23,8 +23,18 @@ const ICAT = {
   deuda: '<rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M3 10h18M7 14.5h4"/>',
   suscripcion: '<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/>',
   base: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="1.5"/>',
+  marketing: '<path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
+  oficina: '<path d="M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M3 21h18M9 7h3M9 11h3M9 15h3"/>',
+  legal: '<path d="M12 4v16M7 20h10M5 8h14M5 8l-2.5 6a3 3 0 0 0 5 0zM19 8l-2.5 6a3 3 0 0 0 5 0z"/>',
+  materiales: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  formacion: '<path d="M3 9l9-4.5L21 9l-9 4.5z"/><path d="M7 11v4.5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V11M21 9v5"/>',
 };
 const claveCat = n => { n = (n || '').toLowerCase();
+  if (/marketing|publicidad|pauta|redes/.test(n)) return 'marketing';
+  if (/oficina|arriendo|servicios p/.test(n)) return 'oficina';
+  if (/contab|legal|tr[áa]mite|notar/.test(n)) return 'legal';
+  if (/material|muestra|maqueta/.test(n)) return 'materiales';
+  if (/formaci|capacita|curso/.test(n)) return 'formacion';
   return /honorario/.test(n) && !/n[óo]mina/.test(n) ? 'honorario' : /otro.*ingreso|otros/.test(n) ? 'otros' : /ingreso/.test(n) ? 'ingreso' : /n[óo]mina|recurso|salari/.test(n) ? 'nomina'
     : /herramienta/.test(n) ? 'herramienta' : /transporte/.test(n) ? 'transporte' : /vi[áa]tico|aliment/.test(n) ? 'viatico' : /deuda|banco|impuesto|cr[ée]dito/.test(n) ? 'deuda' : /suscrip/.test(n) ? 'suscripcion' : 'base'; };
 // Una sola regla para el valor y el saldo de un encargo (Inicio, Finanzas, el encargo y el cliente usan esta misma):
@@ -88,7 +98,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const prev = new Date(a, m - 2, 1), next = new Date(a, m, 1);
   const k = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   const balance = ing - gas;
-  const listas = [['todo', 'Todo regenerativo'], ['general', 'Gastos generales'], ...encargos.map(e => [e.id, e.nombre])];
+  const listas = [['todo', 'General'], ['general', 'Gastos generales (sin proyecto)'], ...encargos.map(e => [e.id, e.nombre])];
   const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))), ...colsIng.map(c => c.recibido));
   const signo = x => x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : '';
   const H = 190;
@@ -131,7 +141,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         }).join('')}</div>
         ${desglose.length ? `<div class="mon-sub">${desglose.map(d => `<div class="ms-fila"><span class="ms-cat">${icoCat(d.nombre)} ${esc(d.nombre)}</span><span class="ms-chips">${d.subs.map(([n, v]) => `<span class="ms-chip">${esc(n)} <b>${compacto(v)}</b></span>`).join('')}</span></div>`).join('')}</div>` : ''}
         <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
-        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" hidden>Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
+        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" hidden style="display:none">Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
       </section>
       <section class="panel fin-lado">
         <div class="od-cab"><h3>Movimientos del mes</h3><span class="sub">${delMes.length}</span></div>
@@ -172,7 +182,10 @@ export async function vistaFinanzas(mesSel, listaSel) {
       ${pend.length > 6 ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
     </section>` : ''}`;
 
-  return { html, mes, mesTxt, montar: recargar => {
+  // Lo que se está viendo, para la esquina superior derecha: General o el proyecto elegido
+  const encSel = encargos.find(e => e.id === lista);
+  const vista = encSel ? { txt: encSel.nombre.replace(/^\s*\d{2}\s+I\s+/, ''), cls: 'proy', titulo: encSel.nombre } : lista === 'general' ? { txt: 'Gastos generales', cls: 'general', titulo: 'Solo lo que no pertenece a ningún proyecto' } : { txt: 'General', cls: 'general', titulo: 'Todo regenerativo' };
+  return { html, mes, mesTxt, vista, montar: recargar => {
     document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
     document.querySelectorAll('[data-origen]').forEach(b => b.onclick = () => {

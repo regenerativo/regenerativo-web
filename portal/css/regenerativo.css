@@ -9646,3 +9646,28 @@ html body .lv .lv-tabs-in > a {
   background: rgba(30, 34, 29, 0.07);
   color: #6b6b6b;
 }
+/* Finanzas: qué se está viendo, arriba a la derecha (General o el proyecto) */
+.fin-vista {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border-radius: 999px;
+  margin-right: 8px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.fin-vista.proy {
+  background: rgba(0, 117, 143, 0.12);
+  color: #00758f;
+}
+.fin-vista.general {
+  background: rgba(30, 34, 29, 0.07);
+  color: #4a4a4a;
+}
