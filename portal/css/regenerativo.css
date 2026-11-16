@@ -9818,3 +9818,34 @@ html body .lv .lv-tabs-in > a {
   color: var(--gris);
   font-size: 13px;
 }
+/* Finanzas: periodo con tres selectores claros (Año · Mes · Proyecto) */
+:root body .mon-filtros {
+  justify-content: flex-start;
+  align-items: flex-end;
+  gap: 14px;
+}
+.per-sel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+}
+.per-sel > span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+:root body .per-sel select {
+  width: auto;
+  min-width: 96px;
+  text-transform: capitalize;
+}
+.per-proy {
+  flex: 1 1 200px;
+}
+:root body .per-proy select {
+  width: 100%;
+  text-transform: none;
+}

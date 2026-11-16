@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=116';
-import { cop, fecha, iso } from './formato.js?v=116';
-import { btnIco, ico } from './iconos.js?v=116';
-import { leerMonai } from './monai.js?v=116';
+import * as D from './datos.js?v=117';
+import { cop, fecha, iso } from './formato.js?v=117';
+import { btnIco, ico } from './iconos.js?v=117';
+import { leerMonai } from './monai.js?v=117';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -74,6 +74,9 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const [a, m] = mes.split('-').map(Number);
   const mesTxt = modoAnio ? `Año ${a}` : `${MESES[m - 1]} ${a}`;
   const eyebrow = modoAnio ? `Todo el año ${a}` : `${MESES[m - 1]} de ${a}`;
+  const anioHoy = hoy.getFullYear();
+  const anioMin = Math.min(anioHoy, ...todos.map(x => Number((x.fecha || '').slice(0, 4))).filter(Boolean));
+  const aniosDisp = Array.from({ length: anioHoy - anioMin + 1 }, (_, i) => anioHoy - i);
   const enPeriodo = x => modoAnio ? (x.fecha || '').slice(0, 4) === String(a) : mesDe(x.fecha) === mes;
   const lista = listaSel || 'todo';   // 'todo' | 'general' | id de encargo
   const enLista = x => lista === 'todo' || (lista === 'general' ? !x.encargo_id : x.encargo_id === lista);
@@ -134,10 +137,9 @@ export async function vistaFinanzas(mesSel, listaSel) {
           <div class="mon-pills"><span class="pill-gas">− ${cop(gas)}</span><span class="pill-ing">+ ${cop(ing)}</span></div>
           <div class="mon-sal"><span>Tu salario <b>${cop(sal)}</b></span><span>Queda en regenerativo <b class="${balance - sal < 0 ? 'xxx' : ''}">${balance - sal < 0 ? '−' : ''}${cop(Math.abs(balance - sal))}</b></span></div>
           <div class="mon-filtros">
-            ${modoAnio
-              ? `<a href="#/finanzas/${a - 1}/${lista}" class="mon-flecha" aria-label="Año anterior">‹</a><b>Año ${a}</b><a href="#/finanzas/${a + 1}/${lista}" class="mon-flecha" aria-label="Año siguiente">›</a><a href="#/finanzas/${mes}/${lista}" class="mon-ver-mes">Ver por mes</a>`
-              : `<a href="#/finanzas/${k(prev)}/${lista}" class="mon-flecha" aria-label="Mes anterior">‹</a><b>${MESES[m - 1]} <a href="#/finanzas/${a}/${lista}" class="mon-anio" title="Ver todo el año ${a}">${a}</a></b><a href="#/finanzas/${k(next)}/${lista}" class="mon-flecha" aria-label="Mes siguiente">›</a>`}
-            <select id="lista">${listas.map(([v, n]) => `<option value="${v}" ${v === lista ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+            <label class="per-sel"><span>Año</span><select id="sel-anio" aria-label="Año">${aniosDisp.map(y => `<option value="${y}" ${y === a ? 'selected' : ''}>${y}</option>`).join('')}</select></label>
+            <label class="per-sel"><span>Mes</span><select id="sel-mes" aria-label="Mes"><option value="" ${modoAnio ? 'selected' : ''}>Todo el año</option>${MESES.map((n, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${!modoAnio && i + 1 === m ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+            <label class="per-sel per-proy"><span>Proyecto</span>            <select id="lista">${listas.map(([v, n]) => `<option value="${v}" ${v === lista ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
           </div>
         </div>
         <div class="mon-cols">${colsIng.map(c => {
@@ -281,7 +283,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
     // Tabla de encargos: cada fila lleva a las finanzas de ese encargo (los botones de valor y saldado siguen funcionando en el sitio)
     document.querySelectorAll('[data-ir-enc]').forEach(f => f.onclick = ev => { if (ev.target.closest('button, a, input, select')) return; location.hash = `#/${f.dataset.irEnc}/finanzas`; scrollTo(0, 0); });
     document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${modoAnio ? a : mes}/${f.dataset.lista}`; scrollTo(0, 0); });
-    $('#lista').onchange = ev => { location.hash = `#/finanzas/${modoAnio ? a : mes}/${ev.target.value}`; };
+    const irPeriodo = () => { const y = $('#sel-anio').value, mm = $('#sel-mes').value; location.hash = `#/finanzas/${mm ? `${y}-${mm}` : y}/${$('#lista').value}`; };
+    $('#sel-anio').onchange = irPeriodo; $('#sel-mes').onchange = irPeriodo; $('#lista').onchange = irPeriodo;
     document.querySelectorAll('[data-graf]').forEach(b => b.onclick = () => { GRAF.vista = b.dataset.graf; const y = scrollY; recargar(); requestAnimationFrame(() => scrollTo(0, y)); });
     document.querySelectorAll('[data-ir-mes]').forEach(tr => tr.onclick = () => { location.hash = `#/finanzas/${tr.dataset.irMes}/${lista}`; scrollTo(0, 0); });
     document.querySelectorAll('.g-col').forEach(col => {
