@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=103';
-import * as M from './modulos.js?v=103';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=103';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=103';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=103';
+import * as D from './datos.js?v=104';
+import * as M from './modulos.js?v=104';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=104';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=104';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=104';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1236,7 +1236,13 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
   let bloques;
   try { bloques = (await Promise.all(grupos.map(leer))).filter(Boolean); }
   catch (err) { el.innerHTML = cab() + `<p class="sub">No se pudo leer OneDrive: ${esc(msg(err))}</p>`; return; }
-  const ordenar = l => envios ? [...l].sort(porLlegada) : l;  // Enviados y Recibidos: lo más reciente arriba, por fecha de llegada
+  // Folders (REG): primero las carpetas ZL, luego los proyectos del año más reciente al más viejo; obsoletos y archivos al final
+  const grupoReg = x => { const n = (x.nombre || '').toUpperCase();
+    if (!x.carpeta) return 6; if (n.startsWith('ZL')) return 0; if (/GESTION INTEGRAL/.test(n)) return 1;
+    if (/OBSOLETO/.test(n)) return 5; if (/^\d{2}[\s_]/.test(n)) return 2; return 3; };
+  const anioReg = x => Number((x.nombre || '').match(/^(\d{2})[\s_]/)?.[1] || 0);
+  const porReg = (a, b) => grupoReg(a) - grupoReg(b) || anioReg(b) - anioReg(a) || a.nombre.localeCompare(b.nombre, 'es', { numeric: true });
+  const ordenar = l => envios ? [...l].sort(porLlegada) : e ? l : [...l].sort(porReg);  // Enviados y Recibidos: lo más reciente arriba, por fecha de llegada
   const fila = (x, ruta, nivel) => {
     const r = ruta ? `${ruta}/${x.nombre}` : x.nombre;
     const f = fechaNombre(x.nombre);
