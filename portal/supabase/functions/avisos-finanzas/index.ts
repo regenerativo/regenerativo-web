@@ -27,11 +27,61 @@ async function tokenCorreo() {
   return t.access_token as string;
 }
 
+async function enviar(asunto: string, html: string) {
+  const at = await tokenCorreo();
+  const s = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+    method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html },
+      toRecipients: DESTINOS.map((address) => ({ emailAddress: { address } })) }, saveToSentItems: true }),
+  });
+  if (!s.ok) throw new Error(`Correo ${s.status}: ${(await s.text()).slice(0, 200)}`);
+}
+
+// Lunes 8:00 a. m. (comité regenerativo): lo que hay que revisar de finanzas
+async function correoComite() {
+  const hoy = new Date(Date.now() - 5 * 3600e3);   // hora de Bogotá
+  const fechaTxt = hoy.toISOString().slice(0, 10).split("-").reverse().join("/");
+  const { data: encs } = await admin.from("encargos").select("id, nombre, estado").order("codigo", { ascending: false });
+  const cobrar: { e: any; k: any }[] = [];
+  for (const e of encs || []) {
+    const { data: c } = await admin.rpc("cuentas_encargo", { p_encargo: e.id });
+    const k = c && c[0]; if (k && Number(k.por_cobrar) > 0) cobrar.push({ e, k });
+  }
+  const totalCobrar = cobrar.reduce((t, x) => t + Number(x.k.por_cobrar), 0);
+  const { data: pend } = await admin.from("fin_movimientos").select("tipo, valor").eq("estado", "por_confirmar");
+  const hace7 = new Date(Date.now() - 7 * 864e5).toISOString();
+  const { data: cambios } = await admin.from("fin_cambios").select("creado, detalle, encargo:encargos(nombre)").gte("creado", hace7).order("creado");
+  // Posibles repetidos: mismo tipo y valor, con un día o menos de diferencia, en los últimos 60 días
+  const desde = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+  const { data: movs } = await admin.from("fin_movimientos").select("id, fecha, tipo, valor, descripcion").eq("estado", "confirmado").gte("fecha", desde).order("fecha");
+  const dup: string[] = [];
+  (movs || []).forEach((a, i) => (movs || []).slice(i + 1).forEach((b2) => {
+    if (a.tipo === b2.tipo && Number(a.valor) === Number(b2.valor) && Math.abs(new Date(a.fecha).getTime() - new Date(b2.fecha).getTime()) <= 864e5)
+      dup.push(`${esc(a.descripcion || "")} y ${esc(b2.descripcion || "")} · ${cop(Number(a.valor))} · ${a.fecha.split("-").reverse().join("/")}`);
+  }));
+  const sec = (t: string, cuerpo: string) => `<h3 style="font-weight:400;font-size:17px;margin:22px 0 8px">${t}</h3>${cuerpo}`;
+  const fila = (a: string, v: string) => `<tr><td style="padding:5px 18px 5px 0;border-bottom:1px dotted #CFCFCF">${a}</td><td style="padding:5px 0;text-align:right;border-bottom:1px dotted #CFCFCF">${v}</td></tr>`;
+  const html = `<div style="font-family:Arial,sans-serif;color:#1E221D;max-width:620px">
+    <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#6B6B6B;margin:0 0 6px">Comité regenerativo · ${fechaTxt}</p>
+    <h2 style="font-weight:400;margin:0 0 4px">Revisión de finanzas de la semana</h2>
+    <p style="color:#6B6B6B;margin:0;font-size:14px">Por cobrar en total: <b style="color:#1E221D">${cop(totalCobrar)}</b> · Por confirmar: <b style="color:#1E221D">${(pend || []).length}</b></p>
+    ${sec("1. Por cobrar", cobrar.length ? `<table style="font-size:14px;border-collapse:collapse;width:100%">${cobrar.map((x) => fila(`<a href="${PORTAL}#/${slug(x.e.nombre)}/finanzas" style="color:#1E221D;text-decoration:none">${esc(x.e.nombre)}</a>`, cop(Number(x.k.por_cobrar)))).join("")}</table>` : `<p style="font-size:14px">Nada por cobrar.</p>`)}
+    ${sec("2. Por confirmar", (pend || []).length ? `<p style="font-size:14px">${(pend || []).length} movimiento${(pend || []).length === 1 ? "" : "s"} esperan tipo, categoría y proyecto. <a href="${PORTAL}#/finanzas" style="color:#00758F;text-decoration:none">Abrir Finanzas</a></p>` : `<p style="font-size:14px">Todo confirmado.</p>`)}
+    ${sec("3. Cambios de la semana", (cambios || []).length ? `<ul style="font-size:14px;margin:0 0 0 18px;padding:0">${(cambios || []).map((c: any) => `<li style="margin:0 0 4px"><b>${esc((c.encargo?.nombre || "").replace(/^\s*\d{2}\s+I\s+/, ""))}</b> · ${esc(c.detalle)}</li>`).join("")}</ul>` : `<p style="font-size:14px">Sin cambios en los números de los proyectos.</p>`)}
+    ${sec("4. Posibles repetidos", dup.length ? `<ul style="font-size:14px;margin:0 0 0 18px;padding:0">${dup.map((d) => `<li style="margin:0 0 4px">${d}</li>`).join("")}</ul><p style="font-size:12px;color:#6B6B6B">Si alguno es repetido, descártalo en Finanzas.</p>` : `<p style="font-size:14px">No se ven movimientos repetidos.</p>`)}
+    <p style="font-size:12px;color:#6B6B6B;border-top:1px dotted #CFCFCF;padding-top:12px;margin-top:22px">Aviso automático del portal de regenerativo para el comité de los lunes.</p></div>`;
+  try { await enviar(`Comité regenerativo · finanzas ${fechaTxt}`, html); }
+  catch (e) { return json({ error: (e as Error).message }, 500); }
+  return json({ ok: true, comite: true, porCobrar: totalCobrar, porConfirmar: (pend || []).length, cambios: (cambios || []).length, repetidos: dup.length });
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido." }, 405);
   let b: any = {}; try { b = await req.json(); } catch (_) { /* vacío */ }
   const { data: cl } = await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle();
   if (!cl?.refresh_token || b.clave !== cl.refresh_token) return json({ error: "Sin acceso." }, 403);
+
+  if (b.accion === "comite") return await correoComite();
 
   const { data: pend } = await admin.from("fin_cambios").select("id, creado, encargo_id, detalle").eq("enviado", false).order("creado");
   if (!pend?.length) return json({ ok: true, cambios: 0 });
