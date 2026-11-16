@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=106';
-import { cop, fecha, iso } from './formato.js?v=106';
-import { btnIco, ico } from './iconos.js?v=106';
-import { leerMonai } from './monai.js?v=106';
+import * as D from './datos.js?v=107';
+import { cop, fecha, iso } from './formato.js?v=107';
+import { btnIco, ico } from './iconos.js?v=107';
+import { leerMonai } from './monai.js?v=107';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -44,6 +44,10 @@ export function cuentasEncargo(e, { props = [], docs = [], adics = [], movs = []
 }
 export const icoCat = n => `<svg class="ico-cat ic-${claveCat(n)}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICAT[claveCat(n)]}</svg>`;
 
+// De dónde viene cada movimiento: correo (lectura automática), MONAI (importación) o escrito a mano en el portal
+const ORIGENES = { correo: 'Correo', monai: 'MONAI', portal: 'Portal' };
+const origenDe = x => x.origen === 'correo' || x.origen === 'monai' ? x.origen : 'portal';
+const chipOrigen = x => `<span class="origen o-${origenDe(x)}" title="${origenDe(x) === 'portal' ? 'Escrito a mano en el portal' : origenDe(x) === 'monai' ? 'Importado de MONAI' : 'Leído del correo'}">${ORIGENES[origenDe(x)]}</span>`;
 const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
 
 export async function vistaFinanzas(mesSel, listaSel) {
@@ -134,7 +138,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         ${delMes.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar en el mes: concepto, categoría, encargo, valor…">' : ''}
         ${delMes.length ? `<div class="lista-filas">${delMes.map(x => `<button class="mov-fila" data-editar="${x.id}" data-buscar="${esc([x.descripcion, x.categoria?.nombre, x.subcategoria, x.encargo?.nombre, x.medio, x.valor].join(' ').toLowerCase())}">
           <span class="mov-ico ${x.tipo}">${icoCat(x.tipo === 'socio' ? 'nómina' : x.tipo === 'ingreso' ? (x.subcategoria || x.categoria?.nombre || 'ingreso') : x.categoria?.nombre)}</span>
-          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''} · ${esc(x.encargo?.nombre || 'General')}</span></span>
+          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''} · ${esc(x.encargo?.nombre || 'General')}</span></span>
           <span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span></button>`).join('')}</div>`
         : '<p class="sub">No hay movimientos este mes en esta lista.</p>'}
       </section>
@@ -153,9 +157,10 @@ export async function vistaFinanzas(mesSel, listaSel) {
     </section>
     ${!pend.length ? `<section class="pend" id="por-confirmar"><div class="pend-cab"><h3>Por confirmar${D.SIN_CORREO ? '' : ' <span class="pend-n">0</span>'}</h3><span class="sub">Lo que llega por correo queda aquí hasta que lo apruebes con ✓; mientras tanto no cuenta en los totales. ${D.SIN_CORREO ? 'Esta vista previa no puede leer los pendientes del correo: en el portal real aparecen todos aquí.' : 'No hay movimientos pendientes.'}</span></div></section>` : ''}
     ${pend.length ? `<section class="pend" id="por-confirmar">
-      <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Llegan del correo para tu aprobación: elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
-      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 ? 'pend-oculta' : ''}" data-pend="${x.id}">
-        <div class="pend-txt"><span class="sub">${fecha(x.fecha)}${x.origen === 'monai' ? ' · MONAI' : x.origen === 'correo' ? ' · Correo' : ''}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
+      <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
+      <div class="pend-filtro" role="group" aria-label="Filtrar por origen"><button type="button" class="chip-f on" data-origen="">Todos <b>${pend.length}</b></button>${Object.entries(ORIGENES).map(([k, t]) => { const n = pend.filter(x => origenDe(x) === k).length; return n ? `<button type="button" class="chip-f" data-origen="${k}"><span class="origen o-${k}">${t}</span> <b>${n}</b></button>` : ''; }).join('')}</div>
+      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 ? 'pend-oculta' : ''}" data-pend="${x.id}" data-org="${origenDe(x)}">
+        <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
         <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
         <div class="pend-sel">
           <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
@@ -170,6 +175,11 @@ export async function vistaFinanzas(mesSel, listaSel) {
   return { html, mes, mesTxt, montar: recargar => {
     document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
+    document.querySelectorAll('[data-origen]').forEach(b => b.onclick = () => {
+      document.querySelectorAll('[data-origen]').forEach(x => x.classList.toggle('on', x === b));
+      const o = b.dataset.origen, pmx = $('#pend-mas'); if (pmx) pmx.remove();
+      document.querySelectorAll('.pend-fila').forEach(f => { f.classList.remove('pend-oculta'); f.hidden = !!o && f.dataset.org !== o; });
+    });
     const pm = $('#pend-mas'); if (pm) pm.onclick = () => { document.querySelectorAll('.pend-oculta').forEach(f => f.classList.remove('pend-oculta')); pm.remove(); };
     const pa = $('.pend-aviso'); if (pa) pa.onclick = ev => { ev.preventDefault(); $('#por-confirmar').scrollIntoView({ behavior: 'smooth' }); };
     document.querySelectorAll('[data-pend]').forEach(fila => {

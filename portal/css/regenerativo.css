@@ -9562,3 +9562,59 @@ html body .lv .lv-tabs-in > a {
     display: none;
   }
 }
+/* Origen de cada movimiento: Correo, MONAI o Portal */
+.origen {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 999px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+.origen.o-correo {
+  background: rgba(0, 163, 203, 0.14);
+  color: #00758f;
+}
+.origen.o-monai {
+  background: rgba(223, 223, 63, 0.35);
+  color: #5c5c10;
+}
+.origen.o-portal {
+  background: rgba(30, 34, 29, 0.08);
+  color: #4a4a4a;
+}
+.pend-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+.chip-f {
+  font: inherit;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(30, 34, 29, 0.14);
+  background: var(--blanco, #fff);
+  color: inherit;
+  cursor: pointer;
+  transition: color 0.6s ease, border-color 0.3s;
+}
+.chip-f b {
+  font-weight: 500;
+}
+.chip-f:hover {
+  color: #999999;
+}
+.chip-f.on {
+  border-color: #1e221d;
+}
+.pend-fila[hidden] {
+  display: none !important;
+}
