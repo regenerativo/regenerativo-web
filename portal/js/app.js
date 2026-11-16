@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=110';
-import * as M from './modulos.js?v=110';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=110';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=110';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=110';
+import * as D from './datos.js?v=111';
+import * as M from './modulos.js?v=111';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=111';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=111';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=111';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -78,6 +78,20 @@ document.addEventListener('visibilitychange', () => {
   if (ocultaDesde && Date.now() - ocultaDesde > 20000) { olvidarConteos(); programarRefresco(); }
 });
 setInterval(() => { if (!document.hidden && !document.body.classList.contains('ingreso')) { olvidarConteos(); if (!ocupado()) refrescar(); } }, 180000);
+// Versión nueva publicada: la pestaña abierta se actualiza sola (sin esperar a que alguien recargue a mano).
+// Compara el número de versión de esta página con el de la publicada; si cambió y no se está escribiendo, recarga.
+const VERSION_ACTUAL = (import.meta.url.match(/[?&]v=(\d+)/) || [])[1];
+let versionNueva = false;
+async function revisarVersion() {
+  try {
+    const r = await fetch(location.pathname + '?nv=' + Date.now(), { cache: 'no-store' });
+    const v = ((await r.text()).match(/app\.js\?v=(\d+)/) || [])[1];
+    if (VERSION_ACTUAL && v && v !== VERSION_ACTUAL) versionNueva = true;
+  } catch (_) { /* sin conexión: se intenta después */ }
+  if (versionNueva && !ocupado()) location.reload();
+}
+setInterval(revisarVersion, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarVersion(); });
 
 async function ir() {
   clearTimeout(cargando);
