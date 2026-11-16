@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=111';
-import { cop, fecha, iso } from './formato.js?v=111';
-import { btnIco, ico } from './iconos.js?v=111';
-import { leerMonai } from './monai.js?v=111';
+import * as D from './datos.js?v=112';
+import { cop, fecha, iso } from './formato.js?v=112';
+import { btnIco, ico } from './iconos.js?v=112';
+import { leerMonai } from './monai.js?v=112';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -54,6 +54,8 @@ export function cuentasEncargo(e, { props = [], docs = [], adics = [], movs = []
 }
 export const icoCat = n => `<svg class="ico-cat ic-${claveCat(n)}" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICAT[claveCat(n)]}</svg>`;
 
+// Por confirmar: «ver todos» y el filtro de origen se mantienen al confirmar (la lista no se vuelve a cerrar)
+const PEND = { todos: false, origen: '' };
 // De dónde viene cada movimiento: correo (lectura automática), MONAI (importación) o escrito a mano en el portal
 const ORIGENES = { correo: 'Correo', monai: 'MONAI', portal: 'Portal' };
 const origenDe = x => x.origen === 'correo' || x.origen === 'monai' ? x.origen : 'portal';
@@ -168,8 +170,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
     ${!pend.length ? `<section class="pend" id="por-confirmar"><div class="pend-cab"><h3>Por confirmar${D.SIN_CORREO ? '' : ' <span class="pend-n">0</span>'}</h3><span class="sub">Lo que llega por correo queda aquí hasta que lo apruebes con ✓; mientras tanto no cuenta en los totales. ${D.SIN_CORREO ? 'Esta vista previa no puede leer los pendientes del correo: en el portal real aparecen todos aquí.' : 'No hay movimientos pendientes.'}</span></div></section>` : ''}
     ${pend.length ? `<section class="pend" id="por-confirmar">
       <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
-      <div class="pend-filtro" role="group" aria-label="Filtrar por origen"><button type="button" class="chip-f on" data-origen="">Todos <b>${pend.length}</b></button>${Object.entries(ORIGENES).map(([k, t]) => { const n = pend.filter(x => origenDe(x) === k).length; return n ? `<button type="button" class="chip-f" data-origen="${k}"><span class="origen o-${k}">${t}</span> <b>${n}</b></button>` : ''; }).join('')}</div>
-      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 ? 'pend-oculta' : ''}" data-pend="${x.id}" data-org="${origenDe(x)}">
+      <div class="pend-filtro" role="group" aria-label="Filtrar por origen"><button type="button" class="chip-f${PEND.origen ? '' : ' on'}" data-origen="">Todos <b>${pend.length}</b></button>${Object.entries(ORIGENES).map(([k, t]) => { const n = pend.filter(x => origenDe(x) === k).length; return n ? `<button type="button" class="chip-f${PEND.origen === k ? ' on' : ''}" data-origen="${k}"><span class="origen o-${k}">${t}</span> <b>${n}</b></button>` : ''; }).join('')}</div>
+      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 && !PEND.todos && !PEND.origen ? 'pend-oculta' : ''}" data-pend="${x.id}" data-org="${origenDe(x)}" ${PEND.origen && origenDe(x) !== PEND.origen ? 'hidden' : ''}>
         <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
         <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
         <div class="pend-sel">
@@ -179,7 +181,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         </div>
         <div class="pend-acc">${btnIco('check', 'Confirmar', 'data-ok', '')}${btnIco('x', 'Descartar (no es un movimiento real)', 'data-no')}</div>
       </div>`).join('')}
-      ${pend.length > 6 ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
+      ${pend.length > 6 && !PEND.todos && !PEND.origen ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
     </section>` : ''}`;
 
   // Lo que se está viendo, para la esquina superior derecha: General o el proyecto elegido
@@ -190,22 +192,31 @@ export async function vistaFinanzas(mesSel, listaSel) {
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
     document.querySelectorAll('[data-origen]').forEach(b => b.onclick = () => {
       document.querySelectorAll('[data-origen]').forEach(x => x.classList.toggle('on', x === b));
-      const o = b.dataset.origen, pmx = $('#pend-mas'); if (pmx) pmx.remove();
+      const o = b.dataset.origen, pmx = $('#pend-mas'); if (pmx) pmx.remove(); PEND.origen = o; PEND.todos = true;
       document.querySelectorAll('.pend-fila').forEach(f => { f.classList.remove('pend-oculta'); f.hidden = !!o && f.dataset.org !== o; });
     });
-    const pm = $('#pend-mas'); if (pm) pm.onclick = () => { document.querySelectorAll('.pend-oculta').forEach(f => f.classList.remove('pend-oculta')); pm.remove(); };
+    const pm = $('#pend-mas'); if (pm) pm.onclick = () => { PEND.todos = true; document.querySelectorAll('.pend-oculta').forEach(f => f.classList.remove('pend-oculta')); pm.remove(); };
     const pa = $('.pend-aviso'); if (pa) pa.onclick = ev => { ev.preventDefault(); $('#por-confirmar').scrollIntoView({ behavior: 'smooth' }); };
+    let tPend = null;
+    const salir = fila => {
+      fila.remove();
+      const n = document.querySelectorAll('.pend-fila').length, cn = $('.pend-n'); if (cn) cn.textContent = n;
+      const sig = document.querySelector('.pend-fila.pend-oculta'); if (sig && document.querySelectorAll('.pend-fila:not(.pend-oculta)').length < 6) sig.classList.remove('pend-oculta');
+      // los totales y gráficas se recalculan cuando dejas de confirmar un momento, sin mover la página
+      clearTimeout(tPend); tPend = setTimeout(async () => { if (document.querySelector('.modal-fondo') || document.activeElement?.closest?.('.pend-fila')) return; const y = scrollY; await recargar(); scrollTo(0, y); }, 2500);
+    };
     document.querySelectorAll('[data-pend]').forEach(fila => {
       const sel = n => fila.querySelector(`[data-f="${n}"]`);
       sel('tipo').onchange = () => { sel('categoria_id').innerHTML = opsCat(cats, sel('tipo').value); sel('categoria_id').disabled = sel('tipo').value === 'socio'; };
       sel('categoria_id').disabled = sel('tipo').value === 'socio';
       fila.querySelector('[data-ok]').onclick = async () => {
+        fila.querySelectorAll('button').forEach(b => b.disabled = true);
         const t = sel('tipo').value;
         await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'confirmado', tipo: t, categoria_id: t === 'socio' ? null : sel('categoria_id').value || null, encargo_id: sel('encargo_id').value || null,
           ...((sel('categoria_id').value || null) !== (pend.find(x => x.id === fila.dataset.pend)?.categoria_id || null) ? { subcategoria: null } : {}) });   // si cambió la categoría, la subcategoría vieja ya no aplica
-        recargar();
+        salir(fila);
       };
-      fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); recargar(); };
+      fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); salir(fila); };
     });
     const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
     // Engranaje de la cabecera: presupuesto del mes, categorías e importación de MONAI
