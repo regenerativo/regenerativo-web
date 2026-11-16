@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=107';
-import { cop, fecha, iso } from './formato.js?v=107';
-import { btnIco, ico } from './iconos.js?v=107';
-import { leerMonai } from './monai.js?v=107';
+import * as D from './datos.js?v=108';
+import { cop, fecha, iso } from './formato.js?v=108';
+import { btnIco, ico } from './iconos.js?v=108';
+import { leerMonai } from './monai.js?v=108';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -138,8 +138,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
         ${delMes.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar en el mes: concepto, categoría, encargo, valor…">' : ''}
         ${delMes.length ? `<div class="lista-filas">${delMes.map(x => `<button class="mov-fila" data-editar="${x.id}" data-buscar="${esc([x.descripcion, x.categoria?.nombre, x.subcategoria, x.encargo?.nombre, x.medio, x.valor].join(' ').toLowerCase())}">
           <span class="mov-ico ${x.tipo}">${icoCat(x.tipo === 'socio' ? 'nómina' : x.tipo === 'ingreso' ? (x.subcategoria || x.categoria?.nombre || 'ingreso') : x.categoria?.nombre)}</span>
-          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''} · ${esc(x.encargo?.nombre || 'General')}</span></span>
-          <span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span></button>`).join('')}</div>`
+          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''}</span></span>
+          <span class="mov-der"><span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span><span class="mov-proy${x.encargo_id ? '' : ' general'}" title="${esc(x.encargo?.nombre || 'Regenerativo (general)')}">${x.encargo_id ? esc((x.encargo?.nombre || '').replace(/^\s*\d{2}\s+I\s+/, '')) : 'General'}</span></span></button>`).join('')}</div>`
         : '<p class="sub">No hay movimientos este mes en esta lista.</p>'}
       </section>
     </div>
