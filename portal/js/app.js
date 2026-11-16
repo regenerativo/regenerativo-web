@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=102';
-import * as M from './modulos.js?v=102';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=102';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=102';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=102';
+import * as D from './datos.js?v=103';
+import * as M from './modulos.js?v=103';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=103';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=103';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=103';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -995,7 +995,6 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   };
   const nombreSec = esCliente && seccion === 'enviados' ? 'Documentos' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
-  const engranaje = admin ? btnIco('ajustes', 'Ajustes del encargo', 'id="ajustes-enc"') : '';
   const pintar = (html, acciones = engranaje) => {
     marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, eyebrow: seccion === 'resumen' ? ([e.cliente?.nombre, ...servs(e)].filter(Boolean).join(' · ') || 'Encargo') : e.nombre, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
     const bg = $('#ajustes-enc'); if (bg) bg.onclick = () => modalAjustesEncargo(e, prop);
@@ -1010,6 +1009,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const abrirAjustes = seccion === 'ajustes' && admin;
   if (seccion === 'ajustes') { seccion = 'resumen'; history.replaceState(null, '', base); }
   const ctx = { e, s, admin, rol, esCliente, fest, base, sub, recargar: ir };
+  const engranaje = admin && seccion === 'resumen' ? btnIco('ajustes', 'Ajustes del encargo', 'id="ajustes-enc"') : '';   // solo en el Resumen
   const valor = valorEncargo(prop, docs, e, adics);
 
   if (seccion === 'resumen') {
