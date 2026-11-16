@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=119';
-import { cop, fecha, iso } from './formato.js?v=119';
-import { btnIco, ico } from './iconos.js?v=119';
-import { leerMonai } from './monai.js?v=119';
+import * as D from './datos.js?v=120';
+import { cop, fecha, iso } from './formato.js?v=120';
+import { btnIco, ico } from './iconos.js?v=120';
+import { leerMonai } from './monai.js?v=120';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -108,6 +108,10 @@ export async function vistaFinanzas(mesSel, listaSel) {
   // Todas las categorías de gasto, incluida Nómina y honorarios (pagos al equipo). En «Todo el año» el presupuesto mensual se multiplica por 12
   const catsGasto = cats.filter(c => c.tipo === 'gasto').map(c => ({ ...c, presupuesto_mensual: c.presupuesto_mensual == null ? null : Number(c.presupuesto_mensual) * (modoAnio ? 12 : 1), gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
     .sort((x, y) => y.gastado - x.gastado);
+  // Nada queda por fuera: si algún gasto no tiene categoría (o la suya está desactivada), sale en su propia barra
+  const idsCat = new Set(cats.map(c => c.id));
+  const sinCatG = delMes.filter(x => x.tipo === 'gasto' && !idsCat.has(x.categoria_id)).reduce((t, x) => t + Number(x.valor), 0);
+  if (sinCatG) catsGasto.push({ id: '', tipo: 'gasto', nombre: 'Sin categoría', subcategorias: [], presupuesto_mensual: null, gastado: sinCatG });
   // Columnas de ingresos: una por subcategoría de cada categoría de ingreso (Honorarios, Otros ingresos…)
   const delIng = delMes.filter(x => x.tipo === 'ingreso');
   const colsIng = cats.filter(c => c.tipo === 'ingreso').flatMap(c => {
@@ -115,6 +119,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
     const sinSub = delIng.filter(x => x.categoria_id === c.id && !subs.includes(x.subcategoria)).reduce((s, x) => s + Number(x.valor), 0);
     return subs.map((sb, i) => ({ id: c.id, sub: sb === c.nombre ? '' : sb, nombre: sb, recibido: delIng.filter(x => x.categoria_id === c.id && x.subcategoria === sb).reduce((s, x) => s + Number(x.valor), 0) + (i === 0 ? sinSub : 0) }));
   });
+  const sinCatI = delIng.filter(x => !idsCat.has(x.categoria_id)).reduce((t, x) => t + Number(x.valor), 0);
+  if (sinCatI) colsIng.push({ id: '', sub: '', nombre: 'Sin categoría', recibido: sinCatI });
   const presTotal = catsGasto.reduce((s, c) => s + Number(c.presupuesto_mensual || 0), 0);
   const ejemplos = movs.some(x => x.ejemplo);
   const prev = new Date(a, m - 2, 1), next = new Date(a, m, 1);
@@ -265,7 +271,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       const tipo = x.dataset.tipo || 'gasto', sub = x.dataset.sub || '', cat = cats.find(c => c.id === x.dataset.cat);
       const nuevo = { tipo, fecha: iso(new Date()), categoria_id: x.dataset.cat, ...(sub ? { subcategoria: sub } : {}), encargo_id: ['todo', 'general'].includes(lista) ? null : lista };
       const subs = (cat?.subcategorias || []);
-      const lst = delMes.filter(m => m.tipo === tipo && m.categoria_id === x.dataset.cat && (tipo !== 'ingreso' || !subs.length || (sub ? m.subcategoria === sub : !subs.slice(1).includes(m.subcategoria))))
+      const lst = delMes.filter(m => m.tipo === tipo && (x.dataset.cat ? m.categoria_id === x.dataset.cat : !idsCat.has(m.categoria_id)) && (tipo !== 'ingreso' || !subs.length || (sub ? m.subcategoria === sub : !subs.slice(1).includes(m.subcategoria))))
         .sort((a, b) => a.fecha < b.fecha ? 1 : -1);
       const tot = lst.reduce((t, m) => t + Number(m.valor), 0);
       const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
