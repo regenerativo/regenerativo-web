@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=109';
-import * as M from './modulos.js?v=109';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=109';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=109';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=109';
+import * as D from './datos.js?v=110';
+import * as M from './modulos.js?v=110';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=110';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=110';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=110';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -1658,7 +1658,7 @@ async function modalPropuesta(p = null) {
       ${checksServicios(svc, p)}
       <input type="hidden" name="tipo" value="${p?.tipo || 'ambos'}">
       <div><label>Fecha de envío</label><input name="fecha_envio" type="date" value="${p?.fecha_envio || ''}"></div>
-      <div><label>Honorarios (COP)</label><input name="honorarios" inputmode="numeric" placeholder="8.200.000" value="${p?.honorarios ? Number(p.honorarios).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></div>
+      <div><label>Valor total final, con descuento, sin IVA (COP)</label><input name="honorarios" inputmode="numeric" placeholder="8.200.000" value="${p?.honorarios ? Number(p.honorarios).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></div>
     </div>
     <h3 style="margin:28px 0 0">Detalles técnicos del encargo</h3>
     <div class="grilla-form">
