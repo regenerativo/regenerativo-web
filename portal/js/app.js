@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=112';
-import * as M from './modulos.js?v=112';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=112';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=112';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=112';
+import * as D from './datos.js?v=115';
+import * as M from './modulos.js?v=115';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=115';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=115';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=115';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -133,7 +133,7 @@ async function irSeguro() {
       finAntes = pedido;
       const v = await vistaFinanzas(p[1], p[2]);
       if (location.hash !== pedido) return;   // si ya se pidió otro mes, esta respuesta vieja no se pinta
-      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, acciones: `<span class="fin-vista ${v.vista.cls}" title="${esc(v.vista.titulo)}">${esc(v.vista.txt)}</span>` + btnIco('ajustes', 'Ajustes de finanzas', 'id="fin-ajustes"'), eyebrow: v.mesTxt.replace(/ (\d{4})$/, ' de $1').replace(/^./, c => c.toUpperCase()) });
+      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, acciones: `<span class="fin-vista ${v.vista.cls}" title="${esc(v.vista.titulo)}">${esc(v.vista.txt)}</span>` + btnIco('ajustes', 'Ajustes de finanzas', 'id="fin-ajustes"'), eyebrow: v.eyebrow });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);

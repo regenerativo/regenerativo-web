@@ -9671,3 +9671,128 @@ html body .lv .lv-tabs-in > a {
   background: rgba(30, 34, 29, 0.07);
   color: #4a4a4a;
 }
+/* Finanzas: vista del año (12 meses) */
+.graf-vistas {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.panel-anio .graf-cols {
+  gap: 2px;
+}
+.panel-anio .tabla-cont {
+  margin-top: 18px;
+}
+.t-anio tbody tr.clic {
+  cursor: pointer;
+}
+.t-anio tbody tr.clic td {
+  transition: color 0.6s ease;
+}
+.t-anio tbody tr.clic:hover td {
+  color: #999999;
+}
+.t-anio .mes-actual td:first-child {
+  font-weight: 600;
+}
+.t-anio .mes-vacio td {
+  color: var(--gris);
+}
+.t-anio td.ingreso {
+  color: var(--ing);
+}
+@media (max-width: 700px) {
+  .panel-anio .g-par span {
+    width: 7px;
+  }
+  .panel-anio .g-par {
+    gap: 1px;
+  }
+  .panel-anio .g-mes {
+    font-size: 9.5px;
+  }
+}
+/* Finanzas: el año junto al mes lleva a la vista de todo el año */
+.mon-anio {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.6s ease;
+}
+.mon-anio:hover {
+  color: #999999;
+}
+.mon-ver-mes {
+  font-size: 13px;
+  color: var(--gris);
+  text-decoration: none;
+  margin-left: 6px;
+  transition: color 0.6s ease;
+}
+.mon-ver-mes:hover {
+  color: #999999;
+}
+.panel-anio .g-col {
+  min-width: 0;
+}
+.panel-anio .g-mes {
+  overflow: hidden;
+  max-width: 100%;
+}
+@media (max-width: 700px) {
+  .panel-anio .graf-cols {
+    left: 30px;
+  }
+  .t-anio th,
+  .t-anio td {
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 13px;
+  }
+}
+.t-anio .m-corto {
+  display: none;
+}
+@media (max-width: 700px) {
+  :root body .panel-anio .g-par span {
+    width: 6px;
+  }
+  :root body .panel-anio .g-par {
+    gap: 1px;
+  }
+  :root body .panel-anio .g-mes {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  :root body .t-anio th,
+  :root body .t-anio td {
+    padding: 9px 4px;
+    font-size: 12.5px;
+  }
+  :root body .t-anio .m-largo {
+    display: none;
+  }
+  :root body .t-anio .m-corto {
+    display: inline;
+  }
+}
+@media (max-width: 700px) {
+  :root body .t-anio th:nth-child(4),
+  :root body .t-anio td:nth-child(4) {
+    display: none;
+  }
+  :root body .t-anio {
+    min-width: 0;
+    width: 100%;
+  }
+}
+.g-mes .gm-c {
+  display: none;
+}
+@media (max-width: 700px) {
+  :root body .panel-anio .g-mes .gm-l {
+    display: none;
+  }
+  :root body .panel-anio .g-mes .gm-c {
+    display: inline;
+  }
+}

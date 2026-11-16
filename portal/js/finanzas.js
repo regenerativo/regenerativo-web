@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=112';
-import { cop, fecha, iso } from './formato.js?v=112';
-import { btnIco, ico } from './iconos.js?v=112';
-import { leerMonai } from './monai.js?v=112';
+import * as D from './datos.js?v=115';
+import { cop, fecha, iso } from './formato.js?v=115';
+import { btnIco, ico } from './iconos.js?v=115';
+import { leerMonai } from './monai.js?v=115';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -56,6 +56,7 @@ export const icoCat = n => `<svg class="ico-cat ic-${claveCat(n)}" viewBox="0 0 
 
 // Por confirmar: «ver todos» y el filtro de origen se mantienen al confirmar (la lista no se vuelve a cerrar)
 const PEND = { todos: false, origen: '' };
+const GRAF = { vista: 'anio' };   // gráfica de Finanzas: 'anio' (12 meses del año) o 'seis' (últimos 6 meses)
 // De dónde viene cada movimiento: correo (lectura automática), MONAI (importación) o escrito a mano en el portal
 const ORIGENES = { correo: 'Correo', monai: 'MONAI', portal: 'Portal' };
 const origenDe = x => x.origen === 'correo' || x.origen === 'monai' ? x.origen : 'portal';
@@ -67,12 +68,16 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const movs = todos.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const pend = todos.filter(x => x.estado === 'por_confirmar').sort((a, b) => a.fecha < b.fecha ? 1 : -1);
   const hoy = new Date();
-  const mes = mesSel && /^\d{4}-\d{2}$/.test(mesSel) ? mesSel : iso(hoy).slice(0, 7);
+  // Periodo: un mes («2026-11») o el año completo («2026», al tocar el año junto al mes)
+  const modoAnio = /^\d{4}$/.test(mesSel || '');
+  const mes = modoAnio ? (iso(hoy).slice(0, 4) === mesSel ? iso(hoy).slice(0, 7) : `${mesSel}-12`) : mesSel && /^\d{4}-\d{2}$/.test(mesSel) ? mesSel : iso(hoy).slice(0, 7);
   const [a, m] = mes.split('-').map(Number);
-  const mesTxt = `${MESES[m - 1]} ${a}`;
+  const mesTxt = modoAnio ? `Año ${a}` : `${MESES[m - 1]} ${a}`;
+  const eyebrow = modoAnio ? `Todo el año ${a}` : `${MESES[m - 1]} de ${a}`;
+  const enPeriodo = x => modoAnio ? (x.fecha || '').slice(0, 4) === String(a) : mesDe(x.fecha) === mes;
   const lista = listaSel || 'todo';   // 'todo' | 'general' | id de encargo
   const enLista = x => lista === 'todo' || (lista === 'general' ? !x.encargo_id : x.encargo_id === lista);
-  const delMes = movs.filter(x => mesDe(x.fecha) === mes && enLista(x));
+  const delMes = movs.filter(x => enPeriodo(x) && enLista(x));
   const suma = (l, t) => l.filter(x => x.tipo === t).reduce((s, x) => s + Number(x.valor), 0);
   const SALARIO = cats.find(c => c.nombre === 'Nómina y honorarios')?.id;
   const esSal = x => x.categoria_id === SALARIO;
@@ -85,6 +90,16 @@ export async function vistaFinanzas(mesSel, listaSel) {
   // Últimos 6 meses
   const meses = Array.from({ length: 6 }, (_, i) => { const d = new Date(a, m - 1 - (5 - i), 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; });
   const serie = meses.map(k => ({ k, ing: suma(movs.filter(x => mesDe(x.fecha) === k && enLista(x)), 'ingreso'), gas: suma(movs.filter(x => mesDe(x.fecha) === k && !esSal(x) && enLista(x)), 'gasto') }));
+
+  // Todo el año del mes elegido: ingresos y egresos (gastos + salario) de cada mes
+  const mesesAnio = Array.from({ length: 12 }, (_, i) => `${a}-${String(i + 1).padStart(2, '0')}`);
+  const serieAnio = mesesAnio.map(k => { const l = movs.filter(x => mesDe(x.fecha) === k && enLista(x)); return { k, ing: suma(l, 'ingreso'), gas: suma(l, 'gasto') }; });
+  const totAnio = serieAnio.reduce((t, x) => ({ ing: t.ing + x.ing, gas: t.gas + x.gas }), { ing: 0, gas: 0 });
+  const nc = v => cop(v).replace(' COP', '');   // en la tabla del año el COP va en el encabezado
+  const tablaAnio = `<div class="tabla-cont"><table class="t-compacta t-anio"><thead><tr><th>Mes</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Balance <span class="sub">COP</span></th></tr></thead><tbody>
+    ${serieAnio.map(x => { const [, mm] = x.k.split('-').map(Number); const b = x.ing - x.gas; const vacio = !x.ing && !x.gas;
+      return `<tr class="clic${x.k === mes && !modoAnio ? ' mes-actual' : ''}${vacio ? ' mes-vacio' : ''}" data-ir-mes="${x.k}"><td><span class="m-largo">${MESES[mm - 1]}</span><span class="m-corto">${MESES[mm - 1].slice(0, 3)}</span></td><td class="num ingreso">${x.ing ? nc(x.ing) : '—'}</td><td class="num gasto">${x.gas ? nc(x.gas) : '—'}</td><td class="num ${b < 0 ? 'xxx' : ''}">${vacio ? '—' : (b < 0 ? '−' : '') + nc(Math.abs(b))}</td></tr>`; }).join('')}
+    <tr class="total"><td>Total ${a}</td><td class="num">${nc(totAnio.ing)}</td><td class="num">${nc(totAnio.gas)}</td><td class="num ${totAnio.ing - totAnio.gas < 0 ? 'xxx' : ''}">${totAnio.ing - totAnio.gas < 0 ? '−' : ''}${nc(Math.abs(totAnio.ing - totAnio.gas))}</td></tr></tbody></table></div>`;
 
   const catsGasto = cats.filter(c => c.tipo === 'gasto' && c.id !== SALARIO).map(c => ({ ...c, gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
     .sort((x, y) => y.gastado - x.gastado);
@@ -119,7 +134,9 @@ export async function vistaFinanzas(mesSel, listaSel) {
           <div class="mon-pills"><span class="pill-gas">− ${cop(gas)}</span><span class="pill-ing">+ ${cop(ing)}</span></div>
           <div class="mon-sal"><span>Tu salario <b>${cop(sal)}</b></span><span>Queda en regenerativo <b class="${balance - sal < 0 ? 'xxx' : ''}">${balance - sal < 0 ? '−' : ''}${cop(Math.abs(balance - sal))}</b></span></div>
           <div class="mon-filtros">
-            <a href="#/finanzas/${k(prev)}/${lista}" class="mon-flecha" aria-label="Mes anterior">‹</a><b>${mesTxt}</b><a href="#/finanzas/${k(next)}/${lista}" class="mon-flecha" aria-label="Mes siguiente">›</a>
+            ${modoAnio
+              ? `<a href="#/finanzas/${a - 1}/${lista}" class="mon-flecha" aria-label="Año anterior">‹</a><b>Año ${a}</b><a href="#/finanzas/${a + 1}/${lista}" class="mon-flecha" aria-label="Año siguiente">›</a><a href="#/finanzas/${mes}/${lista}" class="mon-ver-mes">Ver por mes</a>`
+              : `<a href="#/finanzas/${k(prev)}/${lista}" class="mon-flecha" aria-label="Mes anterior">‹</a><b>${MESES[m - 1]} <a href="#/finanzas/${a}/${lista}" class="mon-anio" title="Ver todo el año ${a}">${a}</a></b><a href="#/finanzas/${k(next)}/${lista}" class="mon-flecha" aria-label="Mes siguiente">›</a>`}
             <select id="lista">${listas.map(([v, n]) => `<option value="${v}" ${v === lista ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
           </div>
         </div>
@@ -146,17 +163,18 @@ export async function vistaFinanzas(mesSel, listaSel) {
         <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" hidden style="display:none">Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
       </section>
       <section class="panel fin-lado">
-        <div class="od-cab"><h3>Movimientos del mes</h3><span class="sub">${delMes.length}</span></div>
-        ${delMes.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar en el mes: concepto, categoría, encargo, valor…">' : ''}
+        <div class="od-cab"><h3>Movimientos del ${modoAnio ? 'año' : 'mes'}</h3><span class="sub">${delMes.length}</span></div>
+        ${delMes.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar: concepto, categoría, encargo, valor…">' : ''}
         ${delMes.length ? `<div class="lista-filas">${delMes.map(x => `<button class="mov-fila" data-editar="${x.id}" data-buscar="${esc([x.descripcion, x.categoria?.nombre, x.subcategoria, x.encargo?.nombre, x.medio, x.valor].join(' ').toLowerCase())}">
           <span class="mov-ico ${x.tipo}">${icoCat(x.tipo === 'socio' ? 'nómina' : x.tipo === 'ingreso' ? (x.subcategoria || x.categoria?.nombre || 'ingreso') : x.categoria?.nombre)}</span>
           <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''}</span></span>
           <span class="mov-der"><span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span><span class="mov-proy${x.encargo_id ? '' : ' general'}" title="${esc(x.encargo?.nombre || 'Regenerativo (general)')}">${x.encargo_id ? esc((x.encargo?.nombre || '').replace(/^\s*\d{2}\s+I\s+/, '')) : 'General'}</span></span></button>`).join('')}</div>`
-        : '<p class="sub">No hay movimientos este mes en esta lista.</p>'}
+        : `<p class="sub">No hay movimientos ${modoAnio ? 'este año' : 'este mes'} en esta lista.</p>`}
       </section>
     </div>
     <div class="fin-grid">
-      <section class="panel"><h3>Ingresos y gastos · 6 meses</h3>${barras(serie)}</section>
+      <section class="panel panel-anio"><div class="od-cab"><h3>Ingresos y egresos</h3><span class="graf-vistas" role="group" aria-label="Periodo"><button type="button" class="chip-f${GRAF.vista === 'anio' ? ' on' : ''}" data-graf="anio">Año ${a}</button><button type="button" class="chip-f${GRAF.vista === 'seis' ? ' on' : ''}" data-graf="seis">6 meses</button></span></div>
+        ${GRAF.vista === 'anio' ? barras(serieAnio, 'Egresos') + tablaAnio : barras(serie)}</section>
       <section class="panel"><h3>Por cobrar</h3><div class="cifra-grande">${cop(porCobrar)}</div><p class="sub">${porEnc.filter(r => r.porCobrar > 0).length} encargos con saldo · valor de propuestas y adicionales menos lo recibido</p>
         <div class="lista-filas">${porEnc.filter(r => r.esperado && !r.pagado && !r.saldado).map(r => `<button class="mov-fila" data-lista="${r.e.id}"><span class="mov-txt"><b>${esc(r.e.nombre)}</b><span class="barra"><i style="width:${Math.min(100, r.recibido / r.esperado * 100)}%"></i></span></span><span class="mov-val">${cop(r.porCobrar)}</span></button>`).join('')}</div>
       </section>
@@ -187,7 +205,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
   // Lo que se está viendo, para la esquina superior derecha: General o el proyecto elegido
   const encSel = encargos.find(e => e.id === lista);
   const vista = encSel ? { txt: encSel.nombre.replace(/^\s*\d{2}\s+I\s+/, ''), cls: 'proy', titulo: encSel.nombre } : lista === 'general' ? { txt: 'Gastos generales', cls: 'general', titulo: 'Solo lo que no pertenece a ningún proyecto' } : { txt: 'General', cls: 'general', titulo: 'Todo regenerativo' };
-  return { html, mes, mesTxt, vista, montar: recargar => {
+  return { html, mes, mesTxt, eyebrow, vista, montar: recargar => {
     document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
     document.querySelectorAll('[data-origen]').forEach(b => b.onclick = () => {
@@ -262,8 +280,10 @@ export async function vistaFinanzas(mesSel, listaSel) {
       window.regModalValores?.(e, props.find(p => p.encargo_id === e.id) || null, recargar); });
     // Tabla de encargos: cada fila lleva a las finanzas de ese encargo (los botones de valor y saldado siguen funcionando en el sitio)
     document.querySelectorAll('[data-ir-enc]').forEach(f => f.onclick = ev => { if (ev.target.closest('button, a, input, select')) return; location.hash = `#/${f.dataset.irEnc}/finanzas`; scrollTo(0, 0); });
-    document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${mes}/${f.dataset.lista}`; scrollTo(0, 0); });
-    $('#lista').onchange = ev => { location.hash = `#/finanzas/${mes}/${ev.target.value}`; };
+    document.querySelectorAll('[data-lista]').forEach(f => f.onclick = () => { location.hash = `#/finanzas/${modoAnio ? a : mes}/${f.dataset.lista}`; scrollTo(0, 0); });
+    $('#lista').onchange = ev => { location.hash = `#/finanzas/${modoAnio ? a : mes}/${ev.target.value}`; };
+    document.querySelectorAll('[data-graf]').forEach(b => b.onclick = () => { GRAF.vista = b.dataset.graf; const y = scrollY; recargar(); requestAnimationFrame(() => scrollTo(0, y)); });
+    document.querySelectorAll('[data-ir-mes]').forEach(tr => tr.onclick = () => { location.hash = `#/finanzas/${tr.dataset.irMes}/${lista}`; scrollTo(0, 0); });
     document.querySelectorAll('.g-col').forEach(col => {
       col.onmouseenter = () => { const t = $('#tip-fin'); t.innerHTML = col.dataset.tip; t.style.display = 'block'; };
       col.onmousemove = ev => { const t = $('#tip-fin'), r = col.closest('.graf').getBoundingClientRect(); t.style.left = (ev.clientX - r.left + 12) + 'px'; t.style.top = (ev.clientY - r.top - 10) + 'px'; };
@@ -272,18 +292,18 @@ export async function vistaFinanzas(mesSel, listaSel) {
   } };
 }
 
-function barras(serie) {
+function barras(serie, nomGas = 'Gastos') {
   const max = Math.max(1, ...serie.flatMap(s => [s.ing, s.gas]));
   const H = 220;
   return `<div class="graf">
-    <div class="leyenda-fin"><span><i style="background:${C_ING}"></i>Ingresos</span><span><i style="background:${C_GAS}"></i>Gastos</span></div>
+    <div class="leyenda-fin"><span><i style="background:${C_ING}"></i>Ingresos</span><span><i style="background:${C_GAS}"></i>${nomGas}</span></div>
     <div class="graf-area" style="height:${H + 26}px">
       ${[0.5, 1].map(f => `<div class="graf-guia" style="bottom:${26 + H * f}px"><span>${compacto(max * f)}</span></div>`).join('')}
       <div class="graf-cols">${serie.map(s => {
         const [y, mm] = s.k.split('-').map(Number);
-        return `<div class="g-col" data-tip="<b>${MESES[mm - 1]} ${y}</b><br>Ingresos ${cop(s.ing)}<br>Gastos ${cop(s.gas)}<br>Balance ${cop(s.ing - s.gas)}">
+        return `<div class="g-col" data-tip="<b>${MESES[mm - 1]} ${y}</b><br>Ingresos ${cop(s.ing)}<br>${nomGas} ${cop(s.gas)}<br>Balance ${cop(s.ing - s.gas)}">
           <div class="g-par" style="height:${H}px"><span style="height:${s.ing / max * H}px;background:${C_ING}"></span><span style="height:${s.gas / max * H}px;background:${C_GAS}"></span></div>
-          <div class="g-mes">${MESES[mm - 1].slice(0, 3)}</div></div>`;
+          <div class="g-mes"><span class="gm-l">${MESES[mm - 1].slice(0, 3)}</span><span class="gm-c">${MESES[mm - 1][0].toUpperCase()}</span></div></div>`;
       }).join('')}</div>
       <div id="tip-fin" class="tip-fin"></div>
     </div></div>`;
