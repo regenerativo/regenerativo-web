@@ -28,13 +28,16 @@ async function tokenCorreo() {
 }
 
 async function enviar(asunto: string, html: string) {
+  // Un correo por destino: si van juntos, la regla del buzón lo manda solo a la carpeta de facturación
   const at = await tokenCorreo();
-  const s = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
-    method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html },
-      toRecipients: DESTINOS.map((address) => ({ emailAddress: { address } })) }, saveToSentItems: true }),
-  });
-  if (!s.ok) throw new Error(`Correo ${s.status}: ${(await s.text()).slice(0, 200)}`);
+  for (const address of DESTINOS) {
+    const s = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+      method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html },
+        toRecipients: [{ emailAddress: { address } }] }, saveToSentItems: address === DESTINOS[0] }),
+    });
+    if (!s.ok) throw new Error(`Correo ${s.status}: ${(await s.text()).slice(0, 200)}`);
+  }
 }
 
 // Lunes 8:00 a. m. (comité regenerativo): lo que hay que revisar de finanzas
@@ -117,15 +120,7 @@ Deno.serve(async (req) => {
     <p style="font-size:12px;color:#6B6B6B;border-top:1px dotted #CFCFCF;padding-top:12px">Aviso automático del portal de regenerativo. Abre cada proyecto para ver el detalle en sus finanzas.</p></div>`;
   const asunto = n === 1 ? `Finanzas · ${encs?.find((x) => x.id === ids[0])?.nombre.replace(/^\s*\d{2}\s+I\s+/, "") || "proyecto"} actualizado` : `Finanzas · ${n} proyectos actualizados`;
 
-  try {
-    const at = await tokenCorreo();
-    const s = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
-      method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html },
-        toRecipients: DESTINOS.map((address) => ({ emailAddress: { address } })) }, saveToSentItems: true }),
-    });
-    if (!s.ok) throw new Error(`Correo ${s.status}: ${(await s.text()).slice(0, 200)}`);
-  } catch (e) { return json({ error: (e as Error).message }, 500); }   // queda pendiente y se reintenta en la próxima vuelta
+  try { await enviar(asunto, html); } catch (e) { return json({ error: (e as Error).message }, 500); }   // queda pendiente y se reintenta en la próxima vuelta
 
   await admin.from("fin_cambios").update({ enviado: true }).in("id", pend.map((x) => x.id));
   return json({ ok: true, enviados: pend.length, proyectos: n });
