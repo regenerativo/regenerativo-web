@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=115';
-import * as M from './modulos.js?v=115';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=115';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=115';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=115';
+import * as D from './datos.js?v=116';
+import * as M from './modulos.js?v=116';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=116';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=116';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=116';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -706,7 +706,10 @@ async function vistaEncargos(s) {
     const q = $('#buscar').value.toLowerCase();
     const f = conTiempo.filter(e => (filtro === 'todos' || fase(e) === filtro) &&
       (!q || [e.nombre, e.codigo, e.cliente?.nombre].join(' ').toLowerCase().includes(q)));
-    $('#tabla').innerHTML = f.length ? `<div class="lv-enc-grid">${f.map((e, i) => {
+    // Encargos agrupados por año, del más reciente al más viejo (año del nombre «26  I …», o del código SCREG_26…)
+    const anioDe = e => { const m = (e.nombre || '').match(/^\s*(\d{2})\s+I\s/) || (e.codigo || '').match(/^[A-Z]+_(\d{2})/); return m ? 2000 + Number(m[1]) : Number((e.inicio || '').slice(0, 4)) || 0; };
+    const anios = [...new Set(f.map(anioDe))].sort((a, b) => b - a);
+    const tarjeta = (e, i) => {
       const t = Math.round((e.tiempo || 0) * 100), lugar = e.cliente?.ciudad || e.ciudad || '';
       const cov = [1, 2, 3, 5, 6, 7][[...String(e.id || e.nombre)].reduce((a, c) => a + c.charCodeAt(0), 0) % 6];
       return `<a class="lv-card lv-enc ${semaforo(e)}" href="#/${D.slugEncargo(e)}" style="--i:${i}">
@@ -719,7 +722,11 @@ async function vistaEncargos(s) {
         <div class="lv-enc-pie"><span class="lv-ava" title="${esc(e.cliente?.nombre || '')}">${ini(e.cliente?.nombre) || '·'}</span><span class="lv-enc-cli">${esc(e.cliente?.nombre || 'Sin cliente')}</span>
           <span class="lv-enc-fin"><small>Entrega</small>${e.fin ? fecha(e.fin) : 'Sin fecha'}</span>
           ${admin && webCarpeta(e) ? `<span class="lv-od" data-od="${esc(webCarpeta(e))}" title="Abrir folder en OneDrive">${ico('carpeta')}</span>` : ''}</div>
-      </a>`; }).join('')}</div>`
+      </a>`; };
+    let n = 0;
+    $('#tabla').innerHTML = f.length ? anios.map(y => { const l = f.filter(e => anioDe(e) === y);
+      return `<section class="enc-anio"><div class="enc-anio-cab"><h2>${y || 'Sin año'}</h2><span>${l.length} encargo${l.length === 1 ? '' : 's'}</span></div>
+        <div class="lv-enc-grid">${l.map(e => tarjeta(e, n++)).join('')}</div></section>`; }).join('')
       : `<div class="vacio">${lista.length ? 'Ningún encargo coincide.' : 'Todavía no hay encargos.'}</div>`;
     document.querySelectorAll('[data-od]').forEach(x => x.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); window.open(x.dataset.od, '_blank', 'noopener'); });
   };

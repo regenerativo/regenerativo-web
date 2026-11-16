@@ -9796,3 +9796,25 @@ html body .lv .lv-tabs-in > a {
     display: inline;
   }
 }
+/* Encargos agrupados por año */
+.enc-anio + .enc-anio {
+  margin-top: 36px;
+}
+.enc-anio-cab {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px dotted rgba(30, 34, 29, 0.25);
+}
+.enc-anio-cab h2 {
+  margin: 0;
+  font-weight: 300;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+}
+.enc-anio-cab span {
+  color: var(--gris);
+  font-size: 13px;
+}
