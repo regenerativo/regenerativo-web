@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=104';
-import { cop, fecha, iso } from './formato.js?v=104';
-import { btnIco, ico } from './iconos.js?v=104';
-import { leerMonai } from './monai.js?v=104';
+import * as D from './datos.js?v=105';
+import { cop, fecha, iso } from './formato.js?v=105';
+import { btnIco, ico } from './iconos.js?v=105';
+import { leerMonai } from './monai.js?v=105';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -153,9 +153,9 @@ export async function vistaFinanzas(mesSel, listaSel) {
     </section>
     ${!pend.length ? `<section class="pend" id="por-confirmar"><div class="pend-cab"><h3>Por confirmar${D.SIN_CORREO ? '' : ' <span class="pend-n">0</span>'}</h3><span class="sub">Lo que llega por correo queda aquí hasta que lo apruebes con ✓; mientras tanto no cuenta en los totales. ${D.SIN_CORREO ? 'Esta vista previa no puede leer los pendientes del correo: en el portal real aparecen todos aquí.' : 'No hay movimientos pendientes.'}</span></div></section>` : ''}
     ${pend.length ? `<section class="pend" id="por-confirmar">
-      <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Llegaron por correo y están sujetos a tu aprobación: no cuentan en los totales hasta que les des ✓.</span></div>
+      <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Llegan del correo para tu aprobación: elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
       ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 ? 'pend-oculta' : ''}" data-pend="${x.id}">
-        <div class="pend-txt"><span class="sub">${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
+        <div class="pend-txt"><span class="sub">${fecha(x.fecha)}${x.origen === 'monai' ? ' · MONAI' : x.origen === 'correo' ? ' · Correo' : ''}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
         <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
         <div class="pend-sel">
           <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
@@ -178,7 +178,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
       sel('categoria_id').disabled = sel('tipo').value === 'socio';
       fila.querySelector('[data-ok]').onclick = async () => {
         const t = sel('tipo').value;
-        await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'confirmado', tipo: t, categoria_id: t === 'socio' ? null : sel('categoria_id').value || null, encargo_id: sel('encargo_id').value || null });
+        await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'confirmado', tipo: t, categoria_id: t === 'socio' ? null : sel('categoria_id').value || null, encargo_id: sel('encargo_id').value || null,
+          ...((sel('categoria_id').value || null) !== (pend.find(x => x.id === fila.dataset.pend)?.categoria_id || null) ? { subcategoria: null } : {}) });   // si cambió la categoría, la subcategoría vieja ya no aplica
         recargar();
       };
       fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); recargar(); };
