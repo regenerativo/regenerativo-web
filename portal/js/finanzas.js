@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=117';
-import { cop, fecha, iso } from './formato.js?v=117';
-import { btnIco, ico } from './iconos.js?v=117';
-import { leerMonai } from './monai.js?v=117';
+import * as D from './datos.js?v=119';
+import { cop, fecha, iso } from './formato.js?v=119';
+import { btnIco, ico } from './iconos.js?v=119';
+import { leerMonai } from './monai.js?v=119';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -84,7 +84,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const suma = (l, t) => l.filter(x => x.tipo === t).reduce((s, x) => s + Number(x.valor), 0);
   const SALARIO = cats.find(c => c.nombre === 'Nómina y honorarios')?.id;
   const esSal = x => x.categoria_id === SALARIO;
-  const ing = suma(delMes, 'ingreso'), gas = suma(delMes.filter(x => !esSal(x)), 'gasto'), sal = suma(delMes.filter(esSal), 'gasto');
+  // Los pagos al equipo (Nómina y honorarios, incluido lo que se paga Andrés) son un gasto más de la empresa
+  const ing = suma(delMes, 'ingreso'), gas = suma(delMes, 'gasto'), sal = suma(delMes.filter(esSal), 'gasto');
 
   // Valor de cada encargo: honorarios de la propuesta (o del documento web) + adendas aprobadas; menos lo recibido
   const porEnc = encargos.map(e => ({ e, ...cuentasEncargo(e, { props, docs, adics: adicsMan, movs }) }));
@@ -92,7 +93,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
 
   // Últimos 6 meses
   const meses = Array.from({ length: 6 }, (_, i) => { const d = new Date(a, m - 1 - (5 - i), 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; });
-  const serie = meses.map(k => ({ k, ing: suma(movs.filter(x => mesDe(x.fecha) === k && enLista(x)), 'ingreso'), gas: suma(movs.filter(x => mesDe(x.fecha) === k && !esSal(x) && enLista(x)), 'gasto') }));
+  const serie = meses.map(k => ({ k, ing: suma(movs.filter(x => mesDe(x.fecha) === k && enLista(x)), 'ingreso'), gas: suma(movs.filter(x => mesDe(x.fecha) === k && enLista(x)), 'gasto') }));
 
   // Todo el año del mes elegido: ingresos y egresos (gastos + salario) de cada mes
   const mesesAnio = Array.from({ length: 12 }, (_, i) => `${a}-${String(i + 1).padStart(2, '0')}`);
@@ -104,7 +105,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
       return `<tr class="clic${x.k === mes && !modoAnio ? ' mes-actual' : ''}${vacio ? ' mes-vacio' : ''}" data-ir-mes="${x.k}"><td><span class="m-largo">${MESES[mm - 1]}</span><span class="m-corto">${MESES[mm - 1].slice(0, 3)}</span></td><td class="num ingreso">${x.ing ? nc(x.ing) : '—'}</td><td class="num gasto">${x.gas ? nc(x.gas) : '—'}</td><td class="num ${b < 0 ? 'xxx' : ''}">${vacio ? '—' : (b < 0 ? '−' : '') + nc(Math.abs(b))}</td></tr>`; }).join('')}
     <tr class="total"><td>Total ${a}</td><td class="num">${nc(totAnio.ing)}</td><td class="num">${nc(totAnio.gas)}</td><td class="num ${totAnio.ing - totAnio.gas < 0 ? 'xxx' : ''}">${totAnio.ing - totAnio.gas < 0 ? '−' : ''}${nc(Math.abs(totAnio.ing - totAnio.gas))}</td></tr></tbody></table></div>`;
 
-  const catsGasto = cats.filter(c => c.tipo === 'gasto' && c.id !== SALARIO).map(c => ({ ...c, gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
+  // Todas las categorías de gasto, incluida Nómina y honorarios (pagos al equipo). En «Todo el año» el presupuesto mensual se multiplica por 12
+  const catsGasto = cats.filter(c => c.tipo === 'gasto').map(c => ({ ...c, presupuesto_mensual: c.presupuesto_mensual == null ? null : Number(c.presupuesto_mensual) * (modoAnio ? 12 : 1), gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
     .sort((x, y) => y.gastado - x.gastado);
   // Columnas de ingresos: una por subcategoría de cada categoría de ingreso (Honorarios, Otros ingresos…)
   const delIng = delMes.filter(x => x.tipo === 'ingreso');
@@ -135,7 +137,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
           <div class="mon-et">Balance de la operación</div>
           <div class="mon-cifra">${balance < 0 ? '−' : '+'}${cop(Math.abs(balance)).replace(' COP', '')}<span>COP</span></div>
           <div class="mon-pills"><span class="pill-gas">− ${cop(gas)}</span><span class="pill-ing">+ ${cop(ing)}</span></div>
-          <div class="mon-sal"><span>Tu salario <b>${cop(sal)}</b></span><span>Queda en regenerativo <b class="${balance - sal < 0 ? 'xxx' : ''}">${balance - sal < 0 ? '−' : ''}${cop(Math.abs(balance - sal))}</b></span></div>
+          <div class="mon-sal"><span>Nómina y honorarios <b>${cop(sal)}</b> <small>(incluida en los gastos)</small></span></div>
           <div class="mon-filtros">
             <label class="per-sel"><span>Año</span><select id="sel-anio" aria-label="Año">${aniosDisp.map(y => `<option value="${y}" ${y === a ? 'selected' : ''}>${y}</option>`).join('')}</select></label>
             <label class="per-sel"><span>Mes</span><select id="sel-mes" aria-label="Mes"><option value="" ${modoAnio ? 'selected' : ''}>Todo el año</option>${MESES.map((n, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${!modoAnio && i + 1 === m ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
