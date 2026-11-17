@@ -1,8 +1,18 @@
-import * as D from './datos.js?v=125';
-import * as M from './modulos.js?v=125';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=125';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=125';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=125';
+import * as D from './datos.js?v=126';
+import * as M from './modulos.js?v=126';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=126';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=126';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=126';
+
+// Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
+window.alert = m => {
+  const t = document.createElement('div'); t.className = 'lv-toast'; t.setAttribute('role', 'status');
+  t.textContent = String(m ?? '').trim();
+  document.body.appendChild(t);
+  const dura = 3500 + t.textContent.length * 35;
+  t.onclick = () => t.remove();
+  setTimeout(() => t.classList.add('fuera'), dura); setTimeout(() => t.remove(), dura + 600);
+};
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -180,6 +190,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
         ${enlacesGen}
       </nav>
       <a class="lv-web" href="https://regenerativo.co/"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Volver a regenerativo.co</a>
+      ${s.admin ? `<a class="lv-web lv-claude-hoja" href="https://claude.ai/project/01a07ee0-6e6e-76ae-8f6f-875a422348d9" target="_blank" rel="noopener"><span class="lv-ico-l"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg></span>Abrir Claude</a>` : ''}
       <div class="pie lv-pie-lado"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Cerrar sesión</button></div>
     </div></aside>
     <header class="lv-arriba" id="lv-arriba">
@@ -420,7 +431,7 @@ async function vistaInicio(s) {
   espera.filter(p => !(diasEnv(p) > 30)).forEach(p => { const d = p.fecha_envio ? 30 - diasEnv(p) : null;
     rec(d !== null && d <= 7 ? 'alto' : 'medio', `Hacer seguimiento a ${p.nombre}`, d !== null ? `${p.cliente?.nombre || 'Cliente'} · ${d > 0 ? d + ' días para decidir' : 'vence hoy'}` : `${p.cliente?.nombre || 'Cliente'} · falta la fecha de envío`, '#/propuestas'); });
   borrador.forEach(p => rec('medio', `Enviar la propuesta ${p.nombre}`, p.archivo_nombre ? 'Está en borrador' : 'Falta cargar el Word', '#/propuestas'));
-  props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera').forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
+  props.filter(p => p.estado !== 'borrador' && !p.fecha_envio && p.estado !== 'en_espera' && !(p.estado === 'despego' && !Number(p.honorarios))).forEach(p => rec('bajo', `Poner la fecha de envío de ${p.nombre}`, 'Propuestas preliminares', '#/propuestas'));
   activos.filter(e => !e.inicio).forEach(e => rec('medio', `Definir el inicio de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'Propuesta aprobada; el encargo aún no ha iniciado', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.inicio && !e.fin).forEach(e => rec('bajo', `Agregar la fecha de entrega de ${e.nombre.replace(/^\d{2}\s+I\s+/, '')}`, 'El encargo está en curso; con la fecha de entrega se mide el tiempo', `#/${D.slugEncargo(e)}`));
   activos.filter(e => e.fin && e.fin >= hoy && e.fin.slice(0, 7) === mes).forEach(e => rec('medio', `${e.nombre.replace(/^\d{2}\s+I\s+/, '')} termina el ${fecha(e.fin)}`, 'Fecha de fin este mes', `#/${D.slugEncargo(e)}`));
@@ -1410,8 +1421,8 @@ function modalAjustesEncargo(e, prop) {
 
 // ---------------- Ajustes generales ----------------
 async function vistaAjustes(s, qs) {
-  const [fest, us, encs, od] = await Promise.all([D.festivos(), D.usuarios().catch(() => []), D.encargos(),
-    D.MODO_DEMO ? { conectado: false } : D.onedrive('estado').catch(e => ({ error: e.message }))]);
+  const [fest, us, encs, od, clis] = await Promise.all([D.festivos(), D.usuarios().catch(() => []), D.encargos(),
+    D.MODO_DEMO ? { conectado: false } : D.onedrive('estado').catch(e => ({ error: e.message })), D.clientes().catch(() => [])]);
   const msjOd = { ok: 'OneDrive quedó conectado.', error: 'No se pudo conectar OneDrive. Vuelve a intentar.', expirado: 'La autorización tardó demasiado. Vuelve a intentar.' }[qs?.get('onedrive')] || '';
   const ROL = { admin: 'Administración', facturacion: 'Facturación', equipo: 'Equipo', cliente: 'Cliente' };
   const html = `
@@ -1421,7 +1432,7 @@ async function vistaAjustes(s, qs) {
     <section class="panel">
       <div class="od-cab"><h3>Usuarios</h3><span class="sub">${us.length} · las invitaciones se envían desde el engranaje de cada encargo</span></div>
       <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Usuario</th><th>Rol</th><th class="col-opc">Encargos</th><th></th></tr></thead>
-      <tbody>${us.map(u => `<tr><td><b>${esc(u.nombre || u.email)}</b><div class="sub">${esc(u.email || '')}${u.telefono ? ' · ' + esc(u.telefono) : ''}</div></td>
+      <tbody>${us.map(u => `<tr><td><b>${esc(u.nombre || u.email)}</b>${u.nombre || u.telefono ? `<div class="sub">${u.nombre ? esc(u.email || '') : ''}${u.nombre && u.telefono ? ' · ' : ''}${u.telefono ? esc(u.telefono) : ''}</div>` : ''}</td>
         <td>${u.roles.length ? u.roles.map(r => `<span class="etiqueta">${ROL[r] || esc(r)}</span>`).join(' ') : u.encargos.length ? `<span class="etiqueta">${ROL[u.encargos[0].rol] || esc(u.encargos[0].rol)}</span>` : '—'}</td>
         <td class="col-opc sub">${u.encargos.map(x => esc(x.nombre)).join(', ') || '—'}</td>
         <td class="acciones-fila">${btnIco('editar', 'Editar usuario', `data-us="${u.id}"`)}</td></tr>`).join('') || '<tr><td colspan="4" class="sub">Sin usuarios.</td></tr>'}</tbody></table></div>
@@ -1434,6 +1445,13 @@ async function vistaAjustes(s, qs) {
         <td class="col-opc">${x.cliente_usuario_id ? '<span class="etiqueta despego">Activo</span>' : '<span class="etiqueta">Sin acceso</span>'}</td>
         <td class="acciones-fila"><a class="btn mini sec" href="#/${D.slugEncargo(x)}/ajustes">Gestionar</a></td></tr>`).join('')}</tbody></table></div>
     </section>
+    <section class="panel"><div class="od-cab"><h3>Clientes</h3><span class="sub">${clis.length} · datos que usan las propuestas, contratos y avisos por correo</span><button type="button" class="btn mini sec" id="cli-nuevo" style="margin-left:auto">+ Nuevo cliente</button></div>
+      <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Cliente</th><th class="col-opc">Documento</th><th class="col-opc">Correo</th><th class="col-opc">Teléfono</th><th></th></tr></thead>
+      <tbody>${clis.map(c => `<tr><td><b>${esc(c.nombre)}</b><div class="sub">${c.tipo === 'empresa' ? 'Empresa' : 'Persona'}${c.representante ? ' · ' + esc(c.representante) : ''}</div></td>
+        <td class="col-opc">${c.documento ? esc((c.tipo_documento ? c.tipo_documento + ' ' : '') + c.documento) : '<span class="xxx">XXX</span>'}</td>
+        <td class="col-opc">${c.email ? esc(c.email) : '<span class="xxx">Sin correo</span>'}</td>
+        <td class="col-opc">${esc(c.telefono || '—')}</td>
+        <td class="acciones-fila">${btnIco('editar', 'Editar cliente', `data-cli="${c.id}"`)}</td></tr>`).join('') || '<tr><td colspan="5" class="sub">Sin clientes.</td></tr>'}</tbody></table></div></section>
     <section class="panel"><div class="od-cab"><h3>Festivos</h3><span class="sub">Colombia · cuentan para los días de trabajo de los encargos</span></div>
       <div id="calendario"></div>
       ${D.MODO_DEMO ? '<button class="btn sec mini" id="reiniciar" style="margin-top:12px">Reiniciar datos de ejemplo</button>' : ''}</section>`;
@@ -1442,6 +1460,8 @@ async function vistaAjustes(s, qs) {
   const r = $('#reiniciar'); if (r) r.onclick = () => { D.reiniciarDemo(); location.hash = '#/'; ir(); };
   $('#od-conectar').onclick = async () => { try { location.href = (await D.onedrive('url')).url; } catch (e) { alert(msg(e)); } };
   document.querySelectorAll('[data-us]').forEach(b => b.onclick = () => modalUsuario(us.find(u => u.id === b.dataset.us)));
+  document.querySelectorAll('[data-cli]').forEach(b => b.onclick = () => modalCliente(clis.find(c => c.id === b.dataset.cli)));
+  $('#cli-nuevo').onclick = () => modalCliente(null);
   document.querySelectorAll('[data-copia]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copia); } catch (err) {} const o = b.textContent; b.textContent = 'Copiado ✓'; setTimeout(() => b.textContent = o, 1600); });
 }
 
@@ -1465,6 +1485,38 @@ function calendarioFestivos(el, fest) {
     el.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { m += Number(b.dataset.d); if (m < 0) { m = 11; a--; } if (m > 11) { m = 0; a++; } pintar(); });
   };
   pintar();
+}
+
+// Clientes: los datos legales y de contacto quedan en un solo lugar (propuestas, contratos, avisos)
+function modalCliente(c) {
+  const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
+  const v = k => esc(c?.[k] || '');
+  fondo.innerHTML = `<form class="modal" id="fcli"><h2>${c ? 'Cliente' : 'Nuevo cliente'}</h2>
+    <div class="grilla-form">
+      <div class="ancho"><label>Nombre o razón social</label><input name="nombre" required value="${v('nombre')}"></div>
+      <div><label>Tipo</label><select name="tipo"><option value="persona"${c?.tipo !== 'empresa' ? ' selected' : ''}>Persona</option><option value="empresa"${c?.tipo === 'empresa' ? ' selected' : ''}>Empresa</option></select></div>
+      <div><label>Tipo de documento</label><select name="tipo_documento">${['', 'CC', 'NIT', 'CE', 'Pasaporte'].map(t => `<option${(c?.tipo_documento || '') === t ? ' selected' : ''} value="${t}">${t || '—'}</option>`).join('')}</select></div>
+      <div><label>Número de documento</label><input name="documento" value="${v('documento')}"></div>
+      <div><label>Representante legal</label><input name="representante" value="${v('representante')}"></div>
+      <div><label>Documento del representante</label><input name="documento_representante" value="${v('documento_representante')}"></div>
+      <div><label>Correo (varios separados por coma)</label><input name="email" value="${v('email')}"></div>
+      <div><label>Teléfono</label><input name="telefono" value="${v('telefono')}"></div>
+      <div><label>Ciudad</label><input name="ciudad" value="${v('ciudad')}"></div>
+      <div><label>Dirección</label><input name="direccion" value="${v('direccion')}"></div>
+    </div>
+    <div class="aviso" id="aviso"></div>
+    <div class="pie-modal"><button type="button" class="btn sec" id="cancelar">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`;
+  document.body.appendChild(fondo);
+  $('#cancelar', fondo).onclick = () => fondo.remove();
+  $('#fcli', fondo).onsubmit = async ev => {
+    ev.preventDefault();
+    const d = Object.fromEntries([...new FormData(ev.target)].map(([k, x]) => [k, String(x).trim() || null]));
+    if (!d.nombre) { $('#aviso', fondo).textContent = 'Escribe el nombre del cliente.'; return; }
+    if (d.email && !d.email.split(',').every(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x.trim()))) { $('#aviso', fondo).textContent = 'Revisa el correo: no parece válido.'; return; }
+    d.tipo = d.tipo || 'persona';
+    try { if (c) await D.actualizarCliente(c.id, d); else await D.crearCliente(d); fondo.remove(); ir(); }
+    catch (err) { $('#aviso', fondo).textContent = msg(err); }
+  };
 }
 
 function modalUsuario(u) {
@@ -1504,7 +1556,7 @@ async function vistaPropuestas(s) {
         <tbody>${f.map(p => `
           <tr style="--acc-w:${((accionesPropuesta(p).match(/<(button|a) /g) || []).length) * 40 + 8}px">
             <td class="sub col-opc">${esc(p.codigo)}</td>
-            <td><b>${esc(p.nombre)}</b><div class="sub">${servs(p).map(esc).join(' · ') || 'Sin servicio'}<span class="solo-movil"> · ${esc(p.codigo)}</span></div></td>
+            <td><b>${esc(p.nombre)}</b><div class="sub">${servs(p).map(esc).join(' · ') || 'Sin servicio'}<span class="solo-movil"> · ${esc(p.codigo)}</span></div><div class="sub solo-movil">${esc(p.cliente?.nombre || 'Sin cliente')} · ${p.honorarios ? cop(p.honorarios) : 'Sin valor'} · ${p.fecha_envio ? 'Enviada ' + fecha(p.fecha_envio) : 'Sin fecha de envío'}</div></td>
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
             <td class="num col-opc">${p.honorarios ? cop(p.honorarios) : '—'}</td>
             <td class="col-opc">${`<label class="fecha-envio" title="Fecha de envío · clic para cambiarla">${p.fecha_envio ? fecha(p.fecha_envio) : '<span class="xxx">Sin fecha</span>'}${ico('editar')}<input type="date" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" aria-label="Fecha de envío"></label>${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
