@@ -13,6 +13,28 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
+    const cuerpo = await req.clone().json().catch(() => ({}));
+    // Cuenta del contador (facturacion@): solo ve Finanzas. Se invita sin contraseña: la persona la define desde el enlace del correo.
+    if (cuerpo.rol === "facturacion") {
+      const admin0 = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: cl } = await admin0.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle();
+      let permitido = !!cl?.refresh_token && cuerpo.clave === cl.refresh_token;
+      if (!permitido) {
+        const u0 = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
+        const { data: a } = await u0.rpc("es_admin"); permitido = !!a;
+      }
+      if (!permitido) return responder({ error: "Solo administración puede invitar." }, 403);
+      const correo = String(cuerpo.email || "").trim().toLowerCase();
+      if (!/^[^@\s]+@regenerativo\.co$/.test(correo)) return responder({ error: "La cuenta de facturación debe ser un correo de regenerativo.co." }, 400);
+      const { data: inv, error: e3 } = await admin0.auth.admin.inviteUserByEmail(correo, { redirectTo: cuerpo.redirect || "https://regenerativo.co/portal/" });
+      if (e3) return responder({ error: e3.message }, 400);
+      const uid = inv.user?.id;
+      if (uid) {
+        await admin0.from("perfiles").upsert({ id: uid, email: correo, nombre: "Facturación" });
+        await admin0.from("roles_usuario").upsert({ usuario_id: uid, rol: "facturacion" });
+      }
+      return responder({ ok: true, usuario: uid });
+    }
     const usuario = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
     });
