@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=127';
-import * as M from './modulos.js?v=127';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=127';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=127';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=127';
+import * as D from './datos.js?v=128';
+import * as M from './modulos.js?v=128';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=128';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=128';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=128';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -528,6 +528,27 @@ function montarComentario(ctx) {
     } catch (err) { est.textContent = msg(err); btn.disabled = false; }
   };
 }
+// Trazabilidad de correos: línea de tiempo de lo enviado al cliente y lo recibido de él
+function vistaCorreos(lista, admin, e) {
+  const env = lista.filter(c => c.direccion === 'enviado').length, rec = lista.length - env;
+  const hora = f => new Date(f).toLocaleString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' });
+  const mes = f => new Date(f).toLocaleDateString('es-CO', { month: 'long', year: 'numeric', timeZone: 'America/Bogota' });
+  let ult = '';
+  const filas = lista.map(c => {
+    const m = mes(c.fecha); const cab = m !== ult ? `<li class="cor-mes">${esc(m)}</li>` : ''; ult = m;
+    const quien = c.direccion === 'enviado' ? 'Para ' + (c.para || '') : 'De ' + (c.de || '');
+    return `${cab}<li class="cor ${c.direccion}">
+      <span class="cor-dir" title="${c.direccion === 'enviado' ? 'Enviado al cliente' : 'Recibido del cliente'}">${c.direccion === 'enviado' ? '↗' : '↙'}</span>
+      <div class="cor-cuerpo"><div class="cor-cab"><b>${esc(c.asunto || '(sin asunto)')}</b></div>
+        <div class="sub">${c.direccion === 'enviado' ? 'Enviado' : 'Recibido'} · ${esc(hora(c.fecha))}${c.adjuntos ? ' · con adjuntos' : ''} · ${esc(quien.length > 80 ? quien.slice(0, 80) + '…' : quien)}</div>
+        ${admin && c.resumen ? `<p class="cor-res">${esc(c.resumen)}</p>` : ''}
+        ${admin && c.web ? `<a class="lv-link" href="${esc(c.web)}" target="_blank" rel="noopener">Abrir en Outlook ${ico('ver')}</a>` : ''}</div></li>`;
+  }).join('');
+  const sinCorreo = admin && !e.cliente?.email ? `<p class="aviso">Este cliente no tiene correo en su ficha: agrégalo en Ajustes → Clientes para que sus correos aparezcan aquí.</p>` : '';
+  return `<section class="panel"><div class="od-cab cor-top"><h3>Correos con el cliente</h3><span class="sub">${env} enviados · ${rec} recibidos · se actualiza cada hora</span></div>
+    ${sinCorreo}${lista.length ? `<ul class="cor-linea">${filas}</ul>` : '<p class="sub">Todavía no hay correos con el cliente de este encargo.</p>'}</section>`;
+}
+
 function vistaComentarios(ctx, coms, pintar) {
   const { admin } = ctx;
   const ab = coms.filter(c => c.estado === 'abierto').length;
@@ -884,7 +905,7 @@ const MODULOS = [
   ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
   ['informes', 'Coordinación administrativa'], ['tecnica', 'Coordinación técnica'], ['obra', 'Coordinación de obra'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
-  ['comentarios', 'Comentarios'], ['resena', 'Reseña del proyecto'],
+  ['correos', 'Correos'], ['comentarios', 'Comentarios'], ['resena', 'Reseña del proyecto'],
 ];
 // Carpetas de OneDrive de cada módulo (plantilla REG_TEM DOCUMENTAL y, como respaldo, los nombres viejos).
 // Cada grupo usa la primera carpeta que exista. "RUTA#0" = solo los archivos sueltos de esa carpeta.
@@ -995,11 +1016,12 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const [docs, tareas, pres, movs, prop, coms] = await Promise.all([
     D.docsEncargo(e.id).catch(() => []), D.ganttTareas(e.id).catch(() => []), D.hayPresupuesto(e.id).catch(() => 0),
     s.facturacion ? D.finMovimientosEncargo(e.id).catch(() => []) : [], D.propuestaDeEncargo(e.id), D.comentarios(e.id).catch(() => [])]);
+  const correos = await D.correosEncargo(e.id).catch(() => []);
   const adics = await D.adicionalesEncargo(e.id).catch(() => []);
   const pagos = esCliente ? await D.pagosEncargo(e.id).catch(() => []) : [];
   const movsOk = movs.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const nTipo = t => docs.filter(d => d.tipo === t && (!esCliente || d.estado !== 'borrador')).length;
-  const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length, comentarios: coms.filter(c => c.estado === 'abierto').length };
+  const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length, comentarios: coms.filter(c => c.estado === 'abierto').length, correos: correos.length };
   let od = admin ? (conteoGuardado(e.id) || {}) : {};
   const n = k => (web[k] || 0) + (od[k] || 0);
   const visible = k => {
@@ -1153,6 +1175,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     return panelOneDrive($('#od'), e, [['']], { titulo: 'Folders del encargo' });
   }
   if (seccion === 'comentarios') return vistaComentarios(ctx, coms, pintar);
+  if (seccion === 'correos') return pintar(vistaCorreos(correos, admin, e));
   if (seccion === 'enviados' && !admin) return enviadosCliente(ctx, pintar);
   if (seccion === 'enviados' || seccion === 'recibidos') {
     if (!admin) { location.hash = base; return; }
@@ -1632,7 +1655,7 @@ function accionesPropuesta(p) {
 // Campos de "Detalles técnicos del encargo" y "Proyecto" (igual que en el Word SCREG_2XXXX_PROPUESTA)
 const DETALLES_PROPUESTA = [
   ['propietario', 'Nombre del propietario'], ['ubicacion_propietario', 'Ubicación del propietario'],
-  ['documento_cliente', 'Documento del cliente (NIT o cédula · si no aplica, escribe No aplica)', 'ancho'],
+  ['documento_cliente', 'Documento del cliente', 'ancho'],
   ['ubicacion', 'Ubicación del encargo'], ['direccion', 'Dirección del encargo'],
   ['area_predio', 'Área predio'], ['area_licencia', 'Área construida en licencia'],
   ['area_existente', 'Área construida existente'], ['area_intervenida', 'Área intervenida'],
@@ -1744,7 +1767,7 @@ async function modalPropuesta(p = null) {
     </div>
     <h3 style="margin:28px 0 0">Detalles técnicos del encargo</h3>
     <div class="grilla-form">
-      ${DETALLES_PROPUESTA.map(([k, t, c]) => `<div class="${c || ''}"><label>${t}</label><input name="${k}" value="${esc(p?.[k] || '')}"></div>`).join('')}
+      ${DETALLES_PROPUESTA.map(([k, t, c]) => `<div class="${c || ''}"><label>${t}</label><input name="${k}" value="${esc(p?.[k] || '')}"${k === 'documento_cliente' ? ' placeholder="NIT o cédula (p. ej. NIT 830.018.957-3) · No aplica · XXX si aún no lo tienes"' : ''}></div>`).join('')}
     </div>
     ${p?.archivo_nombre ? '<p class="sub" style="margin-top:12px">Si cambias los detalles técnicos, el Word de la propuesta económica se actualiza en OneDrive al guardar.</p>' : ''}
     </fieldset>

@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=127';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=128';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -424,6 +424,12 @@ export async function onedrive(accion, extra = {}) {
 }
 
 // ---------------- Comentarios y dudas del cliente ----------------
+// Correos enviados y recibidos con el cliente del encargo (los trae el buzón cada hora)
+export async function correosEncargo(encargoId) {
+  if (MODO_DEMO) return [];
+  const { data, error } = await (await cliente()).from('correos_encargo').select('id,fecha,direccion,de,para,asunto,resumen,web,adjuntos').eq('encargo_id', encargoId).order('fecha', { ascending: false });
+  if (error) throw error; return data || [];
+}
 export async function comentarios(encargoId) {
   if (MODO_DEMO) return [];
   const { data, error } = await (await cliente()).from('comentarios').select('*').eq('encargo_id', encargoId).order('creado', { ascending: false });
