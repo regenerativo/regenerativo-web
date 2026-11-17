@@ -7,6 +7,7 @@ const LIBS = [
 ];
 const FUENTES = { 'stolzl-light.ttf': 'assets/fonts/stolzl-light.ttf', 'stolzl-book.ttf': 'assets/fonts/stolzl-book.ttf', 'stolzl-medium.ttf': 'assets/fonts/stolzl-medium.ttf',
   'metronic-regular.otf': 'assets/fonts/metronic-regular.otf', 'metronic-semibold.otf': 'assets/fonts/metronic-semibold.otf', 'metronic-italic.otf': 'assets/fonts/metronic-italic.otf', 'metronic-light.otf': 'assets/fonts/metronic-light.otf' };
+const FIRMA_Y = 10.2; // base del texto a 11 pt
 // Orden de la marca: Stolzl en títulos, membrete y firma; Metronic Pro en el texto
 const GRIS = '#D9D9D9', TINTA = '#1E221D', GRIS_TXT = '#8A8A8A';
 const ANCHO = 612, MI = 57, MD = 42;   // papel legal 8.5 in = 612 pt; márgenes 0.79 in / 0.59 in
@@ -97,7 +98,12 @@ export async function descargarPDF({ servicio, documento, codigo, nombre, cuerpo
       { canvas: [{ type: 'rect', x: 0, y: 0, w: ANCHO, h: 22, color: GRIS }], margin: [0, 14, 0, 0] },
     ] }),
     footer: pag => ({ columns: [
-      { text: [{ text: 'Por  ', font: 'StolzlLight', fontSize: 10 }, { text: '____ ', font: 'Stolzl', color: TINTA, fontSize: 9 }, { text: 'regenerativo', font: 'Stolzl', bold: true, fontSize: 11 }], width: 'auto' },
+      // Firma «Por ＿ regenerativo»: la línea es un trazo continuo a la altura de la base del texto (como en la web)
+      { columns: [
+        { text: 'Por', font: 'StolzlLight', fontSize: 11, width: 'auto' },
+        { canvas: [{ type: 'line', x1: 2, y1: FIRMA_Y, x2: 2 + 18, y2: FIRMA_Y, lineWidth: 0.7, lineColor: '#000000' }], width: 22.5 },
+        { text: 'regenerativo', font: 'Stolzl', bold: true, fontSize: 11, width: 'auto' },
+      ], columnGap: 0, width: 'auto' },
       { text: 'info@regenerativo.co    @_regenerativo_    +57 320 215 0932', fontSize: 7.5, color: GRIS_TXT, alignment: 'right', marginTop: 2, width: '*' },
       { text: String(pag), font: 'Stolzl', bold: true, fontSize: 10.5, alignment: 'right', width: 28 },
     ], margin: [MI, 30, MD, 0] }),
