@@ -9849,3 +9849,4 @@ html body .lv .lv-tabs-in > a {
   width: 100%;
   text-transform: none;
 }
+.pend-sel select.falta { border-color: #8B1A1A; box-shadow: 0 0 0 2px rgba(139,26,26,.18); }

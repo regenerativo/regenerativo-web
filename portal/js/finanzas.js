@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=121';
-import { cop, fecha, iso } from './formato.js?v=121';
-import { btnIco, ico } from './iconos.js?v=121';
-import { leerMonai } from './monai.js?v=121';
+import * as D from './datos.js?v=122';
+import { cop, fecha, iso } from './formato.js?v=122';
+import { btnIco, ico } from './iconos.js?v=122';
+import { leerMonai } from './monai.js?v=122';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -61,12 +61,39 @@ const GRAF = { vista: 'anio' };   // gráfica de Finanzas: 'anio' (12 meses del 
 const ORIGENES = { correo: 'Correo', monai: 'MONAI', portal: 'Portal' };
 const origenDe = x => x.origen === 'correo' || x.origen === 'monai' ? x.origen : 'portal';
 const chipOrigen = x => `<span class="origen o-${origenDe(x)}" title="${origenDe(x) === 'portal' ? 'Escrito a mano en el portal' : origenDe(x) === 'monai' ? 'Importado de MONAI' : 'Leído del correo'}">${ORIGENES[origenDe(x)]}</span>`;
-const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
+const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : `<option value="" ${sel ? '' : 'selected'} disabled>Elige categoría</option>` + cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
+// Sugerencia para lo que llega por correo: el último movimiento confirmado del mismo comercio (Uber, Adobe, Claude…) dice su categoría y proyecto
+const RUIDO = new Set(['DL', 'DLO', 'BOLD', 'SA', 'SAS', 'PAGO', 'TRANSFERENCIA', 'COMPRA', 'RIDES', 'THE', 'CON', 'DEL', 'LOS', 'LAS']);
+const claveComercio = t => (String(t || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[A-Z]{3,}/g) || []).find(w => !RUIDO.has(w)) || '';
+function sugerencia(x, hist) {
+  const k = claveComercio(x.descripcion); if (!k || x.tipo === 'socio') return null;
+  const h = hist.filter(m => m.tipo === x.tipo && m.categoria_id && claveComercio(m.descripcion) === k).sort((a, b) => a.fecha < b.fecha ? 1 : -1)[0];
+  if (h) return { categoria_id: h.categoria_id, subcategoria: h.subcategoria || null, encargo_id: h.encargo_id || null };
+  return null;
+}
+// Si el comercio nunca se ha visto: reglas por palabras (categoría y subcategoría por nombre)
+const REGLAS = [
+  [/UBER|DIDI|CABIFY|TAXI|INDRIVE|SITP|TRANSMILENIO|PEAJE|PARQUEADERO|TERPEL|PRIMAX|BIOMAX/, 'Transporte', 'Transporte'],
+  [/ARCOS DORADOS|MCDONALD|RESTAUR|CAFE|COFFEE|JUAN VALDEZ|CREPES|\bPAN\b|PANADER|RAPPI|BURGER|PIZZA|JUMBO|EXITO|CARULLA|\bD1\b|\bARA\b|OXXO|FARMATODO|ALMUERZO|COMIDA/, 'Viáticos', 'Alimentación y otros'],
+  [/ADOBE|CLAUDE|ANTHROPIC|OPENAI|AUTODESK|GOOGLE|MICROSOFT|APPLE\.COM|NOTION|CANVA|DROPBOX|LOVABLE|SUPABASE|GITHUB|CHAOS|V-RAY/, 'Suscripciones', 'Software y apps'],
+  [/CLARO|MOVISTAR|TIGO|ETB|WOM/, 'Suscripciones', 'Internet y telefonía'],
+  [/ELECTRIC|FERRET|HOMECENTER|CONSTRUCTOR|MADECENTRO|PINTUR|CORONA|\bEASY\b/, 'Materiales', 'Materiales'],
+  [/FACEBOOK|\bMETA\b|INSTAGRAM|\bADS\b/, 'Marketing', 'Pauta digital'],
+  [/DIAN|NOTARIA|CAMARA DE COMERCIO/, 'Contable y legal', 'Trámites y notaría'],
+  [/4X1000|GMF|CUOTA DE MANEJO|COMISION/, 'Deudas', 'Banco'],
+];
+function sugerenciaPorPalabras(x, cats) {
+  if (x.tipo !== 'gasto') return null;
+  const t = String(x.descripcion || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const r = REGLAS.find(([re]) => re.test(t)); if (!r) return null;
+  const c = cats.find(k => k.tipo === 'gasto' && k.nombre === r[1]); return c ? { categoria_id: c.id, subcategoria: r[2], encargo_id: null } : null;
+}
 
 export async function vistaFinanzas(mesSel, listaSel) {
   const [cats, todos, encargos, docs, props, adicsMan] = await Promise.all([D.finCategorias(), D.finMovimientos(), D.encargos(), D.finDocumentosCobro(), D.finPropuestasEncargos().catch(() => []), D.adicionalesTodos().catch(() => [])]);
   const movs = todos.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const pend = todos.filter(x => x.estado === 'por_confirmar').sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+  pend.forEach(x => { if (x.categoria_id) return; const sg = sugerencia(x, movs) || sugerenciaPorPalabras(x, cats); if (sg) Object.assign(x, { categoria_id: sg.categoria_id, subcategoria: x.subcategoria || sg.subcategoria, encargo_id: x.encargo_id || sg.encargo_id, sugerido: true }); });
   const hoy = new Date();
   // Periodo: un mes («2026-11») o el año completo («2026», al tocar el año junto al mes)
   const modoAnio = /^\d{4}$/.test(mesSel || '');
@@ -136,6 +163,21 @@ export async function vistaFinanzas(mesSel, listaSel) {
     return { ...c, subs: Object.entries(m).sort((a, b) => b[1] - a[1]) };
   }).filter(d => d.subs.length > 1 || d.subs[0][0] !== d.nombre);
   const html = `
+    ${pend.length ? `<section class="pend" id="por-confirmar">
+      <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
+      <div class="pend-filtro" role="group" aria-label="Filtrar por origen"><button type="button" class="chip-f${PEND.origen ? '' : ' on'}" data-origen="">Todos <b>${pend.length}</b></button>${Object.entries(ORIGENES).map(([k, t]) => { const n = pend.filter(x => origenDe(x) === k).length; return n ? `<button type="button" class="chip-f${PEND.origen === k ? ' on' : ''}" data-origen="${k}"><span class="origen o-${k}">${t}</span> <b>${n}</b></button>` : ''; }).join('')}</div>
+      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 && !PEND.todos && !PEND.origen ? 'pend-oculta' : ''}" data-pend="${x.id}" data-org="${origenDe(x)}" ${PEND.origen && origenDe(x) !== PEND.origen ? 'hidden' : ''}>
+        <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
+        <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
+        <div class="pend-sel">
+          <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
+          <select data-f="categoria_id">${opsCat(cats, x.tipo, x.categoria_id)}</select>
+          <select data-f="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === x.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select>
+        </div>
+        <div class="pend-acc">${btnIco('check', 'Confirmar', 'data-ok', '')}${btnIco('x', 'Descartar (no es un movimiento real)', 'data-no')}</div>
+      </div>`).join('')}
+      ${pend.length > 6 && !PEND.todos && !PEND.origen ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
+    </section>` : ''}
     ${ejemplos ? `<div class="aviso-ej">Hay movimientos de ejemplo. <button class="btn sec mini" id="borrar-ej">Borrar ejemplos</button></div>` : ''}
     <div class="fin-mon">
       <section class="mon">
@@ -195,22 +237,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       <tr class="total"><td>Total</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.esperado, 0))}</td><td class="num">${cop(porEnc.reduce((a, r) => a + r.recibido, 0))}</td><td class="num">${cop(porCobrar)}</td><td class="num col-opc">${cop(porEnc.reduce((a, r) => a + r.gastos, 0))}</td><td class="col-opc"></td></tr>
       </tbody></table></div>` : '<p class="sub">Sin encargos.</p>'}
     </section>
-    ${!pend.length ? `<section class="pend" id="por-confirmar"><div class="pend-cab"><h3>Por confirmar${D.SIN_CORREO ? '' : ' <span class="pend-n">0</span>'}</h3><span class="sub">Lo que llega por correo queda aquí hasta que lo apruebes con ✓; mientras tanto no cuenta en los totales. ${D.SIN_CORREO ? 'Esta vista previa no puede leer los pendientes del correo: en el portal real aparecen todos aquí.' : 'No hay movimientos pendientes.'}</span></div></section>` : ''}
-    ${pend.length ? `<section class="pend" id="por-confirmar">
-      <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
-      <div class="pend-filtro" role="group" aria-label="Filtrar por origen"><button type="button" class="chip-f${PEND.origen ? '' : ' on'}" data-origen="">Todos <b>${pend.length}</b></button>${Object.entries(ORIGENES).map(([k, t]) => { const n = pend.filter(x => origenDe(x) === k).length; return n ? `<button type="button" class="chip-f${PEND.origen === k ? ' on' : ''}" data-origen="${k}"><span class="origen o-${k}">${t}</span> <b>${n}</b></button>` : ''; }).join('')}</div>
-      ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 && !PEND.todos && !PEND.origen ? 'pend-oculta' : ''}" data-pend="${x.id}" data-org="${origenDe(x)}" ${PEND.origen && origenDe(x) !== PEND.origen ? 'hidden' : ''}>
-        <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
-        <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
-        <div class="pend-sel">
-          <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
-          <select data-f="categoria_id">${opsCat(cats, x.tipo, x.categoria_id)}</select>
-          <select data-f="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === x.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select>
-        </div>
-        <div class="pend-acc">${btnIco('check', 'Confirmar', 'data-ok', '')}${btnIco('x', 'Descartar (no es un movimiento real)', 'data-no')}</div>
-      </div>`).join('')}
-      ${pend.length > 6 && !PEND.todos && !PEND.origen ? `<button class="btn sec mini pend-mas" id="pend-mas">Ver los ${pend.length - 6} restantes</button>` : ''}
-    </section>` : ''}`;
+`;
 
   // Lo que se está viendo, para la esquina superior derecha: General o el proyecto elegido
   const encSel = encargos.find(e => e.id === lista);
@@ -236,12 +263,14 @@ export async function vistaFinanzas(mesSel, listaSel) {
     document.querySelectorAll('[data-pend]').forEach(fila => {
       const sel = n => fila.querySelector(`[data-f="${n}"]`);
       sel('tipo').onchange = () => { sel('categoria_id').innerHTML = opsCat(cats, sel('tipo').value); sel('categoria_id').disabled = sel('tipo').value === 'socio'; };
+      sel('categoria_id').onchange = () => sel('categoria_id').classList.remove('falta');
       sel('categoria_id').disabled = sel('tipo').value === 'socio';
       fila.querySelector('[data-ok]').onclick = async () => {
-        fila.querySelectorAll('button').forEach(b => b.disabled = true);
         const t = sel('tipo').value;
+        if (t !== 'socio' && !sel('categoria_id').value) { sel('categoria_id').classList.add('falta'); sel('categoria_id').focus(); return; }
+        fila.querySelectorAll('button').forEach(b => b.disabled = true);
         await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'confirmado', tipo: t, categoria_id: t === 'socio' ? null : sel('categoria_id').value || null, encargo_id: sel('encargo_id').value || null,
-          ...((sel('categoria_id').value || null) !== (pend.find(x => x.id === fila.dataset.pend)?.categoria_id || null) ? { subcategoria: null } : {}) });   // si cambió la categoría, la subcategoría vieja ya no aplica
+          ...(() => { const x = pend.find(y => y.id === fila.dataset.pend) || {}; return (sel('categoria_id').value || null) !== (x.categoria_id || null) ? { subcategoria: null } : x.sugerido ? { subcategoria: x.subcategoria || null } : {}; })() });   // si cambió la categoría, la subcategoría vieja ya no aplica
         salir(fila);
       };
       fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); salir(fila); };

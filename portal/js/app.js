@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=121';
-import * as M from './modulos.js?v=121';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=121';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=121';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=121';
+import * as D from './datos.js?v=122';
+import * as M from './modulos.js?v=122';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=122';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=122';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=122';
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -396,7 +396,8 @@ async function vistaInicio(s) {
     s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : [], s.admin ? D.comentariosAbiertos() : [],
     s.facturacion ? D.adicionalesTodos().catch(() => []) : []]);
   const hoy = new Date().toISOString().slice(0, 10), mes = hoy.slice(0, 7);
-  const activos = lista.filter(e => e.estado === 'activo').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
+  // Encargos vigentes: en curso y por iniciar (aprobados que aún no empiezan)
+  const activos = lista.filter(e => e.estado === 'activo' || e.estado === 'por_iniciar').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
   const espera = props.filter(p => p.estado === 'en_espera'), borrador = props.filter(p => p.estado === 'borrador');
   const h = new Date().getHours();
   const saludo = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -439,7 +440,7 @@ async function vistaInicio(s) {
   const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const seis = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 5 + i); const k = d.toISOString().slice(0, 7); const l = ok.filter(x => x.fecha.slice(0, 7) === k); return { mes: MESES[d.getMonth()], ing: suma(l, 'ingreso'), gas: suma(l, 'gasto') }; });
   const ingM = suma(delMes, 'ingreso'), gasM = suma(delMes, 'gasto'), totM = ingM + gasM || 1;
-  const enCurso = activos.filter(e => e.inicio && e.inicio <= hoy).length;
+  const enCurso = activos.filter(e => e.estado === 'activo').length;
   const fechaLarga = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
   const html = `
     <div class="bento-hero">
