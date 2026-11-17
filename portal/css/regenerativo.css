@@ -9940,3 +9940,16 @@ html body .lv .od-cab.cor-top { flex-wrap: wrap; row-gap: 4px; }
   html body .lv dl.datos, html body .lv dl.datos.datos-2c { grid-template-columns: minmax(0, 1fr) !important; }
   html body .lv dl.datos dt { white-space: normal; }
 }
+
+/* Estados del encargo: un color de la paleta para cada uno (también sobre la imagen de portada) */
+html body .lv .lv-chip.por-iniciar, html body .lv .etapa.activa.por-iniciar { background: #f2f2c4 !important; color: #5c5c0e !important; border-color: transparent !important; }
+html body .lv .lv-chip.por-iniciar i { background: #c2c21f; }
+html body .lv .lv-chip.en-curso, html body .lv .etapa.activa.en-curso { background: #d6eff6 !important; color: #00708b !important; }
+html body .lv .lv-chip.en-curso i, html body .lv .lv-chip.en-curso i::after { background: #00a3cb; }
+html body .lv .lv-chip.pausado, html body .lv .etapa.activa.pausado { background: #eee3eb !important; color: #6c4864 !important; }
+html body .lv .lv-chip.pausado i { background: #b088a6; }
+html body .lv .lv-chip.finalizado, html body .lv .etapa.activa.finalizado { background: #1e221d !important; color: #fff !important; }
+html body .lv .lv-chip.finalizado i { background: #dfdf3f; }
+html body .lv .lv-chip.cerrado, html body .lv .etapa.activa.cerrado { background: #f3e2e2 !important; color: #8b1a1a !important; }
+html body .lv .lv-chip.cerrado i { background: #8b1a1a; }
+.lv-enc-cov + .lv-enc-cab .lv-chip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 6px 16px -10px rgba(30, 34, 29, 0.45); }
