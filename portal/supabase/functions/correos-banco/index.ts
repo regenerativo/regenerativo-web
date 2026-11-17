@@ -73,6 +73,9 @@ Deno.serve(async (req) => {
     const filtro = `receivedDateTime ge ${desde}`;
     let url = `https://graph.microsoft.com/v1.0/me/messages?$select=id,internetMessageId,receivedDateTime,from,body&$filter=${encodeURIComponent(filtro)}&$top=50`;
     let nuevos = 0, leidos = 0, ignorados = 0;
+    // Lo que Andrés ya cargó manda: no se traen avisos de días que él ya organizó (último movimiento cargado por él)
+    const { data: ult } = await admin.from("fin_movimientos").select("fecha").neq("origen", "correo").eq("estado", "confirmado").order("fecha", { ascending: false }).limit(1);
+    const organizadoHasta = ult?.[0]?.fecha || "2000-01-01";
     while (url) {
       const r = await fetch(url, { headers: { Authorization: `Bearer ${at}`, Prefer: 'outlook.body-content-type="text"' } });
       const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || `Graph ${r.status}`);
@@ -83,8 +86,13 @@ Deno.serve(async (req) => {
         const mov = leer(m.body?.content || "", m.receivedDateTime);
         if (!mov) { ignorados++; continue; }
         const ref = String(m.internetMessageId || m.id).replace(/[<>]/g, "").split("@")[0];
+        if (mov.fecha <= organizadoHasta) { ignorados++; continue; }
         const { data: ya } = await admin.from("fin_movimientos").select("id").like("ref_correo", `${ref}%`).limit(1);
         if (ya?.length) continue;
+        // ya cargado por él (mismo valor, ±3 días)
+        const d0 = new Date(mov.fecha); const f = (n: number) => new Date(d0.getTime() + n * 864e5).toISOString().slice(0, 10);
+        const { data: igual } = await admin.from("fin_movimientos").select("id").neq("origen", "correo").eq("valor", mov.valor).gte("fecha", f(-3)).lte("fecha", f(3)).limit(1);
+        if (igual?.length) { ignorados++; continue; }
         const { error } = await admin.from("fin_movimientos").insert({ ...mov, estado: "por_confirmar", origen: "correo", ref_correo: ref });
         if (!error) nuevos++;
       }
