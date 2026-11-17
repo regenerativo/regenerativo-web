@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=126';
-import * as M from './modulos.js?v=126';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=126';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=126';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=126';
+import * as D from './datos.js?v=127';
+import * as M from './modulos.js?v=127';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=127';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=127';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=127';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -1632,6 +1632,7 @@ function accionesPropuesta(p) {
 // Campos de "Detalles técnicos del encargo" y "Proyecto" (igual que en el Word SCREG_2XXXX_PROPUESTA)
 const DETALLES_PROPUESTA = [
   ['propietario', 'Nombre del propietario'], ['ubicacion_propietario', 'Ubicación del propietario'],
+  ['documento_cliente', 'Documento del cliente (NIT o cédula · si no aplica, escribe No aplica)', 'ancho'],
   ['ubicacion', 'Ubicación del encargo'], ['direccion', 'Dirección del encargo'],
   ['area_predio', 'Área predio'], ['area_licencia', 'Área construida en licencia'],
   ['area_existente', 'Área construida existente'], ['area_intervenida', 'Área intervenida'],
@@ -1653,7 +1654,7 @@ async function leerPropuestaWord(archivo) {
   const buscar = re => (pares.find(([k, v]) => re.test(k.toLowerCase()) && v) || [])[1] || '';
   const r = {
     propietario: buscar(/nombre del propietario/), ubicacion_propietario: buscar(/ubicaci[oó]n del propietario/),
-    cliente: buscar(/nombre del cliente/), ubicacion: buscar(/ubicaci[oó]n del encargo/), direccion: buscar(/direcci[oó]n del encargo/),
+    cliente: buscar(/nombre del cliente/), documento_cliente: buscar(/documento del cliente/), ubicacion: buscar(/ubicaci[oó]n del encargo/), direccion: buscar(/direcci[oó]n del encargo/),
     area_predio: buscar(/[áa]rea( del)? predio/), area_licencia: buscar(/licencia/), area_existente: buscar(/existente/),
     area_intervenida: buscar(/intervenida/), categoria_trabajo: buscar(/categor[ií]a de trabajo/),
     servicios: buscar(/categor[ií]a de servicios|servicios regenerativo/), encargo: buscar(/^encargo$/),
@@ -1680,7 +1681,14 @@ const ETIQUETAS_WORD = {
   ubicacion: /^ubicaci[oó]n del encargo$/, direccion: /^direcci[oó]n del encargo$/,
   area_predio: /^[áa]rea( del)? predio$/, area_licencia: /licencia/, area_existente: /existente/,
   area_intervenida: /intervenida/, categoria_trabajo: /^categor[ií]a de trabajo$/,
+  documento_cliente: /^documento del cliente$/, cliente_nombre: /^nombre del cliente$/,
 };
+// Valores para la página 2 del Word: los detalles + el nombre del cliente elegido. En un Word nuevo (desde la plantilla) lo vacío queda XXX.
+function valoresWord(v, nuevo, nombreCli) {
+  const o = Object.fromEntries(DETALLES_PROPUESTA.map(([k]) => [k, v[k] || (nuevo ? 'XXX' : '')]));
+  if (nombreCli) o.cliente_nombre = nombreCli; else if (nuevo) o.cliente_nombre = 'XXX';
+  return o;
+}
 async function escribirPropuestaWord(base64, valores) {
   await cargarJSZip();
   const zip = await JSZip.loadAsync(base64, { base64: true });
@@ -1828,26 +1836,34 @@ async function modalPropuesta(p = null) {
     v.fecha_envio = v.fecha_envio || null;
     if (!v.cliente_id && clienteNuevo) { const c = await D.crearCliente({ tipo: 'persona', nombre: clienteNuevo.trim().toUpperCase() }); v.cliente_id = c.id; }
     if (!v.cliente_id) v.cliente_id = null;
+    const nombreCli = cli.find(c => c.id === v.cliente_id)?.nombre || (clienteNuevo ? clienteNuevo.trim().toUpperCase() : null);
     for (const [k] of DETALLES_PROPUESTA) v[k] = (v[k] || '').trim() || null;
+    // El documento de la propuesta alimenta la ficha del cliente cuando esta no lo tiene
+    const docCli = v.documento_cliente && !/^(xxx|no aplica|n\/a)$/i.test(v.documento_cliente) ? v.documento_cliente : null;
+    const fichaCli = cli.find(c => c.id === v.cliente_id);
+    if (docCli && fichaCli && !fichaCli.documento) {
+      const m = docCli.match(/^(NIT|CC|C\.C\.?|CE|Pasaporte)\s*:?\s*(.+)$/i);
+      D.actualizarCliente(fichaCli.id, m ? { tipo_documento: m[1].toUpperCase().replace(/C\.C\.?/, 'CC'), documento: m[2].trim() } : { documento: docCli }).catch(() => {});
+    }
     try {
       const n = p ? (delete v.codigo, await D.actualizarPropuesta(p.id, v)) : await D.crearPropuesta(v);
       if (!D.MODO_DEMO) {
         try {
-          const cambio = p && !archivoWord && p.archivo_nombre && DETALLES_PROPUESTA.some(([k]) => (p[k] || null) !== v[k]);
+          const cambio = p && !archivoWord && p.archivo_nombre && (DETALLES_PROPUESTA.some(([k]) => (p[k] || null) !== v[k]) || (p.cliente_id || null) !== v.cliente_id);
           let r;
           if (archivoWord) r = await D.onedrive('subir_propuesta', { propuesta_id: n.id, nombre: archivoWord.name, base64: await aBase64(archivoWord) });
           else if (cambio) {
             const w = await D.onedrive('descargar_propuesta', { propuesta_id: n.id });
-            const base64 = await escribirPropuestaWord(w.base64, Object.fromEntries(DETALLES_PROPUESTA.map(([k]) => [k, v[k]])));
+            const base64 = await escribirPropuestaWord(w.base64, valoresWord(v, false, (p.cliente_id || null) !== v.cliente_id ? nombreCli : null));
             r = await D.onedrive('subir_propuesta', { propuesta_id: n.id, nombre: w.nombre, base64 });
             alert('Propuesta guardada y Word actualizado en OneDrive.');
           } else {
             r = await D.onedrive('propuesta', { propuesta_id: n.id });
             // Word nuevo desde la plantilla: se le escriben los detalles de la página 2 que ya se llenaron
-            if (r.word && DETALLES_PROPUESTA.some(([k]) => v[k])) {
+            if (r.word) {
               try {
                 const w = await D.onedrive('descargar_propuesta', { propuesta_id: n.id });
-                const base64 = await escribirPropuestaWord(w.base64, Object.fromEntries(DETALLES_PROPUESTA.map(([k]) => [k, v[k]])));
+                const base64 = await escribirPropuestaWord(w.base64, valoresWord(v, true, nombreCli));
                 await D.onedrive('subir_propuesta', { propuesta_id: n.id, nombre: w.nombre, base64 });
               } catch (_) { /* el Word queda con la plantilla tal cual */ }
             }
