@@ -9953,3 +9953,8 @@ html body .lv .lv-chip.finalizado i { background: #dfdf3f; }
 html body .lv .lv-chip.cerrado, html body .lv .etapa.activa.cerrado { background: #f3e2e2 !important; color: #8b1a1a !important; }
 html body .lv .lv-chip.cerrado i { background: #8b1a1a; }
 .lv-enc-cov + .lv-enc-cab .lv-chip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 6px 16px -10px rgba(30, 34, 29, 0.45); }
+
+/* Fechas editables: el campo queda encima para que el toque lo abra en iPhone y iPad */
+html body .lv .lv-fecha { position: relative; }
+html body .lv .lv-fecha input[type=date] { pointer-events: auto !important; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; font-size: 16px; cursor: pointer; z-index: 1; }
+html body .lv .lv-fecha { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

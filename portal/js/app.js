@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=129';
-import * as M from './modulos.js?v=129';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=129';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=129';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=129';
+import * as D from './datos.js?v=130';
+import * as M from './modulos.js?v=130';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=130';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=130';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=130';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -671,10 +671,16 @@ function fechaEnc(e, campo, vacio, editable) {
   if (!editable) return v ? fecha(v) : vacio;
   return `<label class="lv-fecha ${v ? '' : 'falta'}" title="${campo === 'inicio' ? 'Fecha de inicio del encargo' : 'Fecha de entrega del encargo'} · clic para cambiarla" onclick="event.stopPropagation()">${v ? fecha(v) : vacio}${ico('editar')}<input type="date" data-efecha="${e.id}" data-campo="${campo}" data-otra="${(campo === 'inicio' ? e.fin : e.inicio) || ''}" value="${v || ''}" aria-label="${campo === 'inicio' ? 'Fecha de inicio' : 'Fecha de entrega'}"></label>`;
 }
+// En pantallas táctiles (iPhone, iPad) el toque cae directo sobre el campo de fecha y abre el calendario del sistema;
+// con mouse se abre el calendario con showPicker.
 document.addEventListener('click', ev => {
   const l = ev.target.closest?.('.lv-fecha'); if (!l) return;
-  ev.preventDefault(); ev.stopPropagation();
-  const i = l.querySelector('input'); try { i.showPicker(); } catch (_) { i.focus(); i.click(); }
+  ev.stopPropagation();
+  const i = l.querySelector('input');
+  // El toque/clic cae sobre el campo de fecha (iPad, iPhone, Safari: abre el calendario solo); en Chrome se ayuda con showPicker
+  if (ev.target === i && /Chrome|Edg|Firefox/.test(navigator.userAgent) && !/Mobile|iPad|iPhone/.test(navigator.userAgent) && typeof i.showPicker === 'function') {
+    try { ev.preventDefault(); i.showPicker(); } catch (_) { /* el navegador lo abre solo */ }
+  }
 }, true);
 document.addEventListener('change', async ev => {
   const i = ev.target; if (!i.matches?.('[data-efecha]')) return;
