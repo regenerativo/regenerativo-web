@@ -9956,5 +9956,5 @@ html body .lv .lv-chip.cerrado i { background: #8b1a1a; }
 
 /* Fechas editables: el campo queda encima para que el toque lo abra en iPhone y iPad */
 html body .lv .lv-fecha { position: relative; }
-html body .lv .lv-fecha input[type=date] { pointer-events: auto !important; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; -webkit-appearance: none; appearance: none; font-size: 16px; cursor: pointer; z-index: 1; }
+html body .lv .lv-fecha input[type=date] { pointer-events: none !important; }
 html body .lv .lv-fecha { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=130';
-import * as M from './modulos.js?v=130';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=130';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=130';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=130';
+import * as D from './datos.js?v=131';
+import * as M from './modulos.js?v=131';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=131';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=131';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=131';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -671,16 +671,25 @@ function fechaEnc(e, campo, vacio, editable) {
   if (!editable) return v ? fecha(v) : vacio;
   return `<label class="lv-fecha ${v ? '' : 'falta'}" title="${campo === 'inicio' ? 'Fecha de inicio del encargo' : 'Fecha de entrega del encargo'} · clic para cambiarla" onclick="event.stopPropagation()">${v ? fecha(v) : vacio}${ico('editar')}<input type="date" data-efecha="${e.id}" data-campo="${campo}" data-otra="${(campo === 'inicio' ? e.fin : e.inicio) || ''}" value="${v || ''}" aria-label="${campo === 'inicio' ? 'Fecha de inicio' : 'Fecha de entrega'}"></label>`;
 }
-// En pantallas táctiles (iPhone, iPad) el toque cae directo sobre el campo de fecha y abre el calendario del sistema;
-// con mouse se abre el calendario con showPicker.
+// Al tocar una fecha (o su lápiz) se abre una ventanita con el calendario visible: funciona igual en iPad, iPhone y computador
 document.addEventListener('click', ev => {
   const l = ev.target.closest?.('.lv-fecha'); if (!l) return;
-  ev.stopPropagation();
-  const i = l.querySelector('input');
-  // El toque/clic cae sobre el campo de fecha (iPad, iPhone, Safari: abre el calendario solo); en Chrome se ayuda con showPicker
-  if (ev.target === i && /Chrome|Edg|Firefox/.test(navigator.userAgent) && !/Mobile|iPad|iPhone/.test(navigator.userAgent) && typeof i.showPicker === 'function') {
-    try { ev.preventDefault(); i.showPicker(); } catch (_) { /* el navegador lo abre solo */ }
-  }
+  ev.preventDefault(); ev.stopPropagation();
+  const i = l.querySelector('input'); if (!i) return;
+  const titulo = i.dataset.fprop ? 'Fecha de envío de la propuesta' : i.dataset.campo === 'inicio' ? 'Fecha de inicio' : 'Fecha de entrega';
+  const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
+  fondo.innerHTML = `<form class="modal" id="ffecha" style="max-width:380px"><h2>${titulo}</h2>
+    <input type="date" name="f" value="${esc(i.value || '')}" style="width:100%;font-size:17px;min-height:48px">
+    <div class="aviso" id="aviso"></div>
+    <div class="pie-modal">${i.value ? '<button type="button" class="btn sec" id="quitar">Quitar fecha</button>' : ''}<button type="button" class="btn sec" id="cancelar">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`;
+  document.body.appendChild(fondo);
+  const f = $('#ffecha', fondo), campo = $('input[name=f]', fondo);
+  setTimeout(() => campo.focus(), 50);
+  $('#cancelar', fondo).onclick = () => fondo.remove();
+  fondo.addEventListener('click', e2 => { if (e2.target === fondo) fondo.remove(); });
+  const guardar = v => { i.value = v; fondo.remove(); i.dispatchEvent(new Event('change', { bubbles: true })); };
+  if ($('#quitar', fondo)) $('#quitar', fondo).onclick = () => guardar('');
+  f.onsubmit = e2 => { e2.preventDefault(); if (!campo.value) { $('#aviso', fondo).textContent = 'Elige una fecha.'; return; } guardar(campo.value); };
 }, true);
 document.addEventListener('change', async ev => {
   const i = ev.target; if (!i.matches?.('[data-efecha]')) return;
