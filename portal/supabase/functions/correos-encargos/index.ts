@@ -63,8 +63,45 @@ Deno.serve(async (req) => {
         const activos = lista.filter(e => e.estado !== "finalizado");
         const destino = nombrados.length ? nombrados : lista.length === 1 ? lista : (activos.length ? activos : lista);
         for (const e of destino) filas.push({
-          encargo_id: e.id, ref: String(ref).slice(0, 300), fecha, direccion: /@regenerativo\.co$/.test(de) ? "enviado" : "recibido",
+          encargo_id: e.id, ref: String(ref).slice(0, 300), fecha, direccion: /@regenerativo\.co$/i.test(de) ? "enviado" : "recibido",
           de: m.from?.emailAddress?.name ? `${m.from.emailAddress.name} <${de}>` : de, para, asunto: m.subject || "(sin asunto)",
+          resumen: (m.bodyPreview || "").slice(0, 280), web: m.webLink, adjuntos: !!m.hasAttachments,
+        });
+      }
+      if (filas.length) {
+        const { data, error } = await admin.from("correos_encargo").upsert(filas, { onConflict: "encargo_id,ref", ignoreDuplicates: true }).select("id");
+        if (error) throw error; nuevos += data?.length || 0;
+      }
+    }
+    // 2) Todo el buzón (apardo@ y sus alias: info@, proyectos@, facturacion@, arquitectura@…, que llegan al mismo buzón):
+    //    correos que nombran el encargo en el asunto (nombre o código), aunque vengan de alguien que no está en la ficha.
+    const interno = (a: string) => !a || /@regenerativo\.co$/i.test(a);
+    for (const e of encs || []) {
+      const corto = norm(e.nombre).replace(/^\d{2} I /, "");
+      const claves = [corto, norm(e.codigo || "")].filter(x => x.length >= 6);
+      const re = new RegExp(claves.map(x => "(^|[^A-Z0-9])" + x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "(?:[\\s_-]+I)?[\\s_-]*") + "($|[^A-Z0-9])").join("|"));
+      if (!claves.length) continue;
+      const vistos = new Map<string, any>();
+      for (const c of claves) {
+        let url = `/me/messages?$search=${encodeURIComponent(`"${c}"`)}&$select=id,internetMessageId,subject,bodyPreview,from,toRecipients,ccRecipients,receivedDateTime,sentDateTime,webLink,hasAttachments,parentFolderId,isDraft&$top=50`;
+        let paginas = 0;
+        while (url && paginas++ < 4) {
+          const d = await g(at, url);
+          for (const m of d.value || []) if (!m.isDraft && !fuera.has(m.parentFolderId) && re.test(norm(m.subject || ""))) vistos.set(m.internetMessageId || m.id, m);
+          url = d["@odata.nextLink"] || "";
+        }
+      }
+      const filas: any[] = [];
+      for (const [ref, m] of vistos) {
+        const fecha = m.sentDateTime || m.receivedDateTime; if (!fecha || fecha < DESDE) continue;
+        const de = (m.from?.emailAddress?.address || "").toLowerCase();
+        const dest = [...(m.toRecipients || []), ...(m.ccRecipients || [])].map((x: any) => (x.emailAddress?.address || "").toLowerCase()).filter(Boolean);
+        if (interno(de) && dest.every(interno)) continue;   // solo correos con alguien de afuera
+        if (/no-?reply|notificacion|mailer-daemon/i.test(de)) continue;
+        revisados++;
+        filas.push({
+          encargo_id: e.id, ref: String(ref).slice(0, 300), fecha, direccion: interno(de) ? "enviado" : "recibido",
+          de: m.from?.emailAddress?.name ? `${m.from.emailAddress.name} <${de}>` : de, para: dest.join(", "), asunto: m.subject || "(sin asunto)",
           resumen: (m.bodyPreview || "").slice(0, 280), web: m.webLink, adjuntos: !!m.hasAttachments,
         });
       }
