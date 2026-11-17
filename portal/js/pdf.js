@@ -5,7 +5,9 @@ const LIBS = [
   ['pdfMake', 'https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/pdfmake.min.js'],
   ['htmlToPdfmake', 'https://cdn.jsdelivr.net/npm/html-to-pdfmake@2.5.13/browser.js'],
 ];
-const FUENTES = { 'stolzl-light.ttf': 'assets/fonts/stolzl-light.ttf', 'stolzl-book.ttf': 'assets/fonts/stolzl-book.ttf', 'stolzl-medium.ttf': 'assets/fonts/stolzl-medium.ttf' };
+const FUENTES = { 'stolzl-light.ttf': 'assets/fonts/stolzl-light.ttf', 'stolzl-book.ttf': 'assets/fonts/stolzl-book.ttf', 'stolzl-medium.ttf': 'assets/fonts/stolzl-medium.ttf',
+  'metronic-regular.otf': 'assets/fonts/metronic-regular.otf', 'metronic-semibold.otf': 'assets/fonts/metronic-semibold.otf', 'metronic-italic.otf': 'assets/fonts/metronic-italic.otf', 'metronic-light.otf': 'assets/fonts/metronic-light.otf' };
+// Orden de la marca: Stolzl en títulos, membrete y firma; Metronic Pro en el texto
 const GRIS = '#D9D9D9', TINTA = '#1E221D', GRIS_TXT = '#8A8A8A';
 const ANCHO = 612, MI = 57, MD = 42;   // papel legal 8.5 in = 612 pt; márgenes 0.79 in / 0.59 in
 
@@ -23,6 +25,7 @@ function preparar() {
     window.pdfMake.fonts = {
       Stolzl: { normal: 'stolzl-book.ttf', bold: 'stolzl-medium.ttf', italics: 'stolzl-book.ttf', bolditalics: 'stolzl-medium.ttf' },
       StolzlLight: { normal: 'stolzl-light.ttf', bold: 'stolzl-book.ttf', italics: 'stolzl-light.ttf', bolditalics: 'stolzl-book.ttf' },
+      Metronic: { normal: 'metronic-regular.otf', bold: 'metronic-semibold.otf', italics: 'metronic-italic.otf', bolditalics: 'metronic-semibold.otf' },
     };
   })();
   listo.catch(() => { listo = null; });
@@ -61,9 +64,10 @@ export async function descargarPDF({ servicio, documento, codigo, nombre, cuerpo
     removeExtraBlanks: true,
     defaultStyles: {
       h1: { fontSize: 18, font: 'StolzlLight', bold: false, marginBottom: 2 },
-      h3: { fontSize: 10.5, bold: true, marginTop: 12, marginBottom: 4 },
+      h2: { font: 'Stolzl', fontSize: 13, bold: false, marginTop: 14, marginBottom: 4 },
+      h3: { font: 'Stolzl', fontSize: 10.5, bold: true, marginTop: 12, marginBottom: 4 },
       p: { marginBottom: 6, lineHeight: 1.25 },
-      th: { bold: true, fillColor: GRIS, fontSize: 7.5, characterSpacing: 0.4 },
+      th: { font: 'Stolzl', bold: true, fillColor: GRIS, fontSize: 7.5, characterSpacing: 0.4 },
       td: { fontSize: 9 },
       b: { bold: true }, strong: { bold: true },
       ul: { marginBottom: 6 }, ol: { marginBottom: 6 },
@@ -74,7 +78,7 @@ export async function descargarPDF({ servicio, documento, codigo, nombre, cuerpo
     pageSize: 'LEGAL',
     pageMargins: [MI, 128, MD, 78],
     info: { title: nombre.replace(/\.pdf$/i, ''), author: 'regenerativo' },
-    defaultStyle: { font: 'Stolzl', fontSize: 9.5, color: TINTA, lineHeight: 1.2 },
+    defaultStyle: { font: 'Metronic', fontSize: 9.5, color: TINTA, lineHeight: 1.2 },
     styles: {
       'doc-titulo': { fontSize: 18, font: 'StolzlLight' },
       'doc-sub': { fontSize: 8.5, color: GRIS_TXT, marginBottom: 12 },
@@ -87,15 +91,15 @@ export async function descargarPDF({ servicio, documento, codigo, nombre, cuerpo
     },
     header: () => ({ stack: [
       { columns: [
-        { stack: [{ text: (servicio || 'XXX').toUpperCase(), bold: true, fontSize: 10.5, characterSpacing: 0.6 }, { text: 'Servicios', font: 'StolzlLight', fontSize: 9.5, color: GRIS_TXT }] },
-        { stack: [{ text: (documento || '').toUpperCase(), bold: true, fontSize: 10.5, characterSpacing: 0.6, alignment: 'right' }, { text: codigo, font: 'StolzlLight', fontSize: 9.5, color: GRIS_TXT, alignment: 'right' }], width: 'auto' },
+        { stack: [{ text: (servicio || 'XXX').toUpperCase(), font: 'Stolzl', bold: true, fontSize: 10.5, characterSpacing: 0.6 }, { text: 'Servicios', font: 'StolzlLight', fontSize: 9.5, color: GRIS_TXT }] },
+        { stack: [{ text: (documento || '').toUpperCase(), font: 'Stolzl', bold: true, fontSize: 10.5, characterSpacing: 0.6, alignment: 'right' }, { text: codigo, font: 'StolzlLight', fontSize: 9.5, color: GRIS_TXT, alignment: 'right' }], width: 'auto' },
       ], margin: [MI, 40, MD, 0] },
       { canvas: [{ type: 'rect', x: 0, y: 0, w: ANCHO, h: 22, color: GRIS }], margin: [0, 14, 0, 0] },
     ] }),
     footer: pag => ({ columns: [
-      { text: [{ text: 'Por  ', font: 'StolzlLight', fontSize: 10 }, { text: '____ ', color: TINTA, fontSize: 9 }, { text: 'regenerativo', bold: true, fontSize: 11 }], width: 'auto' },
+      { text: [{ text: 'Por  ', font: 'StolzlLight', fontSize: 10 }, { text: '____ ', font: 'Stolzl', color: TINTA, fontSize: 9 }, { text: 'regenerativo', font: 'Stolzl', bold: true, fontSize: 11 }], width: 'auto' },
       { text: 'info@regenerativo.co    @_regenerativo_    +57 320 215 0932', fontSize: 7.5, color: GRIS_TXT, alignment: 'right', marginTop: 2, width: '*' },
-      { text: String(pag), bold: true, fontSize: 10.5, alignment: 'right', width: 28 },
+      { text: String(pag), font: 'Stolzl', bold: true, fontSize: 10.5, alignment: 'right', width: 28 },
     ], margin: [MI, 30, MD, 0] }),
     content: contenido,
   };
