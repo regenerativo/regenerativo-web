@@ -9970,3 +9970,24 @@ html body .modal .pie-modal.pie-fecha #quitar { order: 1; margin-right: auto; }
   html body .modal .pie-modal.pie-fecha .btn[type=submit] { order: 0; flex-basis: 100%; }
   html body .modal .pie-modal.pie-fecha #quitar { margin-right: 0; }
 }
+
+/* Celulares angostos (iPhone SE, Android de 320–380 px): nada se sale de la pantalla */
+.bento-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1180px) { .bento-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 400px) {
+  html body .lv .bento-kpis { gap: 10px; }
+  html body .lv .bento-kpis .lv-card { padding: 16px 14px !important; min-width: 0; }
+  html body .lv .bento-kpis .lv-card * { min-width: 0; overflow-wrap: anywhere; }
+  html body .lv .bento-kpis .lv-num { font-size: 34px !important; }
+  html body .lv .bento-kpis .lv-num.med { font-size: 17px !important; letter-spacing: -0.01em; }
+  html body .lv .bento-kpis .lv-card .num, html body .lv .bento-kpis .lv-card [class*="cop"] { font-size: 15px !important; }
+  html body .lv .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  html body .lv .kpi { min-width: 0; padding: 16px 14px !important; }
+  html body .lv .kpi .va { font-size: 19px !important; overflow-wrap: anywhere; }
+  html body .lv .lv-seg { flex-wrap: wrap; overflow: visible !important; }
+  html body .lv .acciones-res .btn, html body .lv .panel .btn { white-space: normal; text-align: center; }
+}
+@media (max-width: 340px) {
+  html body .lv .lv-tabs-in > a span { font-size: 9.5px !important; letter-spacing: -0.01em; }
+  html body .lv .lv-tabs-in > a { padding-left: 2px !important; padding-right: 2px !important; min-width: 0; }
+}
