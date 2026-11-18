@@ -9894,10 +9894,10 @@ html body .lv .lv-tabs-in > a {
 }
 
 /* Claude: en computador botón flotante; en celular y tableta va dentro del menú (no tapa botones ni textos) */
-.lv .lv-claude-hoja { display: none !important; }
+html body .lv a.lv-web.lv-claude-hoja { display: none !important; }
 @media (max-width: 880px) {
   .lv-claude { display: none !important; }
-  .lv .lv-claude-hoja { display: flex !important; }
+  html body .lv a.lv-web.lv-claude-hoja { display: flex !important; margin-top: 4px !important; }
 }
 
 /* Claves de acceso de clientes en la tipografía de la marca */
