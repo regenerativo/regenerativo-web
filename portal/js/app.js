@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=132';
-import * as M from './modulos.js?v=132';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=132';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=132';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=132';
+import * as D from './datos.js?v=133';
+import * as M from './modulos.js?v=133';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=133';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=133';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=133';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -678,10 +678,10 @@ document.addEventListener('click', ev => {
   const i = l.querySelector('input'); if (!i) return;
   const titulo = i.dataset.fprop ? 'Fecha de envío de la propuesta' : i.dataset.campo === 'inicio' ? 'Fecha de inicio' : 'Fecha de entrega';
   const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
-  fondo.innerHTML = `<form class="modal" id="ffecha" style="max-width:380px"><h2>${titulo}</h2>
-    <input type="date" name="f" value="${esc(i.value || '')}" style="width:100%;font-size:17px;min-height:48px">
+  fondo.innerHTML = `<form class="modal" id="ffecha" style="max-width:460px"><h2>${titulo}</h2>
+    <input type="date" name="f" lang="es-CO" value="${esc(i.value || '')}" style="width:100%;font-size:17px;min-height:48px">
     <div class="aviso" id="aviso"></div>
-    <div class="pie-modal">${i.value ? '<button type="button" class="btn sec" id="quitar">Quitar fecha</button>' : ''}<button type="button" class="btn sec" id="cancelar">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>`;
+    <div class="pie-modal pie-fecha"><button class="btn" type="submit">Guardar</button><button type="button" class="btn sec" id="cancelar">Cancelar</button>${i.value ? '<button type="button" class="btn sec" id="quitar">Quitar fecha</button>' : ''}</div></form>`;
   document.body.appendChild(fondo);
   const f = $('#ffecha', fondo), campo = $('input[name=f]', fondo);
   setTimeout(() => campo.focus(), 50);

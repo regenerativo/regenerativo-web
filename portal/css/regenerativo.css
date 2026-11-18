@@ -9958,3 +9958,15 @@ html body .lv .lv-chip.cerrado i { background: #8b1a1a; }
 html body .lv .lv-fecha { position: relative; }
 html body .lv .lv-fecha input[type=date] { pointer-events: none !important; }
 html body .lv .lv-fecha { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* Ventanita de fecha: los botones nunca se salen (Guardar arriba a lo ancho en celular) */
+html body .modal .pie-modal.pie-fecha { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+html body .modal .pie-modal.pie-fecha .btn { flex: 0 0 auto; }
+html body .modal .pie-modal.pie-fecha .btn[type=submit] { order: 3; }
+html body .modal .pie-modal.pie-fecha #cancelar { order: 2; }
+html body .modal .pie-modal.pie-fecha #quitar { order: 1; margin-right: auto; }
+@media (max-width: 600px) {
+  html body .modal .pie-modal.pie-fecha .btn { flex: 1 1 calc(50% - 5px); }
+  html body .modal .pie-modal.pie-fecha .btn[type=submit] { order: 0; flex-basis: 100%; }
+  html body .modal .pie-modal.pie-fecha #quitar { margin-right: 0; }
+}
