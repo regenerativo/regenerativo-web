@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=136';
-import * as M from './modulos.js?v=136';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=136';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=136';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=136';
+import * as D from './datos.js?v=137';
+import * as M from './modulos.js?v=137';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=137';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=137';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=137';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -255,7 +255,7 @@ function armarTabs() {
   const prim = com ? [...enl.filter(a => a !== com).slice(0, 3), com] : enl.slice(0, 4);
   const resto = enl.filter(a => !prim.includes(a));
   const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
-  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados')}</span></a>`).join('')}
+  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Propuesta preliminar$/, 'Preliminar')}</span></a>`).join('')}
     <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu im-mas" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
   const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
   $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
@@ -638,15 +638,15 @@ async function propuestaCliente(ctx, pintar, html, fresco = false) {
   try { l = (await enviadosDe(ctx.e.id, fresco)).filter(a => /\.pdf$/i.test(a.nombre) && (/propuesta/i.test(a.nombre) || /SCREG_/i.test(a.nombre))).sort((x, y) => (y.fecha || '').localeCompare(x.fecha || '')).slice(0, 1); }
   catch (err) {
     const c = $('#cli-prop'); if (!c) return;
-    c.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta económica</h3></div>${errorCli('No pudimos traer la propuesta en este momento. Puedes reintentar o buscarla en Documentos.', 'prop')}<p><a class="btn sec mini" href="${ctx.base}/enviados">Ir a Documentos</a></p>`;
+    c.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta preliminar</h3></div>${errorCli('No pudimos traer la propuesta en este momento. Puedes reintentar o buscarla en Documentos.', 'prop')}<p><a class="btn sec mini" href="${ctx.base}/enviados">Ir a Documentos</a></p>`;
     c.querySelector('[data-reintentar]').onclick = () => propuestaCliente(ctx, pintar, html, true);
     return;
   }
   // Si mientras cargaba se cambió de sección, no hay caja: no se pinta nada
   const caja = $('#cli-prop');
   if (!caja) return;
-  if (!l.length) { if (html) { pintar(html.html); html.montar?.(); return; } caja.innerHTML = '<div class="cli-docs-cab"><h3>Propuesta económica</h3></div><p class="sub">Todavía no hay una propuesta para mostrar. Cuando te la enviemos aparecerá aquí y en Documentos.</p>'; return; }
-  caja.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta económica</h3><p class="sub">El documento que te enviamos.</p></div>${listaDocsCli(l, 'ip')}`;
+  if (!l.length) { if (html) { pintar(html.html); html.montar?.(); return; } caja.innerHTML = '<div class="cli-docs-cab"><h3>Propuesta preliminar</h3></div><p class="sub">Todavía no hay una propuesta para mostrar. Cuando te la enviemos aparecerá aquí y en Documentos.</p>'; return; }
+  caja.innerHTML = `<div class="cli-docs-cab"><h3>Propuesta preliminar</h3><p class="sub">El documento que te enviamos.</p></div>${listaDocsCli(l, 'ip')}`;
   caja.querySelectorAll('[data-ip]').forEach(b => b.onclick = async () => {
     const a = l[+b.dataset.ip]; const t = b.textContent; b.disabled = true; b.textContent = 'Descargando…';
     try { const d = await conLimite(D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta }), 60000); bajarBase64(d.base64, d.nombre); } catch (err) { alert('No se pudo descargar: ' + msg(err)); }
@@ -916,7 +916,7 @@ async function modalEncargo(e = null) {
 // Módulos del encargo. Cada módulo junta lo del portal (web) y su carpeta de OneDrive.
 // Menú del encargo según la gestión documental (REG_TEM DOCUMENTAL): Legales reúne propuesta, contratos, adendas, actas, cobros y facturación
 const MODULOS = [
-  ['resumen', 'Resumen'], ['carpetas', 'Folder'], ['legales', 'Legales'], ['propuesta', 'Propuesta'],
+  ['resumen', 'Resumen'], ['carpetas', 'Folder'], ['legales', 'Legales'], ['propuesta', 'Propuesta preliminar'],
   ['contrato', 'Contrato'], ['adendas', 'Adendas'],
   ['finanzas', 'Finanzas'], ['presupuesto', 'Presupuesto'], ['gantt', 'Programación'],
   ['informes', 'Coordinación administrativa'], ['tecnica', 'Coordinación técnica'], ['obra', 'Coordinación de obra'], ['enviados', 'Enviados'], ['recibidos', 'Recibidos'],
@@ -1109,7 +1109,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         </dl>
       </section>`;
     if (esCliente) {
-      const DESC = { propuesta: 'Propuesta económica', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
+      const DESC = { propuesta: 'Propuesta preliminar', contrato: 'Contrato firmado', presupuesto: 'Presupuesto de obra', gantt: 'Cronograma y avance', informes: 'Actas e informes de avance' };
       const mods = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && !NO_DOC.includes(k) && n(k) > 0);
       const conAvance = !!(e.tiene_obra && g?.filas.length);
       const pagado = pagos.reduce((a, x) => a + Number(x.valor), 0);
