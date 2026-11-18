@@ -22,7 +22,8 @@
   font-weight: 400; font-style: italic;
   font-display: swap;
 }
-/*  ===== app ===== */ /* REG — Portal de encargos · estilos de regenerativo */
+/*  ===== app ===== */
+/* REG — Portal de encargos · estilos de regenerativo */
 @font-face {
   font-family: "Stolzl";
   src: url("../assets/fonts/stolzl-light.ttf") format("truetype");
@@ -86,7 +87,8 @@ textarea {
 }
 .solo-movil {
   display: none;
-} /* ---------- Acceso ---------- */
+}
+/* ---------- Acceso ---------- */
 .acceso {
   min-height: 100vh;
   place-items: center;
@@ -116,7 +118,8 @@ textarea {
 }
 .firma .reg {
   font-weight: 500;
-} /* ---------- Formularios ---------- */
+}
+/* ---------- Formularios ---------- */
 label {
   display: block;
 }
@@ -152,7 +155,8 @@ textarea {
   font-size: 13px;
   color: var(--vino);
   margin-top: 12px;
-} /* ---------- Estructura ---------- */
+}
+/* ---------- Estructura ---------- */
 .app {
   display: grid;
   grid-template-columns: var(--lado) 1fr;
@@ -210,23 +214,11 @@ textarea {
   display: flex;
   flex-direction: column;
 }
-.cabeza {
-  padding: 22px 36px;
-}
-.cabeza .ruta {
-  font-size: 12px;
-  color: var(--gris);
-  margin-bottom: 4px;
-}
-.cabeza .acciones {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 .cont {
   padding: 28px 36px 60px;
   width: 100%;
-} /* ---------- Tarjetas KPI ---------- */
+}
+/* ---------- Tarjetas KPI ---------- */
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -253,7 +245,8 @@ textarea {
 .barra i {
   display: block;
   height: 100%;
-} /* ---------- Tablas regenerativo: encabezado gris, líneas punteadas ---------- */
+}
+/* ---------- Tablas regenerativo: encabezado gris, líneas punteadas ---------- */
 .tabla-cont {
   overflow-x: auto;
 }
@@ -297,7 +290,8 @@ th.num {
 .etiqueta.cerrado {
   background: var(--gris-fondo);
   color: var(--gris);
-} /* ---------- Bloques ---------- */
+}
+/* ---------- Bloques ---------- */
 .dos {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
@@ -380,7 +374,8 @@ th.num {
   color: var(--negro);
   font-size: 12px;
   padding: 6px 36px;
-} /* ---------- Responsive ---------- */
+}
+/* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -405,9 +400,6 @@ th.num {
   .lado.abierto {
     transform: none;
     box-shadow: 0 0 0 100vmax rgba(30, 34, 29, 0.35);
-  }
-  .cabeza h1 {
-    font-size: 20px;
   }
   .cont {
     padding: 20px 18px 48px;
@@ -446,7 +438,8 @@ th.num {
   .kpi .va {
     font-size: 20px;
   }
-} /* Carga entre pantallas */
+}
+/* Carga entre pantallas */
 body.cargando::before {
   content: "";
   position: fixed;
@@ -497,8 +490,8 @@ body.cargando::before {
 }
 .etiqueta.no_despego {
   background: #f4e6e6;
-} /* "26  I  NOMBRE": respetar los dos espacios */
-.cabeza h1,
+}
+/* "26  I  NOMBRE": respetar los dos espacios */
 td b,
 .lado .grupo,
 .datos dd {
@@ -511,7 +504,8 @@ td b,
   .acciones-fila .btn {
     margin: 3px 0 0 4px;
   }
-} /* ============ Módulos ============ */
+}
+/* ============ Módulos ============ */
 .barra-doc {
   display: flex;
   justify-content: space-between;
@@ -639,7 +633,8 @@ input.ancho-p {
 }
 .tabla-gantt td {
   white-space: nowrap;
-} /* estados del Gantt */
+}
+/* estados del Gantt */
 .t-sin_iniciar {
   background: var(--gris-fondo) !important;
   color: var(--gris);
@@ -806,7 +801,8 @@ input.ancho-p {
   .firmas {
     grid-template-columns: 1fr;
   }
-} /* ============ Impresión: papel legal con membrete ============ */
+}
+/* ============ Impresión: papel legal con membrete ============ */
 #impresion {
   display: none;
 }
@@ -901,7 +897,8 @@ input.ancho-p {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-} /* ============ Finanzas ============ */
+}
+/* ============ Finanzas ============ */
 .aviso-ej {
   background: #f7f7d9;
   padding: 10px 14px;
@@ -998,7 +995,8 @@ input.ancho-p {
 }
 .pc .sub {
   margin-left: 36px;
-} /* ============ Finanzas estilo MonAi ============ */
+}
+/* ============ Finanzas estilo MonAi ============ */
 .mon {
   position: relative;
 }
@@ -1046,10 +1044,6 @@ input.ancho-p {
 }
 .mon-filtros select {
   width: auto;
-}
-.mon-flecha {
-  text-decoration: none;
-  padding: 0 6px;
 }
 .mon-cols {
   display: flex;
@@ -1144,7 +1138,8 @@ input.ancho-p {
   .mon-col {
     flex-basis: 64px;
   }
-} /* Por confirmar (gastos que llegan al correo) */
+}
+/* Por confirmar (gastos que llegan al correo) */
 .pend-cab {
   display: flex;
   align-items: baseline;
@@ -1215,7 +1210,8 @@ input.ancho-p {
     grid-column: 1/-1;
     justify-content: flex-end;
   }
-} /* Tarjeta de descarga (vista del cliente) */
+}
+/* Tarjeta de descarga (vista del cliente) */
 .tarjeta-doc {
   display: flex;
   align-items: center;
@@ -1313,7 +1309,8 @@ body.generando .btn {
 .sop-subir {
   margin-top: 8px;
   cursor: pointer;
-} /* =====================================================================
+}
+/* =====================================================================
    Gráfica de la web regenerativo.co: solo Stolzl, 14.25px / 1.7,
    grises #999, esquinas de 3px, remate inferior como en la web.
    ===================================================================== */
@@ -1325,7 +1322,8 @@ body {
 }
 a:hover {
   color: var(--gris);
-} /* esquinas como la web */
+}
+/* esquinas como la web */
 .btn,
 .btn.sec,
 input,
@@ -1351,11 +1349,8 @@ textarea,
 .etiqueta,
 .sop-correo {
   border-radius: 3px !important;
-} /* títulos y rótulos con la escala de la web */
-.cabeza h1 {
-  font-size: clamp(28px, 3.2vw, 40px);
 }
-.cabeza .ruta,
+/* títulos y rótulos con la escala de la web */
 .kpi .et,
 .lado .grupo,
 th,
@@ -1376,7 +1371,8 @@ h3,
 }
 .sub {
   color: var(--gris);
-} /* menú lateral: activo en negro medium, como la web */
+}
+/* menú lateral: activo en negro medium, como la web */
 .lado a.activo {
   background: transparent;
   color: var(--negro);
@@ -1392,7 +1388,8 @@ h3,
 }
 .lado a {
   justify-content: flex-start;
-} /* tarjeta de descarga del cliente */
+}
+/* tarjeta de descarga del cliente */
 .tarjeta-doc {
   padding: 18px 20px;
   border: 0;
@@ -1406,7 +1403,8 @@ h3,
 .td-txt b {
   font-size: 17px;
   font-weight: 500;
-} /* remate inferior, igual al pie de la web (sin "Hablemos de tu lugar") */
+}
+/* remate inferior, igual al pie de la web (sin "Hablemos de tu lugar") */
 .remate {
   padding: clamp(64px, 7vw, 112px) 36px 36px;
   max-width: 1280px;
@@ -1453,7 +1451,8 @@ h3,
     justify-self: start !important;
     text-align: left !important;
   }
-} /* Maqueta como la web: fondo blanco, marca "regenerativo" en Stolzl 500, cabecera fija translúcida */
+}
+/* Maqueta como la web: fondo blanco, marca "regenerativo" en Stolzl 500, cabecera fija translúcida */
 .lado {
   background: var(--blanco);
   padding: 22px 18px;
@@ -1479,10 +1478,6 @@ h3,
   color: var(--negro);
   font-weight: 500;
 }
-.cabeza {
-  border-bottom: 0;
-  padding: 22px clamp(20px, 3.3vw, 48px);
-}
 .cont,
 .remate {
   padding-left: clamp(20px, 3.3vw, 48px);
@@ -1502,34 +1497,8 @@ h3,
   .lado {
     box-shadow: 0 10px 30px rgba(30, 34, 29, 0.12);
   }
-} /* Barra superior idéntica a regenerativo.co: flotante, redondeada 18px, translúcida; encargo a la izquierda, logo a la derecha */
-.cabeza {
-  position: sticky;
-  top: 12px;
-  z-index: 6;
-  margin: 0 clamp(12px, 1.6vw, 24px);
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(30, 34, 29, 0.05);
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  min-height: 64px;
-  padding: 10px clamp(20px, 3.3vw, 48px);
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 32px;
-  flex-wrap: nowrap;
 }
-.cabeza .ruta {
-  display: none;
-}
-.cabeza h1 {
-  font-size: 15px !important;
-  font-weight: 400;
-  letter-spacing: -0.005em;
-  line-height: 1.3;
-  white-space: pre-wrap;
-}
+/* Barra superior idéntica a regenerativo.co: flotante, redondeada 18px, translúcida; encargo a la izquierda, logo a la derecha */
 .logo-reg:hover {
   color: var(--negro);
 }
@@ -1539,16 +1508,7 @@ h3,
 .lado .grupo:first-of-type {
   padding-top: 0;
 }
-@media (max-width: 820px) {
-  .cabeza {
-    top: 8px;
-    margin: 0 8px;
-    padding: 8px 16px;
-  }
-} /* ===== Barra superior copiada de regenerativo.co (mismas medidas) ===== */
-.cabeza {
-  display: none;
-}
+/* ===== Barra superior copiada de regenerativo.co (mismas medidas) ===== */
 .logo-reg {
   font-family: Stolzl, "Helvetica Neue", Arial, sans-serif;
   font-weight: 500;
@@ -1570,7 +1530,8 @@ h3,
   height: calc(100vh - 64px);
   border-right: 0;
   padding: clamp(40px, 5vw, 72px) 18px 22px clamp(20px, 3.3vw, 48px);
-} /* título de página como "Encargos" en la web */
+}
+/* título de página como "Encargos" en la web */
 .titulo-pag {
   display: flex;
   justify-content: space-between;
@@ -1608,20 +1569,21 @@ h3,
   .logo-reg {
     font-size: 18px;
   }
-} /* =====================================================================
+}
+/* =====================================================================
    SISTEMA GRÁFICO DE REGENERATIVO.CO (maqueta REG - BRAND WEB)
    Sin cajas: bloques separados por espacio. Rótulos 14.25/500/.12em gris en mayúscula,
    títulos Light 34–54, nombres 17/500, texto 14.25 gris 1.65, botón negro radio 8.
    ===================================================================== */
 .titulo-pag h1 {
   line-height: 1;
-} /* rótulos */
+}
+/* rótulos */
 .kpi .et,
 .lado .grupo,
 .panel h3,
 .mon-et,
 .pend-cab h3,
-.cabeza .ruta,
 .soportes h3 {
   font-size: 14.25px !important;
   font-weight: 500 !important;
@@ -1629,7 +1591,8 @@ h3,
   text-transform: uppercase;
   color: var(--gris) !important;
   font-family: var(--t-titulo);
-} /* botones */
+}
+/* botones */
 .btn {
   border-radius: 8px !important;
   padding: 12px 22px;
@@ -1648,7 +1611,8 @@ h3,
 .btn.ok {
   background: var(--negro);
   border-color: var(--negro);
-} /* bloques sin cajas */
+}
+/* bloques sin cajas */
 .kpis {
   gap: 32px 48px;
   margin-bottom: 56px;
@@ -1762,7 +1726,8 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--negro);
-} /* tablas: encabezado gris regenerativo, líneas punteadas (regla de regenerativo) */
+}
+/* tablas: encabezado gris regenerativo, líneas punteadas (regla de regenerativo) */
 .tabla-cont {
   border: 0 !important;
   border-radius: 0 !important;
@@ -1804,7 +1769,8 @@ tr.clic:hover td {
 }
 .lado a.activo::before {
   display: none;
-} /* ---------- Finanzas con la gráfica de la web (se mantienen los colores) ---------- */
+}
+/* ---------- Finanzas con la gráfica de la web (se mantienen los colores) ---------- */
 .mon {
   border: 0 !important;
   padding: 0;
@@ -1866,10 +1832,6 @@ tr.clic:hover td {
   padding: 4px 2px;
   font-size: 15px;
   background: transparent;
-}
-.mon-flecha {
-  color: var(--negro);
-  font-size: 22px;
 }
 .mon-cols {
   gap: 18px;
@@ -1941,7 +1903,8 @@ tr.clic:hover td {
 }
 .remate-fin {
   margin-top: 0;
-} /* Botón igual a "Enviar mensaje" de regenerativo.co/contacto */
+}
+/* Botón igual a "Enviar mensaje" de regenerativo.co/contacto */
 .btn-envio {
   border-radius: 8px;
   display: inline-flex;
@@ -1969,7 +1932,8 @@ tr.clic:hover td {
 }
 .btn-envio {
   line-height: normal;
-} /* Eliminar propuesta */
+}
+/* Eliminar propuesta */
 .btn.sec.peligro {
   color: #b4552d;
   border-color: #e8c9bd;
@@ -1978,8 +1942,11 @@ tr.clic:hover td {
   color: #fff;
   background: #b4552d;
   border-color: #b4552d;
-} /*  ===== web ===== */ /* REG — Portal: capa final con la imagen de regenerativo.co
-   Mismos tamaños, botones, campos y fondo de burbujas que la web (about / contacto). */ /* ---------- Fondo de burbujas, igual a regenerativo.co/about: SOLO en el ingreso (acceso, recuperar, nueva clave).
+}
+/*  ===== web ===== */
+/* REG — Portal: capa final con la imagen de regenerativo.co
+   Mismos tamaños, botones, campos y fondo de burbujas que la web (about / contacto). */
+/* ---------- Fondo de burbujas, igual a regenerativo.co/about: SOLO en el ingreso (acceso, recuperar, nueva clave).
    Dentro del portal el fondo es blanco, para que colores e íconos se lean limpios. ---------- */
 html,
 body {
@@ -2172,7 +2139,9 @@ body:has(.acceso) .gl {
     backdrop-filter: none;
     box-shadow: none;
   }
-} /* ---------- Escala de texto de la web ---------- */ /* 14.25 = texto general y textos pequeños de la web */
+}
+/* ---------- Escala de texto de la web ---------- */
+/* 14.25 = texto general y textos pequeños de la web */
 p,
 td,
 input,
@@ -2190,7 +2159,6 @@ table,
 .modulo span,
 .lado .pie,
 .lado .pie button,
-.cabeza .ruta,
 .kpi .su,
 .btn,
 .btn.mini,
@@ -2220,10 +2188,12 @@ table,
 .graf-guia span,
 .acceso-caja p {
   font-size: 14.25px !important;
-} /* 15 = menú (como el menú superior de la web) */
+}
+/* 15 = menú (como el menú superior de la web) */
 .lado a {
   font-size: 15px !important;
-} /* 17 = subtítulos */
+}
+/* 17 = subtítulos */
 h3,
 .panel h3,
 .hoja h3,
@@ -2232,14 +2202,15 @@ h3,
 .pend-txt b {
   font-size: 17px !important;
   font-weight: 400;
-} /* 20 = nombre regenerativo, igual al encabezado de la web */
+}
+/* 20 = nombre regenerativo, igual al encabezado de la web */
 .logo-reg,
 .marca span {
   font-size: 20px !important;
   font-weight: 500;
   letter-spacing: -0.01em;
-} /* Títulos de página = título grande de la web */
-.cabeza h1,
+}
+/* Títulos de página = título grande de la web */
 .titulo-pag h1,
 .modal h2 {
   font-size: clamp(34px, 4.25vw, 54px) !important;
@@ -2258,7 +2229,8 @@ h3,
 }
 .kpi .va {
   font-size: clamp(28px, 2.6vw, 34px) !important;
-} /* Rótulos en mayúscula = "¿QUÉ NECESITAS?" de la web */
+}
+/* Rótulos en mayúscula = "¿QUÉ NECESITAS?" de la web */
 .lado .grupo,
 .kpi .et,
 .mon-et,
@@ -2269,7 +2241,8 @@ h3,
   letter-spacing: 0.12em !important;
   text-transform: uppercase;
   color: #999999 !important;
-} /* Etiquetas de campos = etiquetas del formulario de contacto */
+}
+/* Etiquetas de campos = etiquetas del formulario de contacto */
 label {
   font-size: 14.25px !important;
   font-weight: 400 !important;
@@ -2277,7 +2250,8 @@ label {
   text-transform: none !important;
   color: #999999 !important;
   margin: 18px 0 0 !important;
-} /* Encabezados de tabla: gris regenerativo, mismo tamaño */
+}
+/* Encabezados de tabla: gris regenerativo, mismo tamaño */
 th {
   font-size: 14.25px !important;
   font-weight: 500 !important;
@@ -2286,7 +2260,8 @@ th {
   background: #d9d9d9 !important;
   color: #1e221d !important;
   white-space: nowrap;
-} /* ---------- Campos: línea inferior, como en contacto ---------- */
+}
+/* ---------- Campos: línea inferior, como en contacto ---------- */
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
@@ -2318,7 +2293,8 @@ select {
   textarea {
     font-size: 16px !important;
   }
-} /* ---------- Botones: como "Enviar mensaje" de la web, esquinas rectas ---------- */
+}
+/* ---------- Botones: como "Enviar mensaje" de la web, esquinas rectas ---------- */
 .btn,
 .btn-envio {
   border-radius: 3px !important;
@@ -2342,7 +2318,8 @@ select {
 }
 .btn.full {
   min-height: 52px;
-} /* ---------- Ingreso: sin caja, sobre el fondo de burbujas ---------- */
+}
+/* ---------- Ingreso: sin caja, sobre el fondo de burbujas ---------- */
 .acceso {
   min-height: 100vh;
   padding: 48px clamp(20px, 3.3vw, 48px);
@@ -2369,7 +2346,8 @@ select {
 .firma {
   font-size: 14.25px !important;
   margin-top: 40px !important;
-} /* ---------- Superficies: esquinas rectas como la web ---------- */
+}
+/* ---------- Superficies: esquinas rectas como la web ---------- */
 .kpi,
 .panel,
 .tabla-cont,
@@ -2404,7 +2382,8 @@ select {
   .filtros select {
     width: 100% !important;
   }
-} /* ---------- Ingreso como la portada de la web: burbujas en movimiento detrás del vidrio,
+}
+/* ---------- Ingreso como la portada de la web: burbujas en movimiento detrás del vidrio,
    logo centrado, "Por — regenerativo" abajo a la izquierda y redes abajo a la derecha ---------- */
 .stage {
   width: max(calc(100vw * 1280 / 858.5), calc(100vh * 1280 / 858.5));
@@ -2507,7 +2486,8 @@ body:has(.acceso) .pie-ingreso {
 .lado .pie {
   text-transform: none !important;
   letter-spacing: 0 !important;
-} /* "Por — regenerativo": la línea va abajo, como guion bajo, igual que en toda la web */
+}
+/* "Por — regenerativo": la línea va abajo, como guion bajo, igual que en toda la web */
 .porx {
   display: inline-flex;
   align-items: baseline;
@@ -2546,7 +2526,8 @@ body:has(.acceso) .pie-ingreso {
   font-weight: 500 !important;
   color: #1e221d !important;
   line-height: 1.3 !important;
-} /* Documentos de OneDrive (propuestas y módulos del encargo) */
+}
+/* Documentos de OneDrive (propuestas y módulos del encargo) */
 .od-cab {
   display: flex;
   align-items: center;
@@ -2591,13 +2572,15 @@ body:has(.acceso) .pie-ingreso {
   .od-acc {
     flex-wrap: wrap;
   }
-} /* Inicio del equipo */
+}
+/* Inicio del equipo */
 .bienvenida {
   padding: 8px 0 28px;
   margin-bottom: 28px;
   border-bottom: 1px dotted #c9ccc6;
   max-width: 760px;
-} /* Móvil: títulos y tabla de propuestas sin apiñar botones */
+}
+/* Móvil: títulos y tabla de propuestas sin apiñar botones */
 @media (max-width: 600px) {
   .titulo-pag h1 {
     font-size: 30px !important;
@@ -2638,7 +2621,8 @@ body:has(.acceso) .pie-ingreso {
   .btn.mini {
     padding: 9px 14px;
   }
-} /* Contenidos del portal: más ancho útil y letra 20 % más pequeña que la web (los encabezados y menús quedan igual) */
+}
+/* Contenidos del portal: más ancho útil y letra 20 % más pequeña que la web (los encabezados y menús quedan igual) */
 .cont {
   max-width: 2100px;
 }
@@ -2663,7 +2647,8 @@ table.t-prop td:nth-child(2) b {
   table.t-prop td.col-opc:nth-child(1) {
     display: none;
   }
-} /* Botones de solo ícono (acciones) */
+}
+/* Botones de solo ícono (acciones) */
 .btn.mini.ico {
   padding: 0 !important;
   width: 34px;
@@ -2683,10 +2668,13 @@ table.t-prop td:nth-child(2) b {
 }
 .acciones-fila .btn.ico {
   margin-left: 6px;
-} /* Título de página 30 % más pequeño y barra lateral 10 % más angosta */
+}
+/* Título de página 30 % más pequeño y barra lateral 10 % más angosta */
 .titulo-pag h1 {
   font-size: clamp(24px, 2.98vw, 38px) !important;
-} /*  ===== portal ===== */ /* REG — Portal v33 · capa práctica de tablero
+}
+/*  ===== portal ===== */
+/* REG — Portal v33 · capa práctica de tablero
    Escala recomendada para tableros (IBM Carbon / Atlassian):
    texto 13.5 · tablas 13 · rótulos 11 en mayúscula · cifras KPI 24 · título 24 · gráficos 11.
    El prefijo ":root body" gana a las capas anteriores sin tocar el resto de la imagen. */
@@ -2695,7 +2683,8 @@ table.t-prop td:nth-child(2) b {
   --alto-barra: 56px;
   --suave: #f7f7f5;
   --tinta2: #5c625a;
-} /* ---------- Escala de texto ---------- */
+}
+/* ---------- Escala de texto ---------- */
 :root body {
   font-size: 15px;
   line-height: 1.5;
@@ -2787,7 +2776,8 @@ table.t-prop td:nth-child(2) b {
 :root body .bienvenida {
   padding: 0 0 18px;
   margin-bottom: 22px;
-} /* ---------- Campos y botones compactos ---------- */
+}
+/* ---------- Campos y botones compactos ---------- */
 :root body input:not([type="checkbox"]):not([type="radio"]),
 :root body select,
 :root body textarea {
@@ -2821,7 +2811,8 @@ table.t-prop td:nth-child(2) b {
   :root body .btn {
     min-height: 40px;
   }
-} /* ---------- Barra superior y título ---------- */
+}
+/* ---------- Barra superior y título ---------- */
 :root body .titulo-pag {
   padding: 24px clamp(16px, 2.6vw, 40px) 0;
   max-width: 1440px;
@@ -2833,7 +2824,8 @@ table.t-prop td:nth-child(2) b {
 :root body .remate {
   padding: 40px clamp(16px, 2.6vw, 40px) 24px;
   max-width: 1440px;
-} /* ---------- Barra lateral: siempre se ve el correo y "Cerrar sesión" ---------- */
+}
+/* ---------- Barra lateral: siempre se ve el correo y "Cerrar sesión" ---------- */
 :root body .lado {
   top: var(--alto-barra);
   height: calc(100vh - var(--alto-barra));
@@ -2915,7 +2907,8 @@ table.t-prop td:nth-child(2) b {
     padding: 20px 14px 0;
     width: min(280px, 86vw);
   }
-} /* ---------- Superficies ---------- */
+}
+/* ---------- Superficies ---------- */
 :root body .kpis {
   gap: 12px;
   margin-bottom: 20px;
@@ -3000,7 +2993,8 @@ table.t-prop td:nth-child(2) b {
 :root body .acciones-fila {
   white-space: nowrap;
   text-align: right;
-} /* Cabecera de panel con acciones */
+}
+/* Cabecera de panel con acciones */
 :root body .od-cab {
   display: flex;
   align-items: center;
@@ -3018,7 +3012,8 @@ table.t-prop td:nth-child(2) b {
 :root body .od-cab > a.sub {
   flex: none;
   margin-left: auto;
-} /* ---------- OneDrive: lista compacta tipo explorador ---------- */
+}
+/* ---------- OneDrive: lista compacta tipo explorador ---------- */
 :root body .od-lista {
   border-top: 1px solid var(--linea);
 }
@@ -3110,7 +3105,8 @@ table.t-prop td:nth-child(2) b {
     grid-column: 3;
     grid-row: 1/3;
   }
-} /* ---------- Resumen del encargo ---------- */
+}
+/* ---------- Resumen del encargo ---------- */
 :root body .barra-apilada {
   display: flex;
   overflow: hidden;
@@ -3181,13 +3177,16 @@ table.t-prop td:nth-child(2) b {
 :root body .tile span {
   font-size: 13px;
   color: #5c625a;
-} /* ---------- Listas de inicio ---------- */
+}
+/* ---------- Listas de inicio ---------- */
 :root body .lista-filas {
   border-top: 1px solid var(--linea);
-} /* ---------- Propuestas ---------- */
+}
+/* ---------- Propuestas ---------- */
 :root body table.t-prop td:nth-child(2) {
   min-width: 200px;
-} /* ---------- Ajustes ---------- */
+}
+/* ---------- Ajustes ---------- */
 :root body .estado-od {
   display: flex;
   align-items: center;
@@ -3209,7 +3208,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .estado-od .btn {
   margin-left: auto;
-} /* ---------- Finanzas ---------- */
+}
+/* ---------- Finanzas ---------- */
 :root body .pend-aviso {
   font-size: 13px;
   text-decoration: none;
@@ -3276,7 +3276,9 @@ table.t-prop td:nth-child(2) b {
   :root body .kpi .va {
     white-space: normal;
   }
-} /* Semáforo (Monograph): verde a tiempo, amarillo al final, rojo vencido */ /* Vista del cliente: tarjetas grandes y claras (Programa) */
+}
+/* Semáforo (Monograph): verde a tiempo, amarillo al final, rojo vencido */
+/* Vista del cliente: tarjetas grandes y claras (Programa) */
 :root body .tarjetas-cli {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -3319,17 +3321,20 @@ table.t-prop td:nth-child(2) b {
   :root body .kpis.kpis-3 {
     grid-template-columns: 1fr;
   }
-} /* Tarjeta de descarga del cliente con la misma superficie */
+}
+/* Tarjeta de descarga del cliente con la misma superficie */
 :root body .tarjeta-doc {
   border: 1px solid var(--linea) !important;
   border-radius: 8px !important;
   padding: 16px !important;
   margin-bottom: 10px;
-} /* ===== Coherencia con regenerativo.co (no copia): Stolzl liviana, grises de marca, esquinas rectas, aire ===== */
+}
+/* ===== Coherencia con regenerativo.co (no copia): Stolzl liviana, grises de marca, esquinas rectas, aire ===== */
 :root {
   --linea: #e4e4e2;
   --gris-reg: #d9d9d9;
-} /* Títulos como la web: liviano y grande, con bajada gris */
+}
+/* Títulos como la web: liviano y grande, con bajada gris */
 :root body .titulo-pag h1 {
   font-size: clamp(32px, 3.2vw, 46px) !important;
   font-weight: 300 !important;
@@ -3343,7 +3348,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .titulo-pag {
   padding-top: clamp(28px, 3vw, 44px);
-} /* Menú lateral como el menú de la web: activo en negrilla, sin fondos */
+}
+/* Menú lateral como el menú de la web: activo en negrilla, sin fondos */
 :root body .lado a,
 :root body .lado a:hover,
 :root body .lado a.activo {
@@ -3369,7 +3375,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .lado .enc-nom {
   font-weight: 500;
-} /* Superficies: esquinas rectas, línea gris clara, sin sombras */
+}
+/* Superficies: esquinas rectas, línea gris clara, sin sombras */
 :root body .kpi,
 :root body .panel,
 :root body .tile,
@@ -3398,7 +3405,8 @@ table.t-prop td:nth-child(2) b {
   border-radius: 3px;
   background: #f4f4f2;
   color: #1e221d;
-} /* Tablas: encabezado en gris regenerativo y líneas punteadas grises delgadas */
+}
+/* Tablas: encabezado en gris regenerativo y líneas punteadas grises delgadas */
 :root body th {
   background: var(--gris-reg) !important;
   color: #1e221d !important;
@@ -3414,7 +3422,8 @@ table.t-prop td:nth-child(2) b {
 :root body .od-lista,
 :root body .lista-filas {
   border-top: 1px dotted #c9c9c9;
-} /* Semáforo en tonos sobrios */
+}
+/* Semáforo en tonos sobrios */
 :root body .barra.sem-verde i {
   background: #5e8f6a;
 }
@@ -3423,7 +3432,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .barra.sem-rojo i {
   background: #b4552d;
-} /* ===== Línea regenerativo: esquinas redondeadas como la barra de la web; barras en píldora como el Gantt ===== */
+}
+/* ===== Línea regenerativo: esquinas redondeadas como la barra de la web; barras en píldora como el Gantt ===== */
 :root {
   --radio: 18px;
   --radio-s: 12px;
@@ -3492,7 +3502,9 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .etiqueta {
   border-radius: 99px;
-} /* Propuestas: ✓/✕ junto al estado */ /* Finanzas estilo Monai: el balance y las columnas redondeadas son lo principal; movimientos al lado */
+}
+/* Propuestas: ✓/✕ junto al estado */
+/* Finanzas estilo Monai: el balance y las columnas redondeadas son lo principal; movimientos al lado */
 :root body .fin-mon {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
@@ -3608,7 +3620,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .pend {
   border: 1.5px dashed #c0603a !important;
-} /* ===== Colores regenerativo en finanzas: azul para ingresos y tonos, rojo vino para gastos ===== */
+}
+/* ===== Colores regenerativo en finanzas: azul para ingresos y tonos, rojo vino para gastos ===== */
 :root {
   --ing: #00a3cb;
   --gas: #800000;
@@ -3653,7 +3666,8 @@ table.t-prop td:nth-child(2) b {
 :root body .barra i,
 :root body .barra-apilada i:first-child {
   background: #00758f;
-} /* Columnas verticales redondeadas en píldora */
+}
+/* Columnas verticales redondeadas en píldora */
 :root body .mon-col {
   flex: 0 0 64px;
 }
@@ -3671,7 +3685,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .g-par span {
   width: 16px;
-} /* Propuestas: estado del Word en palabras */
+}
+/* Propuestas: estado del Word en palabras */
 :root body .doc-estado {
   font-size: 12px;
   margin-top: 4px;
@@ -3686,7 +3701,8 @@ table.t-prop td:nth-child(2) b {
   color: #fff !important;
   padding: 3px 10px;
   border-radius: 99px;
-} /* Calendario de festivos */
+}
+/* Calendario de festivos */
 :root body .cal {
   max-width: 460px;
 }
@@ -3769,7 +3785,8 @@ table.t-prop td:nth-child(2) b {
 :root body .cal-lista li b {
   font-weight: 500;
   min-width: 20px;
-} /* Finanzas: barras verticales apenas redondeadas */
+}
+/* Finanzas: barras verticales apenas redondeadas */
 :root body .mon-barra {
   border-radius: 14px !important;
   width: 52px;
@@ -3782,7 +3799,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .g-par span {
   border-radius: 5px 5px 2px 2px !important;
-} /* Finanzas: detalle por subcategoría (etiquetas de Monai) */
+}
+/* Finanzas: detalle por subcategoría (etiquetas de Monai) */
 :root body .mon-sub {
   margin: 14px 0 4px;
   display: flex;
@@ -3815,7 +3833,8 @@ table.t-prop td:nth-child(2) b {
 :root body .ms-chip b {
   font-weight: 500;
   margin-left: 2px;
-} /* Propuestas: fecha de envío visible y editable con un clic */
+}
+/* Propuestas: fecha de envío visible y editable con un clic */
 :root body .fecha-envio {
   position: relative;
   display: inline-flex;
@@ -3853,7 +3872,8 @@ table.t-prop td:nth-child(2) b {
 :root body label.fecha-envio .xxx {
   font-size: 13px;
   letter-spacing: 0;
-} /* Inicio: visión general y recordatorios */
+}
+/* Inicio: visión general y recordatorios */
 :root body .recordatorios {
   display: flex;
   flex-direction: column;
@@ -3893,7 +3913,8 @@ table.t-prop td:nth-child(2) b {
   font-weight: 300;
   letter-spacing: -0.02em;
   line-height: 1.2;
-} /* Inicio: bloque como regenerativo.co/about */
+}
+/* Inicio: bloque como regenerativo.co/about */
 :root body .about {
   display: flex;
   flex-direction: column;
@@ -3903,7 +3924,8 @@ table.t-prop td:nth-child(2) b {
 }
 :root body .doc-estado.revisando {
   color: #999;
-} /* Celular: tarjetas de cifras compactas (2 x 2, una línea de texto) */
+}
+/* Celular: tarjetas de cifras compactas (2 x 2, una línea de texto) */
 @media (max-width: 600px) {
   :root body .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -3938,7 +3960,8 @@ table.t-prop td:nth-child(2) b {
   :root body .titulo-pag p {
     font-size: 14px;
   }
-} /* Cifras y tarjetas compactas en todo el portal (escritorio, iPad y celular) */
+}
+/* Cifras y tarjetas compactas en todo el portal (escritorio, iPad y celular) */
 :root body .kpi {
   padding: 12px 14px !important;
   border-radius: 14px !important;
@@ -3997,7 +4020,8 @@ table.t-prop td:nth-child(2) b {
     min-height: 38px;
     font-size: 14px !important;
   }
-} /* Finanzas en celular y tablet: una sola columna y "Por confirmar" ordenado */
+}
+/* Finanzas en celular y tablet: una sola columna y "Por confirmar" ordenado */
 @media (max-width: 1000px) {
   :root body .fin-grid,
   :root body .fin-mon {
@@ -4049,7 +4073,8 @@ table.t-prop td:nth-child(2) b {
   :root body .mov-txt b {
     font-size: 14px;
   }
-} /* iPhone/iPad: Safari hace zoom al tocar un campo con letra menor a 16 px y la página queda corrida. */
+}
+/* iPhone/iPad: Safari hace zoom al tocar un campo con letra menor a 16 px y la página queda corrida. */
 @media (pointer: coarse) {
   :root body input,
   :root body select,
@@ -4057,7 +4082,8 @@ table.t-prop td:nth-child(2) b {
   :root body .pend-sel select {
     font-size: 16px !important;
   }
-} /* Nada se sale de la pantalla a los lados */
+}
+/* Nada se sale de la pantalla a los lados */
 :root body .cont {
   overflow-x: clip;
 }
@@ -4075,7 +4101,8 @@ table.t-prop td:nth-child(2) b {
     flex-wrap: wrap;
     gap: 8px;
   }
-} /* Íconos del menú (línea redondeada con acento azul regenerativo) */
+}
+/* Íconos del menú (línea redondeada con acento azul regenerativo) */
 :root body .lado a {
   display: flex !important;
   align-items: center;
@@ -4102,7 +4129,9 @@ table.t-prop td:nth-child(2) b {
 :root body .lado a.enc-nom,
 :root body .lado .volver {
   gap: 6px;
-} /*  ===== movimiento ===== */ /* REG — Portal · capa de movimiento (inspirada en las animaciones de Apple: resortes suaves, respuesta al toque, nada brusco).
+}
+/*  ===== movimiento ===== */
+/* REG — Portal · capa de movimiento (inspirada en las animaciones de Apple: resortes suaves, respuesta al toque, nada brusco).
    Solo se activa con la clase "mov" en <html>. Respeta "reducir movimiento" del sistema. */
 html.mov {
   --resorte: cubic-bezier(0.32, 0.72, 0, 1); /* desaceleración tipo iOS */
@@ -4110,7 +4139,8 @@ html.mov {
   --t-rapido: 0.22s;
   --t-medio: 0.42s;
   --t-lento: 0.75s;
-} /* ---------- Entrada de cada página: los bloques suben y aparecen en cascada ---------- */
+}
+/* ---------- Entrada de cada página: los bloques suben y aparecen en cascada ---------- */
 @keyframes reg-sube {
   from {
     opacity: 0;
@@ -4147,7 +4177,8 @@ html.mov .mon-cols > *,
 html.mov tbody > tr {
   animation: reg-sube var(--t-medio) var(--resorte) both;
   animation-delay: calc(120ms + var(--i, 0) * 35ms);
-} /* ---------- Respuesta al pasar y al tocar ---------- */
+}
+/* ---------- Respuesta al pasar y al tocar ---------- */
 html.mov .kpi,
 html.mov .tile,
 html.mov .tarjeta-cli,
@@ -4203,11 +4234,11 @@ html.mov .mon-col:active,
 html.mov tr.clic:active {
   transform: scale(0.975);
   transition-duration: 0.12s;
-} /* Botones: se hunden al tocar y vuelven con resorte */
+}
+/* Botones: se hunden al tocar y vuelven con resorte */
 html.mov .btn,
 html.mov .btn-envio,
-html.mov .cal-flecha,
-html.mov .mon-flecha {
+html.mov .cal-flecha {
   transition:
     transform var(--t-medio) var(--rebote),
     background-color var(--t-rapido) ease,
@@ -4224,7 +4255,8 @@ html.mov .btn-envio:active,
 html.mov .cal-flecha:active {
   transform: scale(0.94);
   transition-duration: 0.1s;
-} /* Íconos con vida propia al pasar el cursor */
+}
+/* Íconos con vida propia al pasar el cursor */
 html.mov .btn svg,
 html.mov .od-ico svg,
 html.mov .tc-ico svg,
@@ -4277,7 +4309,8 @@ html.mov .od-fila.abierta .od-ico svg {
 }
 html.mov .od-hijos:not([hidden]) {
   animation: reg-sube var(--t-medio) var(--resorte) both;
-} /* Confirmar (✓) rebota; los puntos de estado laten suavemente */
+}
+/* Confirmar (✓) rebota; los puntos de estado laten suavemente */
 @keyframes reg-late {
   0%,
   100% {
@@ -4317,7 +4350,8 @@ html.mov .pend-n {
     transform: none;
     opacity: 1;
   }
-} /* ---------- Barras y gráficos crecen al entrar ---------- */
+}
+/* ---------- Barras y gráficos crecen al entrar ---------- */
 @keyframes reg-crece-x {
   from {
     transform: scaleX(0);
@@ -4349,7 +4383,8 @@ html.mov .g-par span {
 }
 html.mov .g-par span + span {
   animation-delay: calc(330ms + var(--i, 0) * 60ms);
-} /* ---------- Menú lateral ---------- */
+}
+/* ---------- Menú lateral ---------- */
 html.mov .lado a {
   transition:
     color var(--t-rapido),
@@ -4395,7 +4430,8 @@ html.mov .lado .cuenta {
   html.mov .lado {
     transition: transform 0.5s var(--resorte) !important;
   }
-} /* ---------- Ventanas (modales) entran como hoja con resorte ---------- */
+}
+/* ---------- Ventanas (modales) entran como hoja con resorte ---------- */
 @keyframes reg-hoja {
   from {
     opacity: 0;
@@ -4413,12 +4449,15 @@ html.mov .modal-fondo {
 }
 html.mov .modal {
   animation: reg-hoja 0.5s var(--resorte) both;
-} /* Barra superior: sombra al hacer scroll (la pone movimiento.js) */ /* Foco visible y suave */
+}
+/* Barra superior: sombra al hacer scroll (la pone movimiento.js) */
+/* Foco visible y suave */
 html.mov :focus-visible {
   outline: 2px solid #00a3cb;
   outline-offset: 2px;
   transition: outline-offset 0.2s var(--rebote);
-} /* Quien prefiera menos movimiento lo ve todo quieto */
+}
+/* Quien prefiera menos movimiento lo ve todo quieto */
 @media (prefers-reduced-motion: reduce) {
   html.mov *,
   html.mov *::before,
@@ -4426,7 +4465,8 @@ html.mov :focus-visible {
     animation: none !important;
     transition: none !important;
   }
-} /* ---------- Íconos del menú: cada uno tiene su propio gesto ---------- */
+}
+/* ---------- Íconos del menú: cada uno tiene su propio gesto ---------- */
 html.mov .ico-menu,
 html.mov .ico-menu * {
   transform-box: fill-box;
@@ -4503,7 +4543,8 @@ html.mov .lado a:active .ico-menu {
 }
 html.mov .lado a.activo .ico-menu {
   animation: reg-pop 0.55s var(--rebote) both;
-} /* ---------- Toques tipo Lovable: luz suave en movimiento, brillo en botones, vidrio ---------- */
+}
+/* ---------- Toques tipo Lovable: luz suave en movimiento, brillo en botones, vidrio ---------- */
 @keyframes reg-aurora {
   0% {
     transform: translate(0, 0) scale(1);
@@ -4532,7 +4573,9 @@ html.mov .btn:not(.sec)::after {
   html.mov .btn:not(.sec):hover::after {
     transform: translateX(120%);
   }
-} /*  ===== lovable ===== */ /* REG — Portal · versión visual tomada del concepto de Lovable, con la línea regenerativo.
+}
+/*  ===== lovable ===== */
+/* REG — Portal · versión visual tomada del concepto de Lovable, con la línea regenerativo.
    Burbujas de regenerativo de fondo, menú de vidrio flotante, bentos, mucho gráfico y poco texto.
    El logo NO cambia: "regenerativo" en Stolzl Medium, como en la web. */
 :root {
@@ -4553,7 +4596,8 @@ html.mov .btn:not(.sec)::after {
   --lv-resorte: cubic-bezier(0.32, 0.72, 0, 1);
   --lv-rebote: cubic-bezier(0.34, 1.56, 0.64, 1);
   --lv-vidrio: rgba(255, 255, 255, 0.66);
-} /* ---------- Fondo: las burbujas de regenerativo.co/about en todo el portal, con un velo claro ---------- */
+}
+/* ---------- Fondo: las burbujas de regenerativo.co/about en todo el portal, con un velo claro ---------- */
 body:not(.ingreso) .bgfix {
   display: block;
 }
@@ -4574,7 +4618,8 @@ html body .lv,
 html body .lv .main,
 html body .lv .cont {
   background: transparent !important;
-} /* ---------- Estructura ---------- */
+}
+/* ---------- Estructura ---------- */
 html body .lv {
   min-height: 100dvh;
   font-family: var(--t-texto);
@@ -4600,7 +4645,8 @@ html body .lv .remate {
   width: 100%;
   margin: auto auto 0;
   padding: 56px clamp(16px, 3.4vw, 48px) 32px !important;
-} /* Menú lateral de vidrio flotante */
+}
+/* Menú lateral de vidrio flotante */
 html body .lv .lado {
   position: fixed !important;
   inset: 16px auto 16px 16px !important;
@@ -4749,11 +4795,13 @@ html body .lv .lado .pie button {
 }
 html body .lv .lado .grupo {
   padding: 16px 12px 6px !important;
-} /* Barra superior y menú inferior (solo celular) */
+}
+/* Barra superior y menú inferior (solo celular) */
 html body .lv .lv-top,
 html body .lv .lv-tabs {
   display: none;
-} /* ---------- Título de cada página ---------- */
+}
+/* ---------- Título de cada página ---------- */
 html body .lv .titulo-pag {
   max-width: 1200px;
   width: 100%;
@@ -4799,7 +4847,8 @@ html body .lv .titulo-pag .acciones {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-} /* ---------- Superficies ---------- */
+}
+/* ---------- Superficies ---------- */
 html body .lv .lv-card,
 html body .lv .kpi,
 html body .lv .panel,
@@ -4840,7 +4889,8 @@ html body .lv .kpi:active,
 html body .lv .tarjeta-cli:active {
   transform: scale(0.985);
   transition-duration: 0.12s;
-} /* ---------- Inicio: bento ---------- */
+}
+/* ---------- Inicio: bento ---------- */
 .bento-hero {
   display: grid;
   grid-template-columns: 1.55fr 1fr;
@@ -5068,10 +5118,6 @@ html.mov .anillos {
   background: var(--lv-vino);
   margin: 0;
 }
-.lv-vacio {
-  padding: 14px 0;
-  color: var(--lv-gris);
-}
 .bento-kpis {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -5190,7 +5236,8 @@ html.mov .lv-pill i {
 }
 .lv-link:hover svg {
   transform: translate(2px, -2px);
-} /* Columnas pareadas (ingresos azul, gastos vino), solo un poco redondeadas */
+}
+/* Columnas pareadas (ingresos azul, gastos vino), solo un poco redondeadas */
 .lv-cols-ley {
   display: flex;
   flex-wrap: wrap;
@@ -5299,7 +5346,8 @@ html.mov .lv-col-b i.gas {
   to {
     transform: scaleY(1);
   }
-} /* ---------- Filtros: control segmentado en píldora + buscador ---------- */
+}
+/* ---------- Filtros: control segmentado en píldora + buscador ---------- */
 .lv-filtros {
   display: flex;
   align-items: center;
@@ -5375,7 +5423,8 @@ html body .lv .lv-buscar input {
   min-width: 0;
   flex: 1;
   outline: none;
-} /* ---------- Encargos: tarjetas ---------- */
+}
+/* ---------- Encargos: tarjetas ---------- */
 .lv-enc-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5494,7 +5543,8 @@ html body .lv .lv-buscar input {
     background: var(--lv-crema);
     transform: scale(1.08) rotate(-6deg);
   }
-} /* Chips de estado */
+}
+/* Chips de estado */
 .lv-chip {
   display: inline-flex;
   align-items: center;
@@ -5566,7 +5616,8 @@ html body .lv .lv-buscar input {
 html.mov .lv-enc-grid > * {
   animation: reg-sube 0.6s var(--lv-resorte) both;
   animation-delay: calc(80ms + var(--i, 0) * 60ms);
-} /* ---------- KPI de módulos, tablas, etiquetas, botones ---------- */
+}
+/* ---------- KPI de módulos, tablas, etiquetas, botones ---------- */
 html body .lv .kpis {
   gap: 20px !important;
 }
@@ -5679,7 +5730,8 @@ html body .lv .vacio {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.7);
   border: 1px dashed var(--lv-tabla);
-} /* Ventanas como hoja de vidrio */
+}
+/* Ventanas como hoja de vidrio */
 html body .modal-fondo {
   background: rgba(30, 34, 29, 0.22) !important;
   -webkit-backdrop-filter: blur(8px);
@@ -5690,7 +5742,8 @@ html body .modal {
   background: rgba(255, 255, 255, 0.94) !important;
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 30px 80px -30px rgba(0, 60, 80, 0.45) !important;
-} /* Entrada de cada página: sube, se enfoca y aparece */
+}
+/* Entrada de cada página: sube, se enfoca y aparece */
 @keyframes lv-entra {
   from {
     opacity: 0;
@@ -5712,7 +5765,8 @@ html.mov body .lv .cont {
 }
 html.mov body .lv .lv-lado {
   animation: lv-entra 0.7s var(--lv-ease) both;
-} /* ---------- Tablet y celular ---------- */
+}
+/* ---------- Tablet y celular ---------- */
 @media (max-width: 1180px) {
   .bento-kpis {
     grid-template-columns: repeat(2, 1fr);
@@ -5929,7 +5983,8 @@ html.mov body .lv .lv-lado {
   .anillos {
     animation: none !important;
   }
-} /* Ajustes finos */
+}
+/* Ajustes finos */
 html body .lv .hero-about {
   border-color: rgba(234, 228, 214, 0.9) !important;
 }
@@ -6040,7 +6095,8 @@ html body .lv .etiqueta.no_despego::before {
 }
 html body .lv .doc-estado {
   margin-top: 6px;
-} /* =====================================================================
+}
+/* =====================================================================
    Menú arriba o al lado (como Apple Music en iPad y Mac) — solo en pantallas grandes.
    En el celular el menú siempre va abajo.
    ===================================================================== */
@@ -6276,7 +6332,8 @@ html body .lv .lv-arriba {
   html.menu-arriba body .lv .titulo-pag {
     padding-top: clamp(28px, 3.6vw, 48px) !important;
   }
-} /* ---------- Celular: barra inferior como Apple Music ---------- */
+}
+/* ---------- Celular: barra inferior como Apple Music ---------- */
 @media (max-width: 1023px) {
   .lv-tabs-in {
     max-width: 520px;
@@ -6317,7 +6374,8 @@ html body .lv .lv-arriba {
   html body .lv .lv-top {
     border-radius: 999px;
   }
-} /* Fechas del encargo editables en el sitio */
+}
+/* Fechas del encargo editables en el sitio */
 .lv-fecha {
   position: relative;
   display: inline-flex;
@@ -6379,7 +6437,8 @@ html body .lv label.lv-fecha.falta {
 html body .lv .kpi .va {
   font-size: clamp(20px, 1.9vw, 28px) !important;
   text-overflow: clip;
-} /* Íconos simples: un solo color; el detalle azul solo en la opción activa */
+}
+/* Íconos simples: un solo color; el detalle azul solo en la opción activa */
 html body .ico-menu .ac {
   stroke: currentColor !important;
   fill: none !important;
@@ -6426,12 +6485,14 @@ html body label.lv-check {
 .lv-check:has(input:checked) {
   background: rgba(0, 163, 203, 0.1);
   border-color: rgba(0, 163, 203, 0.4);
-} /* Íconos de una sola forma: el gesto es de todo el ícono */
+}
+/* Íconos de una sola forma: el gesto es de todo el ícono */
 html.mov body .ico-menu {
   transition:
     transform 0.45s var(--lv-rebote),
     color 0.2s;
-} /* Íconos sólidos tipo Apple: gris cuando no está activo, azul cuando sí */
+}
+/* Íconos sólidos tipo Apple: gris cuando no está activo, azul cuando sí */
 html body .lv .ico-menu {
   color: rgba(30, 34, 29, 0.42);
   stroke: none !important;
@@ -6456,7 +6517,8 @@ html body .lv .ico-menu * {
   width: 25px;
   height: 25px;
   color: rgba(30, 34, 29, 0.85);
-} /* Íconos solo en la barra inferior del celular; el menú lateral y la hoja quedan solo con texto */
+}
+/* Íconos solo en la barra inferior del celular; el menú lateral y la hoja quedan solo con texto */
 html body .lv .lv-nav .ico-menu {
   display: none !important;
 }
@@ -6469,7 +6531,8 @@ html body .lv .lv-tabs-in > button .ico-menu {
 }
 html body .lv .lv-tabs-in > .activo .ico-menu {
   color: var(--lv-azul) !important;
-} /* Propuestas en el celular: tarjeta limpia con las acciones arriba a la derecha */
+}
+/* Propuestas en el celular: tarjeta limpia con las acciones arriba a la derecha */
 @media (max-width: 760px) {
   html body .lv table.t-prop tr {
     position: relative;
@@ -6524,7 +6587,8 @@ html body .lv .lv-tabs-in > .activo .ico-menu {
   html body .lv table.t-prop td:nth-child(2) b {
     padding-right: 0;
   }
-} /* Barras de vidrio como la de regenerativo.co: al pasar el contenido por debajo se alcanza a ver, desenfocado */
+}
+/* Barras de vidrio como la de regenerativo.co: al pasar el contenido por debajo se alcanza a ver, desenfocado */
 html body .lv .lv-top,
 html body .lv .lv-tabs-in,
 .lv-isla,
@@ -6546,7 +6610,8 @@ html body .lv .lv-tabs-in {
   html body .lv .lv-lado {
     background: rgba(255, 255, 255, 0.78) !important;
   }
-} /* =====================================================================
+}
+/* =====================================================================
    VERSIÓN FINAL — liquid glass (Apple) + concepto Lovable
    ===================================================================== */
 :root {
@@ -6554,7 +6619,8 @@ html body .lv .lv-tabs-in {
   --lg-borde: rgba(255, 255, 255, 0.72);
   --lg-brillo: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.35);
   --lg-sombra: 0 1px 2px rgba(30, 34, 29, 0.04), 0 18px 48px -24px rgba(0, 80, 100, 0.28);
-} /* Superficies con brillo especular en el borde superior, como el vidrio líquido de Apple */
+}
+/* Superficies con brillo especular en el borde superior, como el vidrio líquido de Apple */
 html body .lv .lv-card,
 html body .lv .kpi,
 html body .lv .panel,
@@ -6581,7 +6647,8 @@ html body .lv .hero-about {
       0 2px 4px rgba(30, 34, 29, 0.04),
       0 28px 56px -22px rgba(0, 117, 143, 0.34) !important;
   }
-} /* ---------- Acceso ---------- */
+}
+/* ---------- Acceso ---------- */
 body.ingreso #raiz.gl {
   box-shadow: none !important;
 }
@@ -6879,7 +6946,8 @@ html.mov .lv-acc-card {
   .pie-ingreso .redes {
     bottom: 16px !important;
   }
-} /* ---------- Comentarios y dudas ---------- */
+}
+/* ---------- Comentarios y dudas ---------- */
 .lv-com-f {
   display: flex;
   flex-direction: column;
@@ -6996,7 +7064,8 @@ html body .lv .lv-resp-f textarea:focus {
     margin-left: 0;
     width: 100%;
   }
-} /* ---------- Documentos enviados al cliente ---------- */
+}
+/* ---------- Documentos enviados al cliente ---------- */
 .lv-docs {
   list-style: none;
   margin: 14px 0 0;
@@ -7174,7 +7243,8 @@ html body .lv .tarjeta-cli:hover .tc-flecha {
   .lv-reabrir {
     margin-left: 0;
   }
-} /* =====================================================================
+}
+/* =====================================================================
    Íconos dinámicos de la barra inferior (celular) — burbuja de vidrio que se desliza,
    ícono que salta al activarse y un gesto propio por cada uno
    ===================================================================== */
@@ -7470,7 +7540,8 @@ html body .lv .tarjeta-cli:hover .tc-flecha {
       opacity: 1;
     }
   }
-} /* Íconos dentro del contenido: más vivos al pasar o tocar */
+}
+/* Íconos dentro del contenido: más vivos al pasar o tocar */
 .tc-ico svg,
 .lv-doc-ico,
 .lv-od svg,
@@ -7535,7 +7606,8 @@ html.mov .lv-rec.alto .lv-circ {
     animation: none !important;
     transition: none !important;
   }
-} /* Finanzas: columnas de ingresos (azul) y gastos (vino) con íconos de línea */
+}
+/* Finanzas: columnas de ingresos (azul) y gastos (vino) con íconos de línea */
 html body .lv .mon-ico {
   margin-top: -40px;
   width: 34px;
@@ -7645,7 +7717,8 @@ html body .lv .mon-ley::before {
   background: var(--lv-azul);
   margin-right: 6px;
   vertical-align: -1px;
-} /* Tamaño de títulos igual al de regenerativo.co ("Antes de trazar, leemos el lugar.") */
+}
+/* Tamaño de títulos igual al de regenerativo.co ("Antes de trazar, leemos el lugar.") */
 html body .lv .titulo-pag h1,
 .lv-acc-hero h1,
 html body .lv .ha-tit,
@@ -7670,7 +7743,8 @@ html body .lv .hero-about {
   html body .lv .ha-tit {
     font-size: 34px !important;
   }
-} /* Volver a la página de regenerativo */
+}
+/* Volver a la página de regenerativo */
 .lv-acc-volver {
   position: fixed;
   top: max(env(safe-area-inset-top), 14px);
@@ -7705,7 +7779,8 @@ html body .lv .hero-about {
 }
 .lv-acc-volver:hover svg {
   transform: translateX(-4px) scale(1.06);
-} /* descendentes (g, p, y) completos en títulos de línea 1: Safari recorta lo que sale de la caja al animar */
+}
+/* descendentes (g, p, y) completos en títulos de línea 1: Safari recorta lo que sale de la caja al animar */
 .lv-acc-hero h1,
 html body .lv .titulo-pag h1,
 html body .lv .ha-tit,
@@ -7745,7 +7820,8 @@ html body .lv .lv-web:hover {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-} /* Portada de encargo (Warmspace): banda de burbujas con fichas de vidrio encima */
+}
+/* Portada de encargo (Warmspace): banda de burbujas con fichas de vidrio encima */
 .lv-enc {
   position: relative;
   overflow: hidden;
@@ -7807,7 +7883,8 @@ html body .lv .lv-web:hover {
   .lv-enc-cov {
     height: 112px;
   }
-} /* Títulos palabra por palabra, como en regenerativo.co */
+}
+/* Títulos palabra por palabra, como en regenerativo.co */
 .lv-w {
   display: inline-block;
   overflow: hidden;
@@ -7839,7 +7916,8 @@ html body .lv .lv-web:hover {
     left: auto;
     margin: -8px 0 10px -12px;
   }
-} /* Acceso: dos frases que se alternan con un desvanecido lento */
+}
+/* Acceso: dos frases que se alternan con un desvanecido lento */
 .lv-acc-rota {
   display: grid;
 }
@@ -7887,7 +7965,8 @@ html body .lv .lv-web:hover {
   .lv-acc-frase {
     transition: none;
   }
-} /* Acceso: fondo como regenerativo.co (About): burbujas vivas detrás de un vidrio esmerilado crema */
+}
+/* Acceso: fondo como regenerativo.co (About): burbujas vivas detrás de un vidrio esmerilado crema */
 body.ingreso .bgfix::after {
   background: none !important;
 }
@@ -7915,7 +7994,8 @@ html.mov .lv-acc-simbolo {
 }
 html.mov .lv-acc-hero > a:has(.lv-acc-simbolo) {
   animation: none !important;
-} /* Redes y contacto: mismo efecto que regenerativo.co (salto suave y cambio a gris) */
+}
+/* Redes y contacto: mismo efecto que regenerativo.co (salto suave y cambio a gris) */
 a[href*="instagram.com"] svg,
 a[href^="mailto:"] svg,
 a[href*="wa.me"] svg,
@@ -7948,7 +8028,8 @@ a[href*="wa.me"] svg * {
   a[href*="wa.me"]:hover svg [fill]:not([fill="none"]) {
     fill: #999999;
   }
-} /* cursor: círculo gris translúcido, igual que la web */
+}
+/* cursor: círculo gris translúcido, igual que la web */
 @media (hover: hover) and (pointer: fine) {
   html,
   body {
@@ -7973,7 +8054,8 @@ a[href*="wa.me"] svg * {
   [contenteditable] {
     cursor: text !important;
   }
-} /* Stolzl solo tiene 300, 400 y 500: nunca negrita sintética */
+}
+/* Stolzl solo tiene 300, 400 y 500: nunca negrita sintética */
 b,
 strong,
 th,
@@ -7992,7 +8074,8 @@ h1 {
 }
 * {
   font-synthesis: style;
-} /* Pie del menú lateral: mismo lenguaje que regenerativo.co (texto 14.25px, ícono de línea, negro a gris) */
+}
+/* Pie del menú lateral: mismo lenguaje que regenerativo.co (texto 14.25px, ícono de línea, negro a gris) */
 html body .lv .lv-web,
 html body .lv .lv-salir {
   display: flex !important;
@@ -8059,7 +8142,8 @@ html body .lv .lv-pie-lado .pie-correo {
 .remate-fin {
   display: flex !important;
   justify-content: flex-start !important;
-} /* Inicio · Sobre regenerativo: dos frases que se alternan muy lento */
+}
+/* Inicio · Sobre regenerativo: dos frases que se alternan muy lento */
 .ha-rota {
   display: grid;
 }
@@ -8107,7 +8191,8 @@ html body .lv .lv-pie-lado .pie-correo {
   .ha-frase {
     transition: none;
   }
-} /* Escala de la web en el bloque Sobre regenerativo: texto 14.25px, cita 14.25px */
+}
+/* Escala de la web en el bloque Sobre regenerativo: texto 14.25px, cita 14.25px */
 html body .lv .ha-lead {
   font-size: 14.25px;
   line-height: 1.6;
@@ -8133,7 +8218,8 @@ html body .lv .lv-web,
 html body .lv .lv-salir {
   font-family: var(--t-texto) !important;
   letter-spacing: 0 !important;
-} /* Una sola tipografía como en regenerativo.co: Stolzl también en el texto del portal (los documentos impresos conservan la suya) */
+}
+/* Una sola tipografía como en regenerativo.co: Stolzl también en el texto del portal (los documentos impresos conservan la suya) */
 :root {
   --t-texto: "Stolzl", "Helvetica Neue", Arial, sans-serif;
 }
@@ -8153,7 +8239,8 @@ textarea,
 select,
 button {
   font-family: inherit;
-} /* Más ancho útil para tablas: que las acciones se vean completas */
+}
+/* Más ancho útil para tablas: que las acciones se vean completas */
 html body .lv .cont,
 html body .lv .titulo-pag,
 html body .lv .remate {
@@ -8170,7 +8257,8 @@ html body .lv .remate {
   html body .lv table.t-prop td:nth-child(3) {
     min-width: 120px;
   }
-} /* Propuestas en pantallas medianas: el código pasa debajo del nombre y las acciones se agrupan */
+}
+/* Propuestas en pantallas medianas: el código pasa debajo del nombre y las acciones se agrupan */
 @media (min-width: 761px) and (max-width: 1499px) {
   html body .lv table.t-prop th:first-child,
   html body .lv table.t-prop td:first-child {
@@ -8205,7 +8293,8 @@ html body .lv .remate {
     margin: 3px !important;
     vertical-align: top;
   }
-} /* Dinamismo de íconos en todo el portal: mismo lenguaje de regenerativo.co */
+}
+/* Dinamismo de íconos en todo el portal: mismo lenguaje de regenerativo.co */
 html body .lv button svg,
 html body .lv .btn svg,
 html body .lv a svg,
@@ -8248,7 +8337,8 @@ html body .lv .buscar svg {
 html body .lv input[type="search"]:focus ~ svg,
 html body .lv :has(> input:focus) > svg {
   transform: scale(1.15) rotate(-8deg);
-} /* + en botones principales: gira suave */
+}
+/* + en botones principales: gira suave */
 @media (hover: hover) {
   html body .lv .btn:hover .mas {
     transform: rotate(90deg);
@@ -8257,7 +8347,8 @@ html body .lv :has(> input:focus) > svg {
 html body .lv .btn .mas {
   display: inline-block;
   transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-} /* Tarjetas de encargo compactas (práctico en teléfono) */
+}
+/* Tarjetas de encargo compactas (práctico en teléfono) */
 html body .lv .lv-enc {
   padding: 16px 18px !important;
 }
@@ -8335,7 +8426,8 @@ html body .lv .lv-tabs-in > button span {
   letter-spacing: -0.015em;
   overflow: visible;
   text-overflow: clip;
-} /* Finanzas: marca de pagado total por encargo */
+}
+/* Finanzas: marca de pagado total por encargo */
 html body .lv .pago-tog {
   white-space: nowrap;
   font-size: 12px !important;
@@ -8359,7 +8451,8 @@ a:hover,
 a:focus-visible,
 button:hover {
   text-decoration: none !important;
-} /* Al ingresar: nada se pone gris; el botón sigue vivo con un brillo que recorre */
+}
+/* Al ingresar: nada se pone gris; el botón sigue vivo con un brillo que recorre */
 body.ingreso .lv-acc-card .btn.full:disabled,
 body.ingreso .lv-acc-card .btn.full.ocupado {
   opacity: 1 !important;
@@ -8383,7 +8476,8 @@ body.cargando #raiz,
 body.cargando .lv-acc-card {
   filter: none !important;
   opacity: 1 !important;
-} /* Tarjetas: las esquinas redondeadas se mantienen al pasar el cursor (Safari) */
+}
+/* Tarjetas: las esquinas redondeadas se mantienen al pasar el cursor (Safari) */
 html body .lv .lv-enc-cov {
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
@@ -8403,7 +8497,8 @@ html body .lv .tile {
   backface-visibility: hidden;
   will-change: transform;
   -webkit-transform: translateZ(0);
-} /* Detalles: las tres fechas juntas en una sola fila */
+}
+/* Detalles: las tres fechas juntas en una sola fila */
 html body .lv .datos-2c .dt-fechas {
   grid-column: 1;
 }
@@ -8421,7 +8516,8 @@ html body .lv .dd-fechas span {
 html body .lv .dd-fechas small {
   font-size: 11.5px;
   color: #999999;
-} /* Folder del proyecto: un solo enlace, simple */
+}
+/* Folder del proyecto: un solo enlace, simple */
 html body .lv .folder-link {
   display: flex;
   align-items: center;
@@ -8467,7 +8563,8 @@ html body .lv .folder-link .folder-flecha {
   html body .lv .datos-2c .dd-fechas {
     grid-column: auto;
   }
-} /* Finanzas: detalle por categoría (ingresos y gastos), como en MONAI */
+}
+/* Finanzas: detalle por categoría (ingresos y gastos), como en MONAI */
 html body .modal.modal-cat {
   max-width: 760px;
   width: min(760px, calc(100vw - 32px));
@@ -8525,7 +8622,8 @@ html body .lv .clave-vis {
 }
 html body .lv .copiar {
   margin-left: 6px;
-} /* Cliente: Enviados y Recibidos con su explicación */
+}
+/* Cliente: Enviados y Recibidos con su explicación */
 html body .lv .cli-docs-cab {
   margin-bottom: 14px;
 }
@@ -8544,7 +8642,8 @@ html body .lv .cli-subir {
 }
 html body .lv .cli-docs + .cli-docs {
   margin-top: 18px;
-} /* Visor de Presupuesto y Programación (solo lectura, al día con la carpeta) */
+}
+/* Visor de Presupuesto y Programación (solo lectura, al día con la carpeta) */
 html body .lv .visor-cab {
   display: flex;
   align-items: center;
@@ -8581,7 +8680,8 @@ html body .lv .visor-marco iframe {
   html body .lv .visor-marco {
     height: 70vh;
   }
-} /* Reseña del proyecto */
+}
+/* Reseña del proyecto */
 html body .lv .resena textarea {
   width: 100%;
   margin: 12px 0;
@@ -8634,7 +8734,8 @@ html body .lv .estrellas.mini {
 html body .lv .estrellas.mini i {
   font-style: normal;
   color: #e3dfd3;
-} /* Acceso directo al chat con Claude: flota a la derecha mientras te desplazas */
+}
+/* Acceso directo al chat con Claude: flota a la derecha mientras te desplazas */
 .lv-claude {
   position: fixed;
   right: max(18px, env(safe-area-inset-right));
@@ -8734,7 +8835,8 @@ html body .lv label.cli-subir {
   letter-spacing: 0 !important;
   font-size: 13px !important;
   font-weight: 500;
-} /* Menú lateral: nada se aplasta cuando la pantalla es baja; si no cabe, el menú hace scroll y el correo se ve completo */
+}
+/* Menú lateral: nada se aplasta cuando la pantalla es baja; si no cabe, el menú hace scroll y el correo se ve completo */
 html body .lv .lv-lado > .lv-marca,
 html body .lv .lv-lado > .lv-web,
 html body .lv .lv-lado > .lv-pie-lado {
@@ -8754,7 +8856,8 @@ html body .lv .lv-lado .pie-correo {
   flex-shrink: 0;
   line-height: 1.5;
   min-height: 1.5em;
-} /* Valor del encargo editable: valor base, adicionales e ingresos */
+}
+/* Valor del encargo editable: valor base, adicionales e ingresos */
 html body .panel-cab {
   display: flex;
   align-items: center;
@@ -8890,7 +8993,8 @@ html body .valor-ed:hover {
 }
 html body .valor-ed:hover svg {
   transform: translateY(-1px) rotate(-8deg);
-} /* Finanzas: buscar movimientos y editar categorías */
+}
+/* Finanzas: buscar movimientos y editar categorías */
 html body .buscar-mov {
   width: 100%;
   margin: 4px 0 10px;
@@ -8954,7 +9058,8 @@ html body .modal-cats .cat-fila.nueva {
   html body .modal-cats .cat-fila.nueva > span {
     display: none;
   }
-} /* Importar desde MONAI */
+}
+/* Importar desde MONAI */
 html body .monai-arch {
   display: flex;
   align-items: center;
@@ -9026,7 +9131,8 @@ html body .monai-det li {
 html body .monai-det .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
-} /* Tarjeta de encargo: botón de abrir circular de vidrio; la flecha sale y entra una nueva al pasar el cursor */
+}
+/* Tarjeta de encargo: botón de abrir circular de vidrio; la flecha sale y entra una nueva al pasar el cursor */
 html body .lv-enc-cab .lv-ir {
   margin-left: auto;
   position: relative;
@@ -9107,7 +9213,8 @@ html body .lv .fila-correo {
 html body .lv .fila-correo input {
   flex: 1;
   min-width: 0;
-} /* Las cifras de los KPI se ajustan al ancho de su tarjeta (no se cortan con 4 tarjetas) */
+}
+/* Las cifras de los KPI se ajustan al ancho de su tarjeta (no se cortan con 4 tarjetas) */
 html body .lv .kpi {
   container-type: inline-size;
 }
@@ -9128,7 +9235,8 @@ html body .lv .alcance .lv-check {
 html body .lv dd .alcance {
   vertical-align: middle;
   margin-top: -4px;
-} /* Documentos de la propuesta: nombre completo visible */
+}
+/* Documentos de la propuesta: nombre completo visible */
 html body .prop-docs .od-fila {
   grid-template-columns: minmax(0, 1fr) auto !important;
   padding: 8px 6px !important;
@@ -9144,7 +9252,8 @@ html body .prop-docs .od-nom {
 html body .prop-docs .od-nom b {
   overflow-wrap: anywhere;
   font-weight: 500;
-} /* Finanzas del encargo: gastos por categoría */
+}
+/* Finanzas del encargo: gastos por categoría */
 html body .lv .gastos-cat {
   display: flex;
   flex-direction: column;
@@ -9227,7 +9336,8 @@ html body .lv .dos > * {
   html body .lv .t-fin-enc td.num {
     font-size: 13.5px;
   }
-} /* Etapa del encargo en Resumen (equipo): botones claros, la activa con el color de su etapa */
+}
+/* Etapa del encargo en Resumen (equipo): botones claros, la activa con el color de su etapa */
 html body .lv .etapas {
   display: inline-flex;
   flex-wrap: wrap;
@@ -9283,7 +9393,8 @@ html body .lv .alcance-modal {
   display: flex;
   gap: 8px;
   padding-top: 6px;
-} /* Finanzas del encargo: Ingresos en azul y Gastos en vino, como en Finanzas generales */
+}
+/* Finanzas del encargo: Ingresos en azul y Gastos en vino, como en Finanzas generales */
 html body .lv h3.tit-ing,
 html body .lv h3.tit-gas {
   display: flex;
@@ -9300,7 +9411,8 @@ html body .lv h3.tit-gas::before {
 }
 html body .lv h3.tit-gas::before {
   background: var(--lv-vino);
-} /* Hoja del menú en celular y tableta: pie limpio y aireado, sin el botón flotante encima */
+}
+/* Hoja del menú en celular y tableta: pie limpio y aireado, sin el botón flotante encima */
 @media (max-width: 1023px) {
   html body .lv .lv-lado {
     padding-bottom: calc(max(env(safe-area-inset-bottom), 14px) + 14px) !important;
@@ -9357,7 +9469,8 @@ html body .lv h3.tit-gas::before {
   html body .lv .lv-nav a {
     padding: 11px 12px !important;
   }
-} /* Cargas del cliente: indicador y error con reintento */
+}
+/* Cargas del cliente: indicador y error con reintento */
 html body .lv .cargando-cli {
   display: flex;
   align-items: center;
@@ -9409,7 +9522,8 @@ html body .lv .cont.fin-cargando {
   opacity: 0.35;
   pointer-events: none;
   transition: opacity 0.15s;
-} /* Legibilidad: textos secundarios con contraste suficiente (≥ 4,5:1 sobre blanco) sin perder la jerarquía */
+}
+/* Legibilidad: textos secundarios con contraste suficiente (≥ 4,5:1 sobre blanco) sin perder la jerarquía */
 html body .lv {
   --lv-gris-texto: #6b6b6b;
 }
@@ -9442,7 +9556,8 @@ html body .lv .lv-nav a .cuenta {
 }
 html body .lv ::placeholder {
   color: #8a8a8a;
-} /* Detalles del encargo: la columna de etiquetas con espacio para no partir palabras */
+}
+/* Detalles del encargo: la columna de etiquetas con espacio para no partir palabras */
 html body .lv dl.datos {
   grid-template-columns: minmax(120px, max-content) minmax(0, 1fr);
 }
@@ -9477,7 +9592,8 @@ html body .lv .datos-2c .dd-ancho {
   html body .lv .datos-2c .dd-ancho {
     grid-column: auto;
   }
-} /* Textos dinámicos (igual que regenerativo.co): menús, filtros y enlaces de texto se ponen grises al pasar el cursor, con cambio lento */
+}
+/* Textos dinámicos (igual que regenerativo.co): menús, filtros y enlaces de texto se ponen grises al pasar el cursor, con cambio lento */
 html body .lv .lv-nav a,
 html body .lv .lv-isla-in a,
 html body .lv .lv-seg button,
@@ -9508,7 +9624,6 @@ html body .lv .lv-tabs-in > a {
     color: #999999 !important;
   }
 }
-
 /* Ajustes en ventana (engranaje de la cabecera) */
 .modal.modal-ajustes {
   max-width: 980px;
@@ -9741,24 +9856,6 @@ html body .lv .lv-tabs-in > a {
   }
 }
 /* Finanzas: el año junto al mes lleva a la vista de todo el año */
-.mon-anio {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.6s ease;
-}
-.mon-anio:hover {
-  color: #999999;
-}
-.mon-ver-mes {
-  font-size: 13px;
-  color: var(--gris);
-  text-decoration: none;
-  margin-left: 6px;
-  transition: color 0.6s ease;
-}
-.mon-ver-mes:hover {
-  color: #999999;
-}
 .panel-anio .g-col {
   min-width: 0;
 }
@@ -9878,7 +9975,6 @@ html body .lv .lv-tabs-in > a {
   text-transform: none;
 }
 .pend-sel select.falta { border-color: #8B1A1A; box-shadow: 0 0 0 2px rgba(139,26,26,.18); }
-
 /* Finanzas en celular: la tabla de encargos se lee como tarjetas (valor, recibido y por cobrar en filas, sin desplazar) */
 @media (max-width: 600px) {
   html body .lv table.t-encfin thead { display: none; }
@@ -9891,33 +9987,29 @@ html body .lv .lv-tabs-in > a {
   html body .lv table.t-encfin .valor-ed { padding: 0; }
   html body .lv .tabla-cont:has(table.t-encfin) { overflow: visible; }
 }
-
 /* Claude: en computador botón flotante; en celular y tableta va dentro del menú (no tapa botones ni textos) */
 html body .lv a.lv-web.lv-claude-hoja { display: none !important; }
 @media (max-width: 880px) {
   .lv-claude { display: none !important; }
   html body .lv a.lv-web.lv-claude-hoja { display: flex !important; margin-top: 4px !important; }
 }
-
 /* Claves de acceso de clientes en la tipografía de la marca */
 html body .lv .clave-vis { font-family: var(--t-texto, 'Stolzl'), sans-serif !important; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
-
 /* Avisos breves (reemplazan la ventana del sistema) */
 .lv-toast { position: fixed; left: 50%; bottom: calc(28px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 200; max-width: min(520px, calc(100vw - 32px)); padding: 14px 20px; border-radius: 16px; background: #1e221d; color: #fff; font-family: var(--t-texto, 'Stolzl'), sans-serif; font-size: 14.5px; line-height: 1.45; white-space: pre-line; box-shadow: 0 18px 40px -16px rgba(30, 34, 29, 0.55); animation: lv-toast-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer; transition: opacity 0.5s ease, transform 0.5s ease; }
 .lv-toast.fuera { opacity: 0; transform: translate(-50%, 12px); }
 @keyframes lv-toast-in { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
-@media (max-width: 1023px) { .lv-toast { bottom: calc(104px + env(safe-area-inset-bottom)); } }
-
+@media (max-width: 1023px) {
+  .lv-toast { bottom: calc(104px + env(safe-area-inset-bottom)); }
+}
 /* Estado de OneDrive en celular: el botón baja de línea en vez de salirse de la pantalla */
 @media (max-width: 600px) {
   :root body .estado-od { flex-wrap: wrap; row-gap: 10px; }
 }
-
 /* Filtros en celular: todos caben a la vista (sin pestañas escondidas a la derecha) */
 @media (max-width: 430px) {
   html body .lv .lv-seg button { padding: 8px 7px !important; font-size: 12.5px !important; }
 }
-
 /* Trazabilidad de correos del encargo */
 .lv .cor-linea { list-style: none; margin: 8px 0 0; padding: 0; }
 .lv .cor-mes { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tinta2, #8a8a8a); padding: 18px 0 6px; border-bottom: 1px dotted rgba(153, 153, 153, 0.55); }
@@ -9928,18 +10020,17 @@ html body .lv .clave-vis { font-family: var(--t-texto, 'Stolzl'), sans-serif !im
 .lv .cor-cuerpo { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .lv .cor-cab { display: flex; gap: 8px; align-items: baseline; }
 .lv .cor-cab b { font-weight: 500; overflow-wrap: anywhere; }
-.lv .cor-adj { font-size: 13px; }
 .lv .cor .sub { overflow-wrap: anywhere; }
 .lv .cor-res { margin: 4px 0 2px; font-size: 13.5px; color: var(--tinta2, #5b5f59); line-height: 1.5; overflow-wrap: anywhere; }
 html body .lv .od-cab.cor-top { flex-wrap: wrap; row-gap: 4px; }
-@media (max-width: 600px) { html body .lv .od-cab.cor-top .sub { flex-basis: 100%; margin-left: 0; } }
-
+@media (max-width: 600px) {
+  html body .lv .od-cab.cor-top .sub { flex-basis: 100%; margin-left: 0; }
+}
 /* Detalles del encargo en celular: una columna que no se estira con las etapas (se cortaba a la derecha) */
 @media (max-width: 600px) {
   html body .lv dl.datos, html body .lv dl.datos.datos-2c { grid-template-columns: minmax(0, 1fr) !important; }
   html body .lv dl.datos dt { white-space: normal; }
 }
-
 /* Estados del encargo: un color de la paleta para cada uno (también sobre la imagen de portada) */
 html body .lv .lv-chip.por-iniciar, html body .lv .etapa.activa.por-iniciar { background: #f2f2c4 !important; color: #5c5c0e !important; border-color: transparent !important; }
 html body .lv .lv-chip.por-iniciar i { background: #c2c21f; }
@@ -9952,12 +10043,10 @@ html body .lv .lv-chip.finalizado i { background: #dfdf3f; }
 html body .lv .lv-chip.cerrado, html body .lv .etapa.activa.cerrado { background: #f3e2e2 !important; color: #8b1a1a !important; }
 html body .lv .lv-chip.cerrado i { background: #8b1a1a; }
 .lv-enc-cov + .lv-enc-cab .lv-chip { -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 6px 16px -10px rgba(30, 34, 29, 0.45); }
-
 /* Fechas editables: el campo queda encima para que el toque lo abra en iPhone y iPad */
 html body .lv .lv-fecha { position: relative; }
 html body .lv .lv-fecha input[type=date] { pointer-events: none !important; }
 html body .lv .lv-fecha { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-
 /* Ventanita de fecha: los botones nunca se salen (Guardar arriba a lo ancho en celular) */
 html body .modal .pie-modal.pie-fecha { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
 html body .modal .pie-modal.pie-fecha .btn { flex: 0 0 auto; }
@@ -9969,10 +10058,11 @@ html body .modal .pie-modal.pie-fecha #quitar { order: 1; margin-right: auto; }
   html body .modal .pie-modal.pie-fecha .btn[type=submit] { order: 0; flex-basis: 100%; }
   html body .modal .pie-modal.pie-fecha #quitar { margin-right: 0; }
 }
-
 /* Celulares angostos (iPhone SE, Android de 320–380 px): nada se sale de la pantalla */
 .bento-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-@media (max-width: 1180px) { .bento-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1180px) {
+  .bento-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 400px) {
   html body .lv .bento-kpis { gap: 10px; }
   html body .lv .bento-kpis .lv-card { padding: 16px 14px !important; min-width: 0; }
@@ -9984,17 +10074,17 @@ html body .modal .pie-modal.pie-fecha #quitar { order: 1; margin-right: auto; }
   html body .lv .kpi { min-width: 0; padding: 16px 14px !important; }
   html body .lv .kpi .va { font-size: 19px !important; overflow-wrap: anywhere; }
   html body .lv .lv-seg { flex-wrap: wrap; overflow: visible !important; }
-  html body .lv .acciones-res .btn, html body .lv .panel .btn { white-space: normal; text-align: center; }
+  html body .lv .panel .btn { white-space: normal; text-align: center; }
 }
 @media (max-width: 340px) {
   html body .lv .lv-tabs-in > a span { font-size: 9.5px !important; letter-spacing: -0.01em; }
   html body .lv .lv-tabs-in > a { padding-left: 2px !important; padding-right: 2px !important; min-width: 0; }
 }
-
 /* La línea de resumen (cliente · valor · envío) de cada propuesta es solo para el celular; en pantallas grandes ya están las columnas */
 html body .lv table.t-prop div.solo-movil { display: none; }
-@media (max-width: 1023px) { html body .lv table.t-prop div.solo-movil { display: block !important; margin-top: 3px; } }
-
+@media (max-width: 1023px) {
+  html body .lv table.t-prop div.solo-movil { display: block !important; margin-top: 3px; }
+}
 /* Ajustes en celular: tablas a lo ancho sin desplazar (correos largos bajan de línea, el botón de editar siempre a la vista)
    y el texto de ayuda de cada sección debajo del título, no apretado al lado */
 @media (max-width: 600px) {
@@ -10012,8 +10102,6 @@ html body .lv table.t-prop div.solo-movil { display: none; }
   html body .lv table.t-ajustes td:not(:first-child):not(:last-child):not(.col-opc) { grid-column: 1; }
   html body .lv table.t-ajustes .chip { white-space: nowrap; }
 }
-}
-
 /* Pantallas muy angostas (cubierta de los plegables, 280–320 px) */
 @media (max-width: 320px) {
   html body .lv .lv-card, html body .lv .ha-frase { min-width: 0; }
@@ -10021,11 +10109,15 @@ html body .lv table.t-prop div.solo-movil { display: none; }
   html body .lv .ha-frase * { min-width: 0; max-width: 100%; }
   html body .lv h1 { font-size: 34px !important; overflow-wrap: anywhere; }
 }
-@media (max-width: 760px) { html body .lv .bento-hero { grid-template-columns: minmax(0, 1fr) !important; } }
+@media (max-width: 760px) {
+  html body .lv .bento-hero { grid-template-columns: minmax(0, 1fr) !important; }
+}
 /* Plegables abiertos y Surface Duo con las dos pantallas (1024–1199 px con menú lateral): menos columnas para que las cifras quepan */
 @media (min-width: 1024px) and (max-width: 1199px) {
   html body .lv .bento-hero { grid-template-columns: minmax(0, 1fr) !important; }
   html body .lv .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 html body .lv .lv-lado .lv-nav.con-mas { -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
-@media (max-width: 1023px) { html body .lv .lv-lado .lv-nav.con-mas { -webkit-mask-image: none; mask-image: none; } }
+@media (max-width: 1023px) {
+  html body .lv .lv-lado .lv-nav.con-mas { -webkit-mask-image: none; mask-image: none; }
+}
