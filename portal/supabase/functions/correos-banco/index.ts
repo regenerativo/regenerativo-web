@@ -41,7 +41,9 @@ function leer(texto: string, recibido: string) {
   if (/c[oó]digo/i.test(f) && !/\$/.test(f)) return null;
   const monto = f.match(/\$\s?[\d.,]+/); if (!monto) return null;
   const v = valor(monto[0]); if (!v) return null;
-  const base = { fecha: fecha(f, recibido), valor: v, correo_texto: f.split(/\. (Si tienes|Con Bre-b|¿Dudas|Dudas)/)[0] + "." };
+  const h = f.match(/a las (\d{1,2}:\d{2})/i);
+  const hora = h ? h[1] : new Date(new Date(recibido).getTime() - 5 * 3600e3).toISOString().slice(11, 16);
+  const base = { fecha: fecha(f, recibido), hora, valor: v, correo_texto: f.split(/\. (Si tienes|Con Bre-b|¿Dudas|Dudas)/)[0] + "." };
   let m;
   if ((m = f.match(/Compraste \$[\d.,]+ en (.+?) con tu (.+?), el/i)))
     return { ...base, tipo: "gasto", descripcion: limpio(m[1]), medio: limpio(m[2]), nota_correo: null };

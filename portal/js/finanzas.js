@@ -1,8 +1,13 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=131';
-import { cop, fecha, iso } from './formato.js?v=131';
-import { btnIco, ico } from './iconos.js?v=131';
-import { leerMonai } from './monai.js?v=131';
+import * as D from './datos.js?v=132';
+import { cop, fecha, iso } from './formato.js?v=132';
+import { btnIco, ico } from './iconos.js?v=132';
+import { leerMonai } from './monai.js?v=132';
+// Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
+const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
+const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };
+const masReciente = (a, b) => (a.fecha + (a.hora || '')) < (b.fecha + (b.hora || '')) ? 1 : -1;
+
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -92,7 +97,7 @@ function sugerenciaPorPalabras(x, cats) {
 export async function vistaFinanzas(mesSel, listaSel) {
   const [cats, todos, encargos, docs, props, adicsMan] = await Promise.all([D.finCategorias(), D.finMovimientos(), D.encargos(), D.finDocumentosCobro(), D.finPropuestasEncargos().catch(() => []), D.adicionalesTodos().catch(() => [])]);
   const movs = todos.filter(x => (x.estado || 'confirmado') === 'confirmado');
-  const pend = todos.filter(x => x.estado === 'por_confirmar').sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+  const pend = todos.filter(x => x.estado === 'por_confirmar').sort(masReciente);
   pend.forEach(x => { if (x.categoria_id) return; const sg = sugerencia(x, movs) || sugerenciaPorPalabras(x, cats); if (sg) Object.assign(x, { categoria_id: sg.categoria_id, subcategoria: x.subcategoria || sg.subcategoria, encargo_id: x.encargo_id || sg.encargo_id, sugerido: true }); });
   const hoy = new Date();
   // Periodo: un mes («2026-11») o el año completo («2026», al tocar el año junto al mes)
@@ -107,7 +112,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const enPeriodo = x => modoAnio ? (x.fecha || '').slice(0, 4) === String(a) : mesDe(x.fecha) === mes;
   const lista = listaSel || 'todo';   // 'todo' | 'general' | id de encargo
   const enLista = x => lista === 'todo' || (lista === 'general' ? !x.encargo_id : x.encargo_id === lista);
-  const delMes = movs.filter(x => enPeriodo(x) && enLista(x));
+  const delMes = movs.filter(x => enPeriodo(x) && enLista(x)).sort(masReciente);
   const suma = (l, t) => l.filter(x => x.tipo === t).reduce((s, x) => s + Number(x.valor), 0);
   const SALARIO = cats.find(c => c.nombre === 'Nómina y honorarios')?.id;
   const esSal = x => x.categoria_id === SALARIO;
@@ -167,7 +172,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
       <div class="pend-filtro" role="group" aria-label="Filtrar por origen"><button type="button" class="chip-f${PEND.origen ? '' : ' on'}" data-origen="">Todos <b>${pend.length}</b></button>${Object.entries(ORIGENES).map(([k, t]) => { const n = pend.filter(x => origenDe(x) === k).length; return n ? `<button type="button" class="chip-f${PEND.origen === k ? ' on' : ''}" data-origen="${k}"><span class="origen o-${k}">${t}</span> <b>${n}</b></button>` : ''; }).join('')}</div>
       ${pend.map((x, i) => `<div class="pend-fila ${i >= 6 && !PEND.todos && !PEND.origen ? 'pend-oculta' : ''}" data-pend="${x.id}" data-org="${origenDe(x)}" ${PEND.origen && origenDe(x) !== PEND.origen ? 'hidden' : ''}>
-        <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
+        <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${conHora(x)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
         <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
         <div class="pend-sel">
           <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
@@ -219,7 +224,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         ${delMes.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar: concepto, categoría, encargo, valor…">' : ''}
         ${delMes.length ? `<div class="lista-filas">${delMes.map(x => `<button class="mov-fila" data-editar="${x.id}" data-buscar="${esc([x.descripcion, x.categoria?.nombre, x.subcategoria, x.encargo?.nombre, x.medio, x.valor].join(' ').toLowerCase())}">
           <span class="mov-ico ${x.tipo}">${icoCat(x.tipo === 'socio' ? 'nómina' : x.tipo === 'ingreso' ? (x.subcategoria || x.categoria?.nombre || 'ingreso') : x.categoria?.nombre)}</span>
-          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${chipOrigen(x)} ${fecha(x.fecha)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''}</span></span>
+          <span class="mov-txt"><b>${esc(x.descripcion || '')}</b><span class="sub">${chipOrigen(x)} ${conHora(x)} · ${esc(x.categoria?.nombre || (x.tipo === 'socio' ? 'Personal / socio' : ''))}${subDe(x) ? ' › ' + esc(subDe(x)) : ''}</span></span>
           <span class="mov-der"><span class="mov-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</span><span class="mov-proy${x.encargo_id ? '' : ' general'}" title="${esc(x.encargo?.nombre || 'Regenerativo (general)')}">${x.encargo_id ? esc((x.encargo?.nombre || '').replace(/^\s*\d{2}\s+I\s+/, '')) : 'General'}</span></span></button>`).join('')}</div>`
         : `<p class="sub">No hay movimientos ${modoAnio ? 'este año' : 'este mes'} en esta lista.</p>`}
       </section>
@@ -301,12 +306,12 @@ export async function vistaFinanzas(mesSel, listaSel) {
       const nuevo = { tipo, fecha: iso(new Date()), categoria_id: x.dataset.cat, ...(sub ? { subcategoria: sub } : {}), encargo_id: ['todo', 'general'].includes(lista) ? null : lista };
       const subs = (cat?.subcategorias || []);
       const lst = delMes.filter(m => m.tipo === tipo && (x.dataset.cat ? m.categoria_id === x.dataset.cat : !idsCat.has(m.categoria_id)) && (tipo !== 'ingreso' || !subs.length || (sub ? m.subcategoria === sub : !subs.slice(1).includes(m.subcategoria))))
-        .sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+        .sort(masReciente);
       const tot = lst.reduce((t, m) => t + Number(m.valor), 0);
       const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
       fondo.innerHTML = `<div class="modal modal-cat"><div class="mc-cab"><span class="mc-ico ${tipo}">${icoCat(sub || cat?.nombre)}</span><div><span class="lv-ceja">${tipo === 'ingreso' ? 'Ingresos' : 'Gastos'} · ${mesTxt}</span><h2>${esc(sub || cat?.nombre || '')}</h2></div><b class="mc-tot ${tipo}">${tipo === 'ingreso' ? '+' : '−'} ${cop(tot)}</b></div>
         ${lst.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Fecha</th><th>Concepto</th><th class="col-opc">Encargo</th><th class="col-opc">Medio</th><th class="num">Valor</th></tr></thead><tbody>
-          ${lst.map(m => `<tr class="clic" data-ed="${m.id}"><td>${esc(m.fecha.split('-').reverse().join('/'))}</td><td>${esc(m.descripcion || subDe(m) || '—')}</td><td class="col-opc">${esc(encargos.find(e => e.id === m.encargo_id)?.nombre || 'General')}</td><td class="col-opc">${esc(m.medio || '—')}</td><td class="num">${cop(m.valor)}</td></tr>`).join('')}
+          ${lst.map(m => `<tr class="clic" data-ed="${m.id}"><td>${esc(m.fecha.split('-').reverse().join('/'))}${m.hora ? ' · ' + horaTxt(m.hora) : ''}</td><td>${esc(m.descripcion || subDe(m) || '—')}</td><td class="col-opc">${esc(encargos.find(e => e.id === m.encargo_id)?.nombre || 'General')}</td><td class="col-opc">${esc(m.medio || '—')}</td><td class="num">${cop(m.valor)}</td></tr>`).join('')}
           </tbody></table></div>` : `<p class="sub">No hay ${tipo === 'ingreso' ? 'ingresos' : 'gastos'} en ${esc(sub || cat?.nombre || '')} este mes.</p>`}
         <div class="pie-modal"><button type="button" class="btn sec" data-cerrar>Cerrar</button><button type="button" class="btn" data-agregar><span class="mas">+</span> ${tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</button></div></div>`;
       document.body.appendChild(fondo);
@@ -357,6 +362,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
     <div class="grilla-form">
       <div><label>Valor (COP)</label><input name="valor" inputmode="numeric" required value="${m.valor ? Number(m.valor).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></div>
       <div><label>Fecha</label><input name="fecha" type="date" required value="${m.fecha || ''}"></div>
+      <div><label>Hora</label><input name="hora" type="time" value="${m.hora ? String(m.hora).slice(0, 5) : ''}"></div>
       ${m.tipo === 'socio' ? '' : `<div><label>Categoría</label><select name="categoria_id">${opsCat(m.tipo)}</select></div>
       <div><label>Subcategoría</label><select name="subcategoria"></select></div>`}
       <div class="ancho"><label>Pertenece a</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${[['Encargos vigentes', encargos.filter(e => !['finalizado', 'cerrado'].includes(e.estado))], ['Finalizados y cancelados', encargos.filter(e => ['finalizado', 'cerrado'].includes(e.estado))]].filter(([, l]) => l.length).map(([g, l]) => `<optgroup label="${g}">${l.map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>
@@ -401,7 +407,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
   f.onsubmit = async ev => {
     ev.preventDefault();
     const v = Object.fromEntries(new FormData(f));
-    const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
+    const reg = { tipo: m.tipo, valor: Number(v.valor.replace(/\D/g, '')), fecha: v.fecha, hora: v.hora || null, categoria_id: m.tipo === 'socio' ? null : v.categoria_id || null, encargo_id: v.encargo_id || null, descripcion: v.descripcion, medio: v.medio };
     if (m.id) reg.id = m.id;
     const sub = m.tipo === 'socio' ? '' : (v.subcategoria || '').trim();
     if (sub && f.categoria_id && subsDe().length && !subsDe().includes(sub) && sub !== m.subcategoria) { $('#aviso', fondo).textContent = 'Revisa la subcategoría: no pertenece a la categoría elegida.'; return; }
@@ -422,7 +428,7 @@ function modalMonai(recargar) {
   let filas = null;
   const av = t => { $('#monai-aviso', fondo).textContent = t; };
   const lista = (t, l, f) => l.length ? `<details class="monai-det"><summary>${t} (${l.length})</summary><ul>${l.map(f).join('')}</ul></details>` : '';
-  const fila = x => `<li><span>${fecha(x.fecha)}</span><b>${esc(x.descripcion || '')}</b><span class="num">${x.tipo === 'ingreso' ? '+' : '−'} ${cop(x.valor)}</span></li>`;
+  const fila = x => `<li><span>${conHora(x)}</span><b>${esc(x.descripcion || '')}</b><span class="num">${x.tipo === 'ingreso' ? '+' : '−'} ${cop(x.valor)}</span></li>`;
   const resumen = r => `<ul class="monai-res">
       <li><b>${r.filas}</b>movimientos en el archivo</li><li><b>${r.nuevos}</b>nuevos</li><li><b>${r.cambios}</b>con cambios</li>
       <li><b>${r.eliminados}</b>borrados en MONAI</li><li><b>${r.duplicados_correo}</b>repetidos del correo</li></ul>
