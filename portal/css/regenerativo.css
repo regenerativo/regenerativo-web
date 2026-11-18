@@ -8180,8 +8180,7 @@ html body .lv .remate {
     display: inline !important;
   }
   html body .lv table.t-prop div.solo-movil {
-    display: block !important;
-    margin-top: 3px;
+    display: none !important;
   }
   html body .lv table.t-prop td:nth-child(3) {
     min-width: 0;
@@ -9990,4 +9989,27 @@ html body .modal .pie-modal.pie-fecha #quitar { order: 1; margin-right: auto; }
 @media (max-width: 340px) {
   html body .lv .lv-tabs-in > a span { font-size: 9.5px !important; letter-spacing: -0.01em; }
   html body .lv .lv-tabs-in > a { padding-left: 2px !important; padding-right: 2px !important; min-width: 0; }
+}
+
+/* La línea de resumen (cliente · valor · envío) de cada propuesta es solo para el celular; en pantallas grandes ya están las columnas */
+html body .lv table.t-prop div.solo-movil { display: none; }
+@media (max-width: 1023px) { html body .lv table.t-prop div.solo-movil { display: block !important; margin-top: 3px; } }
+
+/* Ajustes en celular: tablas a lo ancho sin desplazar (correos largos bajan de línea, el botón de editar siempre a la vista)
+   y el texto de ayuda de cada sección debajo del título, no apretado al lado */
+@media (max-width: 600px) {
+  html body .lv .od-cab { flex-wrap: wrap; row-gap: 4px; }
+  html body .lv .od-cab > .sub { flex-basis: 100%; order: 3; margin-left: 0 !important; }
+  html body .lv .od-cab > .btn { margin-left: 0 !important; }
+  html body .lv .tabla-cont:has(table.t-ajustes) { overflow: visible; }
+  html body .lv table.t-ajustes thead { display: none; }
+  html body .lv table.t-ajustes, html body .lv table.t-ajustes tbody { display: block; width: 100%; }
+  html body .lv table.t-ajustes tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 12px 2px; border-bottom: 1px dotted rgba(153, 153, 153, 0.55); }
+  html body .lv table.t-ajustes td { display: block; border: 0 !important; padding: 0 !important; min-width: 0; overflow-wrap: anywhere; }
+  html body .lv table.t-ajustes td.col-opc { display: none; }
+  html body .lv table.t-ajustes td:first-child { grid-column: 1; grid-row: 1; }
+  html body .lv table.t-ajustes td:last-child { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+  html body .lv table.t-ajustes td:not(:first-child):not(:last-child):not(.col-opc) { grid-column: 1; }
+  html body .lv table.t-ajustes .chip { white-space: nowrap; }
+}
 }

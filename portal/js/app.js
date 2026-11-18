@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=135';
-import * as M from './modulos.js?v=135';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=135';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=135';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=135';
+import * as D from './datos.js?v=136';
+import * as M from './modulos.js?v=136';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=136';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=136';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=136';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -1469,7 +1469,7 @@ async function vistaAjustes(s, qs) {
       <button class="btn sec mini" id="od-conectar">${od?.conectado ? 'Volver a conectar' : 'Conectar'}</button></div>
     <section class="panel">
       <div class="od-cab"><h3>Usuarios</h3><span class="sub">${us.length} · las invitaciones se envían desde el engranaje de cada encargo</span></div>
-      <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Usuario</th><th>Rol</th><th class="col-opc">Encargos</th><th></th></tr></thead>
+      <div class="tabla-cont"><table class="t-compacta t-ajustes"><thead><tr><th>Usuario</th><th>Rol</th><th class="col-opc">Encargos</th><th></th></tr></thead>
       <tbody>${us.map(u => `<tr><td><b>${esc(u.nombre || u.email)}</b>${u.nombre || u.telefono ? `<div class="sub">${u.nombre ? esc(u.email || '') : ''}${u.nombre && u.telefono ? ' · ' : ''}${u.telefono ? esc(u.telefono) : ''}</div>` : ''}</td>
         <td>${u.roles.length ? u.roles.map(r => `<span class="etiqueta">${ROL[r] || esc(r)}</span>`).join(' ') : u.encargos.length ? `<span class="etiqueta">${ROL[u.encargos[0].rol] || esc(u.encargos[0].rol)}</span>` : '—'}</td>
         <td class="col-opc sub">${u.encargos.map(x => esc(x.nombre)).join(', ') || '—'}</td>
@@ -1477,14 +1477,14 @@ async function vistaAjustes(s, qs) {
     </section>
     <section class="panel">
       <div class="od-cab"><h3>Accesos de clientes</h3><span class="sub">Pestaña Clientes del acceso · nombre del encargo y contraseña</span></div>
-      <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Encargo</th><th>Contraseña</th><th class="col-opc">Estado</th><th></th></tr></thead>
+      <div class="tabla-cont"><table class="t-compacta t-ajustes t-accesos"><thead><tr><th>Encargo</th><th>Contraseña</th><th class="col-opc">Estado</th><th></th></tr></thead>
       <tbody>${encs.map(x => `<tr><td><b>${esc(x.nombre)}</b><div class="sub">${esc(x.cliente?.nombre || '')}</div></td>
         <td>${x.acceso_clave ? `<span class="clave-vis">${esc(x.acceso_clave)}</span> <button type="button" class="btn mini sec copiar" data-copia="${esc(x.acceso_clave)}">Copiar</button>` : x.cliente_usuario_id ? '<span class="sub">Asignada antes</span>' : '—'}</td>
         <td class="col-opc">${x.cliente_usuario_id ? '<span class="etiqueta despego">Activo</span>' : '<span class="etiqueta">Sin acceso</span>'}</td>
         <td class="acciones-fila"><a class="btn mini sec" href="#/${D.slugEncargo(x)}/ajustes">Gestionar</a></td></tr>`).join('')}</tbody></table></div>
     </section>
     <section class="panel"><div class="od-cab"><h3>Clientes</h3><span class="sub">${clis.length} · datos que usan las propuestas, contratos y avisos por correo</span><button type="button" class="btn mini sec" id="cli-nuevo" style="margin-left:auto">+ Nuevo cliente</button></div>
-      <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Cliente</th><th class="col-opc">Documento</th><th class="col-opc">Correo</th><th class="col-opc">Teléfono</th><th></th></tr></thead>
+      <div class="tabla-cont"><table class="t-compacta t-ajustes"><thead><tr><th>Cliente</th><th class="col-opc">Documento</th><th class="col-opc">Correo</th><th class="col-opc">Teléfono</th><th></th></tr></thead>
       <tbody>${clis.map(c => `<tr><td><b>${esc(c.nombre)}</b><div class="sub">${c.tipo === 'empresa' ? 'Empresa' : 'Persona'}${c.representante ? ' · ' + esc(c.representante) : ''}</div></td>
         <td class="col-opc">${c.documento ? esc((c.tipo_documento ? c.tipo_documento + ' ' : '') + c.documento) : '<span class="xxx">XXX</span>'}</td>
         <td class="col-opc">${c.email ? esc(c.email) : '<span class="xxx">Sin correo</span>'}</td>
