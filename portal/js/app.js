@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=137';
-import * as M from './modulos.js?v=137';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=137';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=137';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=137';
+import * as D from './datos.js?v=138';
+import * as M from './modulos.js?v=138';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=138';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=138';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=138';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -250,6 +250,9 @@ function armarIsla() {
 // Menú inferior del celular: los 4 primeros del menú + "Más" (abre el menú completo como hoja)
 function armarTabs() {
   const tabs = $('#lv-tabs'), lado = $('#lado'), velo = $('#lv-velo');
+  // Menú lateral en pantallas bajas: si hay más opciones abajo, se insinúan con un desvanecido
+  const navL = lado?.querySelector('.lv-nav');
+  if (navL) { const marca = () => navL.classList.toggle('con-mas', navL.scrollHeight > navL.clientHeight + 4 && navL.scrollTop + navL.clientHeight < navL.scrollHeight - 4); marca(); setTimeout(marca, 400); setTimeout(marca, 1500); navL.onscroll = marca; window.onresize = marca; }
   const enl = [...document.querySelectorAll('.lv-nav a:not(.volver):not(.enc-nom)')];
   const com = enl.find(a => /\/comentarios$/.test(a.getAttribute('href')));
   const prim = com ? [...enl.filter(a => a !== com).slice(0, 3), com] : enl.slice(0, 4);

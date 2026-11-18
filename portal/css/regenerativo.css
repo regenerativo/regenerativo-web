@@ -10013,3 +10013,19 @@ html body .lv table.t-prop div.solo-movil { display: none; }
   html body .lv table.t-ajustes .chip { white-space: nowrap; }
 }
 }
+
+/* Pantallas muy angostas (cubierta de los plegables, 280–320 px) */
+@media (max-width: 320px) {
+  html body .lv .lv-card, html body .lv .ha-frase { min-width: 0; }
+  html body .lv .ha-tit { font-size: 30px !important; overflow-wrap: anywhere; hyphens: auto; }
+  html body .lv .ha-frase * { min-width: 0; max-width: 100%; }
+  html body .lv h1 { font-size: 34px !important; overflow-wrap: anywhere; }
+}
+@media (max-width: 760px) { html body .lv .bento-hero { grid-template-columns: minmax(0, 1fr) !important; } }
+/* Plegables abiertos y Surface Duo con las dos pantallas (1024–1199 px con menú lateral): menos columnas para que las cifras quepan */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  html body .lv .bento-hero { grid-template-columns: minmax(0, 1fr) !important; }
+  html body .lv .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+html body .lv .lv-lado .lv-nav.con-mas { -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
+@media (max-width: 1023px) { html body .lv .lv-lado .lv-nav.con-mas { -webkit-mask-image: none; mask-image: none; } }
