@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=139';
-import * as M from './modulos.js?v=139';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=139';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=139';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=139';
+import * as D from './datos.js?v=140';
+import * as M from './modulos.js?v=140';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=140';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=140';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=140';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -179,11 +179,11 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   raiz.innerHTML = `
   <div class="lv">
     <header class="lv-top">
-      <a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
+      <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
       <span class="lv-top-sub">${esc(enc ? enc.nombre : 'Portal de encargos')}</span>
     </header>
     <aside class="lado" id="lado"><div class="lv-lado">
-      <div class="lv-marca"><div class="lv-marca-f"><a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a><button type="button" class="lv-cambia" data-menu="arriba" title="Llevar el menú arriba" aria-label="Llevar el menú arriba"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button></div><span>Portal de encargos</span></div>
+      <div class="lv-marca"><div class="lv-marca-f"><a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a><button type="button" class="lv-cambia" data-menu="arriba" title="Llevar el menú arriba" aria-label="Llevar el menú arriba"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button></div><span>Portal de encargos</span></div>
       <nav class="lv-nav" aria-label="Principal"><span class="lv-ind" aria-hidden="true"></span>
         ${cabEnc}
         ${menu || ''}
@@ -194,7 +194,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
       <div class="pie lv-pie-lado"><span class="pie-correo" title="${esc(s.email)}">${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button id="salir" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Cerrar sesión</button></div>
     </div></aside>
     <header class="lv-arriba" id="lv-arriba">
-      <a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
+      <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
       <nav class="lv-isla" aria-label="Menú"><button type="button" class="lv-cambia" data-menu="lado" title="Llevar el menú al lado" aria-label="Llevar el menú al lado"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button><div class="lv-isla-in" id="lv-isla"><span class="lv-ind-h" aria-hidden="true"></span></div></nav>
       <div class="lv-cuenta-c"><button type="button" class="lv-circulo" id="lv-cuenta" aria-label="Cuenta"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg></button>
         <div class="lv-pop" id="lv-pop" hidden><span>${esCli ? 'Acceso de cliente' : esc(s.email)}</span><button type="button" id="salir2" class="lv-salir"><span class="lv-ico-l"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Cerrar sesión</button></div></div>
@@ -308,7 +308,7 @@ function marcoAcceso(form) {
   return `<div class="lv-acceso">
     <section class="lv-acc-hero">
       <a class="lv-acc-volver" href="https://regenerativo.co/"><span><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4"/><path d="M19.5 12h-10"/><path d="M13 8.5 9.5 12l3.5 3.5"/></svg></span>Volver a regenerativo.co</a>
-      <a href="/portal/#/" aria-label="Inicio del portal"><img class="lv-acc-simbolo" src="/assets/33b2a586a276.png" alt=""></a>
+      <a href="#/" aria-label="Inicio del portal"><img class="lv-acc-simbolo" src="/assets/33b2a586a276.png" alt=""></a>
       <span class="lv-ceja">Portal de encargos</span>
       <div class="lv-acc-rota" aria-live="off">
         <div class="lv-acc-frase on"><h1>No intervenimos,<br>regeneramos.</h1><p class="lv-acc-cita">Génesis 1.27</p></div>
@@ -324,7 +324,7 @@ function vistaAcceso() {
   const pintar = () => {
     const cli = modo === 'cliente';
     raiz.innerHTML = marcoAcceso(`<form class="lv-acc-card" id="f">
-      <a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
+      <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
       <h2>${cli ? 'Bienvenido a tu encargo' : 'Hola, equipo'}</h2>
       <div class="lv-seg ancho" role="tablist">
         <button type="button" class="${cli ? 'activo' : ''}" data-m="cliente">Clientes</button>
@@ -358,13 +358,13 @@ function vistaAcceso() {
 function vistaNuevaClave(enlace) {
   document.body.classList.add('ingreso');
   if (enlace.error) {
-    raiz.innerHTML = marcoAcceso(`<div class="lv-acc-card"><a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a><h2>El enlace ya no sirve</h2>
+    raiz.innerHTML = marcoAcceso(`<div class="lv-acc-card"><a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a><h2>El enlace ya no sirve</h2>
       <p class="lv-acc-txt">${esc(enlace.error)}. Pide una nueva invitación o usa "Olvidé mi contraseña".</p><a class="btn full" href="#/acceso">Ir al ingreso</a></div>`);
     return;
   }
   const bienvenida = enlace.tipo === 'invite';
   raiz.innerHTML = marcoAcceso(`<form class="lv-acc-card" id="f">
-    <a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
+    <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
     <h2>${bienvenida ? 'Bienvenido al portal' : 'Nueva contraseña'}</h2>
     <p class="lv-acc-txt">${bienvenida ? 'Crea tu contraseña para entrar a tus encargos.' : 'Escribe tu nueva contraseña.'}</p>
     <label for="c1">Contraseña (mínimo 8 caracteres)</label><input id="c1" type="password" autocomplete="new-password" minlength="8" required>
@@ -382,7 +382,7 @@ function vistaNuevaClave(enlace) {
 
 function vistaRecuperar() {
   raiz.innerHTML = marcoAcceso(`<form class="lv-acc-card" id="f">
-    <a href="/portal/#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
+    <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
     <h2>Recuperar contraseña</h2>
     <p class="lv-acc-txt">Te enviaremos un enlace para crear una nueva.</p>
     <label for="email">Correo</label><input id="email" type="email" required>
