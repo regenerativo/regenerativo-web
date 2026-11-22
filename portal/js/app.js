@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=147';
-import * as M from './modulos.js?v=147';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=147';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=147';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=147';
+import * as D from './datos.js?v=148';
+import * as M from './modulos.js?v=148';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=148';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=148';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=148';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -204,6 +204,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     <header class="lv-top">
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
       <span class="lv-top-sub">${esc(enc ? enc.nombre : 'Portal de encargos')}</span>
+      ${s.admin ? `<a class="lv-claude-top" href="https://claude.ai/project/01a07ee0-6e6e-76ae-8f6f-875a422348d9" target="_blank" rel="noopener" title="Abrir el chat de regenerativo con Claude" aria-label="Abrir el chat de regenerativo con Claude"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg></a>` : ''}
     </header>
     <aside class="lado" id="lado"><div class="lv-lado">
       <div class="lv-marca"><div class="lv-marca-f"><a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a><button type="button" class="lv-cambia" data-menu="arriba" title="Llevar el menú arriba" aria-label="Llevar el menú arriba"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3.5"/><path d="M9.5 4.5v15"/><path class="ac" d="M6 8h1M6 11h1"/></svg></button></div><span>Portal de encargos</span></div>
