@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=148';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=149';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -341,6 +341,13 @@ function diasEntre(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400
 async function q(fn) { if (MODO_DEMO) throw new Error('Este módulo funciona con la base de datos conectada.'); return fn(await cliente()); }
 const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
 
+// Marketing: ideas de mejora para la web (solo administración)
+export const marketingIdeas = () => q(c => c.from('marketing_ideas').select('*').order('orden')).then(ok);
+export async function decidirIdea(id, estado, nota) {
+  const c = await cliente(); const { data: u } = await c.auth.getUser();
+  return q(k => k.from('marketing_ideas').update({ estado, nota: nota ?? null, decidido_por: estado === 'pendiente' ? null : u?.user?.id, decidido_en: estado === 'pendiente' ? null : new Date().toISOString() }).eq('id', id)).then(ok);
+}
+export const crearIdea = i => q(c => c.from('marketing_ideas').insert(i)).then(ok);
 export const documentos = (encargoId, tipo) => q(c => c.from('documentos').select('*').eq('encargo_id', encargoId).eq('tipo', tipo).order('numero').order('version')).then(ok);
 export const hayPresupuesto = encargoId => q(c => c.from('presupuestos').select('id', { count: 'exact', head: true }).eq('encargo_id', encargoId)).then(r => { if (r.error) throw r.error; return r.count || 0; });
 export const docsEncargo = encargoId => q(c => c.from('documentos').select('id, tipo, estado, numero, version, contenido').eq('encargo_id', encargoId)).then(ok);
@@ -493,7 +500,7 @@ export async function escucharCambios(cb) {
   if (!data?.session) return;
   c.realtime.setAuth(data.session.access_token);
   _canal = c.channel('portal-cambios');
-  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables']
+  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables', 'marketing_ideas']
     .forEach(t => _canal.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => cb(t)));
   _canal.subscribe();
 }

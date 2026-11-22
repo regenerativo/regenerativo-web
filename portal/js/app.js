@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=148';
-import * as M from './modulos.js?v=148';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=148';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=148';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=148';
+import * as D from './datos.js?v=149';
+import * as M from './modulos.js?v=149';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=149';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=149';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=149';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -158,7 +158,7 @@ async function irSeguro() {
     if (p.length === 0) return esCliente ? await vistaEncargos(s) : await vistaInicio(s);
     if (p[0] === 'encargos' && !p[1]) return await vistaEncargos(s);
     if (p[0] === 'encargos' && p[1]) return await vistaExpediente(s, decodeURIComponent(p[1]), p[2] || 'resumen', p[3]);
-    const RESERVADAS = ['folders', 'finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
+    const RESERVADAS = ['marketing', 'folders', 'finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
     if (p[0] === 'finanzas' && s.facturacion) {
       const pedido = location.hash;
@@ -172,6 +172,7 @@ async function irSeguro() {
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
     if (p[0] === 'ajustes' && s.admin) return await vistaAjustes(s, qs);
     if (p[0] === 'propuestas' && s.admin) return await vistaPropuestas(s);
+    if (p[0] === 'marketing' && s.admin) return await vistaMarketing(s);
     if (p[0] === 'folders' && s.admin) {
       marco(s, { titulo: 'Folders', ruta: 'Folders', activo: 'folders', html: '<section class="panel od" id="od"></section>', eyebrow: 'OneDrive · REG', bajada: 'Toda la carpeta REG de OneDrive: encargos, gestión integral y librerías.' });
       return panelOneDrive($('#od'), null, [['']], { titulo: 'REG' });
@@ -193,6 +194,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     ${s.admin ? `<a href="#/propuestas" class="${activo === 'propuestas' ? 'activo' : ''}">${icoMenu('propuestas')}<span>Propuestas</span></a>` : ''}
     ${s.soloFinanzas ? '' : `<a href="#/encargos" class="${activo === 'encargos' ? 'activo' : ''}">${icoMenu('encargos')}<span>Encargos</span></a>`}
     ${s.facturacion ? `<a href="#/finanzas" class="${activo === 'finanzas' ? 'activo' : ''}">${icoMenu('finanzas')}<span>Finanzas</span></a>` : ''}
+    ${s.admin ? `<a href="#/marketing" class="${activo === 'marketing' ? 'activo' : ''}">${icoMenu('marketing')}<span>Marketing</span></a>` : ''}
     ${s.admin ? `<a href="#/folders" class="${activo === 'folders' ? 'activo' : ''}">${icoMenu('folders')}<span>Folders</span></a>` : ''}
     ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">${icoMenu('base')}<span>Base de precios</span></a>` : ''}
     ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">${icoMenu('ajustes')}<span>Ajustes</span></a>` : ''}`;
@@ -1620,6 +1622,50 @@ function modalUsuario(u) {
 }
 
 // ---------------- Propuestas preliminares ----------------
+// ---------------- Marketing: ideas de mejora para la web, se aprueban o descartan ----------------
+const EST_IDEA = { pendiente: 'Por decidir', aprobada: 'Aprobada', hecha: 'Hecha', descartada: 'Descartada' };
+let mkFiltro = 'pendiente';
+async function vistaMarketing(s) {
+  let lista = [];
+  try { lista = await D.marketingIdeas(); } catch (e) { return marco(s, { titulo: 'Marketing', ruta: 'Portal', activo: 'marketing', eyebrow: 'Ideas para la web', html: `<div class="vacio">${/marketing_ideas|relation|schema cache/i.test(msg(e)) ? 'La pestaña de Marketing se está activando. Vuelve a abrirla en un momento.' : esc(msg(e))}</div>` }); }
+  const n = k => lista.filter(x => x.estado === k).length;
+  const html = `
+    <p class="sub mk-intro">Ideas para mejorar cada parte de la web. Apruébalas o descártalas; las aprobadas se montan en regenerativo.co.</p>
+    <div class="lv-filtros"><div class="lv-seg" id="mk-seg">${['pendiente', 'aprobada', 'hecha', 'descartada', ''].map(k => `<button type="button" data-f="${k}" class="${mkFiltro === k ? 'activo' : ''}">${k ? { pendiente: 'Por decidir', aprobada: 'Aprobadas', hecha: 'Hechas', descartada: 'Descartadas' }[k] : 'Todas'}<i>${k ? n(k) : lista.length}</i></button>`).join('')}</div></div>
+    <div id="mk-lista"></div>`;
+  marco(s, { titulo: 'Marketing', ruta: 'Portal', activo: 'marketing', html, eyebrow: 'Ideas para la web',
+    acciones: '<button class="btn" id="mk-nueva"><span class="mas">+</span> Nueva idea</button>' });
+  const pintar = () => {
+    const f = lista.filter(x => !mkFiltro || x.estado === mkFiltro);
+    const areas = [...new Set(f.map(x => x.area))];
+    $('#mk-lista').innerHTML = f.length ? areas.map(ar => `
+      <section class="panel mk-area"><h3>${esc(ar)}</h3><ul class="mk-ideas">${f.filter(x => x.area === ar).map(x => `
+        <li class="mk-idea" data-id="${x.id}">
+          <div class="mk-txt"><b>${esc(x.titulo)}</b><p class="sub">${esc(x.detalle)}</p>${x.nota ? `<p class="sub mk-nota">Nota: ${esc(x.nota)}</p>` : ''}</div>
+          <div class="mk-acc"><span class="etiqueta mk-${x.estado}">${EST_IDEA[x.estado]}</span>
+            ${x.estado === 'pendiente' ? `<button type="button" class="btn mini" data-mk="aprobada">Aprobar</button><button type="button" class="btn sec mini" data-mk="descartada">Descartar</button>` : ''}
+            ${x.estado === 'aprobada' ? `<button type="button" class="btn sec mini" data-mk="pendiente">Volver a decidir</button>` : ''}
+            ${x.estado === 'descartada' ? `<button type="button" class="btn sec mini" data-mk="pendiente">Recuperar</button>` : ''}
+          </div></li>`).join('')}</ul></section>`).join('')
+      : `<div class="vacio">${mkFiltro === 'pendiente' ? 'No hay ideas por decidir.' : 'No hay ideas en este grupo.'}</div>`;
+    document.querySelectorAll('[data-mk]').forEach(b => b.onclick = async () => {
+      const id = b.closest('[data-id]').dataset.id, est = b.dataset.mk;
+      let nota = null;
+      if (est === 'descartada') { nota = await preguntar('¿Por qué la descartas?\n\nOpcional: una nota corta para no volver a proponerla.', { opcional: true, ok: 'Descartar' }); if (nota === null) return; }
+      b.disabled = true;
+      try { await D.decidirIdea(id, est, nota || null); const x = lista.find(y => y.id === id); Object.assign(x, { estado: est, nota: nota || null }); vistaMarketing(s); }
+      catch (e) { b.disabled = false; alert(msg(e)); }
+    });
+  };
+  document.querySelectorAll('#mk-seg button').forEach(b => b.onclick = () => { mkFiltro = b.dataset.f; document.querySelectorAll('#mk-seg button').forEach(y => y.classList.toggle('activo', y === b)); pintar(); });
+  $('#mk-nueva').onclick = async () => {
+    const titulo = await preguntar('Nueva idea para la web\n\nEscribe la idea en una frase.', { ok: 'Siguiente' }); if (!titulo) return;
+    const area = await preguntar('¿En qué parte de la web?\n\nInicio, Encargos, About, Contacto, Google o Instagram.', { valor: 'Inicio', ok: 'Guardar' }); if (!area) return;
+    try { await D.crearIdea({ titulo: titulo.trim(), area: area.trim(), detalle: '', orden: 1000 }); mkFiltro = 'pendiente'; vistaMarketing(s); } catch (e) { alert(msg(e)); }
+  };
+  pintar();
+}
+
 async function vistaPropuestas(s) {
   const lista = await D.propuestas();
   const n = k => lista.filter(p => p.estado === k).length;

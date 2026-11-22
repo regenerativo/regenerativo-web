@@ -41,6 +41,7 @@ const M = {   // íconos sólidos de una sola forma, con la simpleza de los de A
   contrato: '<path d="M15.6 3.4a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L9.5 19.5 4 21l1.5-5.5z"/>',
   adendas: '<path d="M6 3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zm5 5v3H8v2h3v3h2v-3h3v-2h-3V8z"/>',
   presupuesto: '<path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 4v2h8V7zm0 4v2h8v-2zm0 4v2h5v-2z"/>',
+  marketing: '<path d="M18.6 3.2c.9-.5 2 .2 2 1.2v13.2c0 1-1.1 1.7-2 1.2L13 15.6H9.8l1 4a1.5 1.5 0 0 1-1.5 1.9H8a1.5 1.5 0 0 1-1.4-1.1l-1.3-4.8A4.5 4.5 0 0 1 7 7h6z"/>',
   gantt: '<rect x="3" y="4.5" width="11" height="4" rx="2"/><rect x="7" y="10" width="14" height="4" rx="2"/><rect x="3" y="15.5" width="9" height="4" rx="2"/>',
   informes: '<path d="M9 2.5h6a1 1 0 0 1 1 1V4h1.5A2.5 2.5 0 0 1 20 6.5v12a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 18.5v-12A2.5 2.5 0 0 1 6.5 4H8v-.5a1 1 0 0 1 1-1z"/>',
   enviados: '<path d="M21.4 2.6c.3.3.4.8.2 1.2l-7 16.4c-.4.9-1.6.9-2-.1l-2.2-6.5-6.5-2.2c-1-.3-1-1.6-.1-2l16.4-7c.4-.2.9-.1 1.2.2z"/>',

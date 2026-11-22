@@ -10185,3 +10185,20 @@ html body .modal.dialogo input { min-height: 46px; font-size: 16px; margin: 4px 
 html body .modal .pie-modal.pie-dialogo { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 @media (max-width: 480px) { html body .modal .pie-modal.pie-dialogo .btn { flex: 1 1 calc(50% - 5px); } }
 html body .modal.dialogo .btn.peligro { background: var(--lv-vino, #800000) !important; border-color: var(--lv-vino, #800000) !important; color: #fff !important; }
+/* Marketing: ideas para la web, una por fila con su decisión */
+html body .lv .mk-intro { margin: 0 0 18px; max-width: 62ch; }
+html body .lv .mk-area { margin-bottom: 18px; }
+html body .lv .mk-area h3 { margin: 0 0 6px; }
+html body .lv .mk-ideas { list-style: none; margin: 0; padding: 0; }
+html body .lv .mk-idea { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 14px 0; border-top: 1px dotted rgba(153, 153, 153, 0.55); }
+html body .lv .mk-idea:first-child { border-top: 0; }
+html body .lv .mk-txt { min-width: 0; }
+html body .lv .mk-txt p { margin: 4px 0 0; }
+html body .lv .mk-nota { font-style: italic; }
+html body .lv .mk-acc { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+html body .lv .etiqueta.mk-aprobada, html body .lv .etiqueta.mk-hecha { color: #1e221d; }
+html body .lv .etiqueta.mk-descartada { color: var(--lv-gris, #999); }
+@media (max-width: 640px) {
+  html body .lv .mk-idea { flex-direction: column; gap: 10px; }
+  html body .lv .mk-acc { justify-content: flex-start; }
+}
