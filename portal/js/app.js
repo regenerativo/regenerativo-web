@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=151';
-import * as M from './modulos.js?v=151';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=151';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=151';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=151';
+import * as D from './datos.js?v=152';
+import * as M from './modulos.js?v=152';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=152';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=152';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=152';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -1348,11 +1348,58 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
       <section class="panel"><div class="od-cab"><h3 class="tit-ing">Ingresos</h3><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button></div>${tabla(ings, 'ingreso')}</section>
       <section class="panel"><div class="od-cab"><h3 class="tit-gas">Gastos</h3><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>${tabla(gass, 'gasto')}</section>
     </div>
+    ${admin ? `<section class="panel cc-nueva"><div class="od-cab"><h3>Cuenta de cobro</h3>${e.pagado_total ? '' : '<button class="btn mini" id="cc-nueva"><span class="mas">+</span> Nueva cuenta de cobro</button>'}</div>
+      <p class="sub">${e.pagado_total ? 'Este encargo ya está pagado: no lleva más cuentas de cobro.' : 'Se arma con el membrete de regenerativo y los datos del encargo, y queda en Word y PDF en LEGALES / 04 CUENTAS DE COBRO.'}</p></section>` : ''}
     ${admin ? '<section class="panel od" id="od"></section>' : ''}`;
   pintar(html);
+  if ($('#cc-nueva')) $('#cc-nueva').onclick = () => modalCuentaCobro(e);
   document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: new Date().toISOString().slice(0, 10), encargo_id: e.id }, cats, encs, ir));
   document.querySelectorAll('[data-mov]').forEach(tr => tr.onclick = () => modalMov(movs.find(x => x.id === tr.dataset.mov), cats, encs, ir));
   if (admin) panelOneDrive($('#od'), e, FUENTES.finanzas, { titulo: 'Cuentas de cobro' });
+}
+
+// ---------------- Cuenta de cobro: formulario corto; el documento se arma en el servidor ----------------
+async function modalCuentaCobro(e) {
+  const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
+  fondo.innerHTML = `<form class="modal" id="fcc" style="max-width:560px"><h2>Nueva cuenta de cobro</h2><p class="sub" id="cc-sub">Cargando los datos del encargo…</p>
+    <div class="campos-cc" hidden>
+      <label>Concepto<input name="concepto" required placeholder="Ej.: Anticipo, 50 % del valor total del trabajo"></label>
+      <label>Valor (COP)<input name="valor" inputmode="numeric" required placeholder="Ej.: 2.200.000"></label>
+      <label>Fecha<input type="date" name="fecha" lang="es-CO" value="${new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10)}"></label>
+      <p class="sub" style="margin:14px 0 4px">Datos del cliente (lo que cambies queda guardado en su ficha; lo vacío sale como XXX)</p>
+      <label>Documento (NIT o C.C.)<input name="documento"></label>
+      <label>Correo<input name="email" type="email"></label>
+      <label>Teléfono<input name="telefono"></label>
+      <label>Dirección<input name="direccion"></label>
+    </div>
+    <div class="aviso" id="cc-aviso"></div>
+    <div class="pie-modal"><button class="btn" type="submit" disabled>Generar Word y PDF</button><button type="button" class="btn sec" id="cc-cancelar">Cancelar</button></div></form>`;
+  document.body.appendChild(fondo);
+  const f = $('#fcc', fondo), av = t => { $('#cc-aviso', fondo).textContent = t; };
+  $('#cc-cancelar', fondo).onclick = () => fondo.remove();
+  const sep = v => String(v).replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  f.valor.addEventListener('input', () => { f.valor.value = sep(f.valor.value); });
+  try {
+    const d = await D.cuentaCobro({ accion: 'datos', encargo_id: e.id });
+    if (d.pagado) { $('#cc-sub', fondo).textContent = 'Este encargo ya está pagado: no lleva más cuentas de cobro.'; return; }
+    $('#cc-sub', fondo).textContent = `Será la cuenta de cobro No. ${d.numero} de ${e.nombre}.`;
+    ['documento', 'email', 'telefono', 'direccion'].forEach(k => { f[k].value = d.cliente?.[k] || ''; });
+    $('.campos-cc', fondo).hidden = false; f.querySelector('[type=submit]').disabled = false; f.concepto.focus();
+  } catch (err) { $('#cc-sub', fondo).textContent = msg(err); return; }
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const valor = Number(f.valor.value.replace(/\D/g, ''));
+    if (!f.concepto.value.trim()) return av('Escribe el concepto.');
+    if (!valor) return av('Escribe el valor a cobrar.');
+    const b = f.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Generando…'; av('');
+    try {
+      const r = await D.cuentaCobro({ accion: 'crear', encargo_id: e.id, concepto: f.concepto.value.trim(), valor, fecha: f.fecha.value,
+        cliente: { documento: f.documento.value.trim(), email: f.email.value.trim(), telefono: f.telefono.value.trim(), direccion: f.direccion.value.trim() } });
+      f.innerHTML = `<h2>Cuenta de cobro No. ${esc(r.numero)} lista</h2><p class="sub">Quedó en LEGALES / 04 CUENTAS DE COBRO como «${esc(r.nombre)}».</p>
+        <div class="pie-modal"><a class="btn" href="${esc(r.pdf)}" target="_blank" rel="noopener">Ver PDF</a><a class="btn sec" href="${esc(r.word)}" target="_blank" rel="noopener">Abrir Word</a><button type="button" class="btn sec" id="cc-ok">Cerrar</button></div>`;
+      $('#cc-ok', fondo).onclick = () => { fondo.remove(); olvidarConteos(); ir(); };
+    } catch (err) { b.disabled = false; b.textContent = 'Generar Word y PDF'; av(msg(err)); }
+  };
 }
 
 // ---------------- Documentos de OneDrive: lista compacta, las carpetas se despliegan en el sitio ----------------

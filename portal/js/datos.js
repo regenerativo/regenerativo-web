@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=151';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=152';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -341,6 +341,13 @@ function diasEntre(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400
 async function q(fn) { if (MODO_DEMO) throw new Error('Este módulo funciona con la base de datos conectada.'); return fn(await cliente()); }
 const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
 
+// Cuenta de cobro: se arma en el servidor con el membrete y queda en LEGALES/04 CUENTAS DE COBRO (Word y PDF)
+export async function cuentaCobro(body) {
+  const { data, error } = await (await cliente()).functions.invoke('cuenta-cobro', { body });
+  if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
 // Marketing: ideas de mejora para la web (solo administración)
 export const marketingIdeas = () => q(c => c.from('marketing_ideas').select('*').order('orden')).then(ok);
 export async function decidirIdea(id, estado, nota) {
