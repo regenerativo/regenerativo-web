@@ -1,8 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=154';
-import { descargarPDF } from './pdf.js?v=154';
-import { btnIco } from './iconos.js?v=154';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=154';
+import * as D from './datos.js?v=155';
+import { descargarPDF } from './pdf.js?v=155';
+import { btnIco } from './iconos.js?v=155';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=155';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -351,7 +351,9 @@ export async function datosGantt(ctx) {
 
 async function gantt(ctx) {
   const g = await datosGantt(ctx);
-  const todo = !!ctx.editarTodo, editable = ctx.admin || ctx.rol === 'equipo';
+  // En teléfono el Gantt es solo para ver; se edita en iPad o computador (o en el Excel)
+  const telefono = matchMedia('(max-width: 700px)').matches;
+  const todo = !!ctx.editarTodo && !telefono, editable = (ctx.admin || ctx.rol === 'equipo') && !telefono;
   const nueva = todo ? `<button class="btn sec mini" id="g-nueva"${g.filas.length >= 15 ? ' disabled title="El Excel tiene 15 filas de actividades"' : ''}>+ Actividad</button>` : '';
   const estadoGuardar = '<span class="sub" id="g-guarda" aria-live="polite"></span>';
   if (!g.filas.length) return { html: todo ? `<div class="vacio">Todavía no hay actividades en el cronograma.<div style="margin-top:12px">${nueva}</div>${estadoGuardar}</div>` : vacioDoc(ctx, 'cronograma'), montar: () => montarGantt(ctx, g) };
@@ -399,7 +401,7 @@ async function gantt(ctx) {
     <div class="kpi"><div class="et">Avance real</div><div class="va">${pct(g.realTotal)}</div><div class="barra"><i style="width:${g.realTotal * 100}%"></i></div></div>
     <div class="kpi"><div class="et">Estado de la obra</div><div class="va" style="font-size:20px">${g.realTotal + 0.005 >= g.esperadoTotal ? 'A tiempo' : 'Con retraso'}</div><div class="su">${pct(g.realTotal - g.esperadoTotal)} frente a lo esperado</div></div></div>`;
   const cuerpoXls = () => `<h1>Cronograma ${esc(ctx.e.nombre)}</h1>${tabla.replace(/<select[\s\S]*?<\/select>/g, '').replace(/<button[^>]*>×<\/button>/g, '').replace(/<input[^>]*value="([^"]*)"[^>]*>%?/g, '$1')}`;
-  const ayuda = todo ? 'Edita aquí cualquier dato; se guarda también en el Excel del encargo.' : editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.';
+  const ayuda = telefono && (ctx.admin || ctx.rol === 'equipo') ? '<span class="solo-ver">Solo visualización</span> Para editar, abre el portal en iPad o computador.' : todo ? 'Edita aquí cualquier dato; se guarda también en el Excel del encargo.' : editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.';
   return { html: kp + `<div class="barra-doc"><div class="sub">${ayuda} ${estadoGuardar}</div><div class="barra-acc">${nueva}${ctx.esCliente || ctx.alGuardar ? '' : btnIco('excel', 'Descargar Excel', 'id="xls-g"')}</div></div>` + grafico + tabla,
     montar: () => { const b = $('#xls-g'); if (b) b.onclick = () => descargar(nombreArchivo(ctx.e, 'gantt', { fecha: iso(new Date()) }, 'xls'), cuerpoXls(), 'xls'); montarGantt(ctx, g); } };
 }

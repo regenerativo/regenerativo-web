@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=154';
-import * as M from './modulos.js?v=154';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=154';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=154';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=154';
+import * as D from './datos.js?v=155';
+import * as M from './modulos.js?v=155';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=155';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=155';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=155';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -816,8 +816,8 @@ async function programacionExcel(ctx, pintar) {
   const a = r.archivo && /\.xlsx$/i.test(r.archivo.nombre) ? r.archivo : null;
   if (!a) {
     const cab0 = `<div class="visor-cab"><div><b>Cronograma</b><span class="sub">Todavía no hay Excel del cronograma en ${esc(r.carpeta || 'PROGRAMACIÓN')}. Se crea desde la plantilla de regenerativo al guardar el primer cambio, o con el botón.</span></div><button class="btn sec mini" id="g-crear">Crear Excel</button></div>`;
-    await pintarGantt(cab0);
-    $('#g-crear').onclick = async ev => { ev.target.disabled = true; ev.target.textContent = 'Creando…'; try { await alGuardar(); ctx.recargar(); } catch (err) { alert('No se pudo crear el Excel: ' + msg(err)); ev.target.disabled = false; ev.target.textContent = 'Crear Excel'; } };
+    await pintarGantt(matchMedia('(max-width: 700px)').matches ? cab0.replace(/<button class="btn sec mini" id="g-crear">Crear Excel<\/button>/, '') : cab0);
+    if ($('#g-crear')) $('#g-crear').onclick = async ev => { ev.target.disabled = true; ev.target.textContent = 'Creando…'; try { await alGuardar(); ctx.recargar(); } catch (err) { alert('No se pudo crear el Excel: ' + msg(err)); ev.target.disabled = false; ev.target.textContent = 'Crear Excel'; } };
     return;
   }
   const cab = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · lo que cambies aquí o en el Excel queda en los dos</span></div>${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en Excel</a>` : ''}</div>`;

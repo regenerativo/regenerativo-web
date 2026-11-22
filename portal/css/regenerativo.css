@@ -10244,3 +10244,4 @@ html body .lv .cli-docs.plegado .cli-docs-cab p.sub { display: none; }
 .g-borrar:hover { color: var(--vino); }
 .g-borrar.seguro { font-size: 12px; color: var(--vino); background: #f4e6e6; }
 #g-guarda { margin-left: 6px; }
+.solo-ver { display: inline-block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); border: 1px solid currentColor; border-radius: 999px; padding: 2px 10px; margin-right: 6px; }
