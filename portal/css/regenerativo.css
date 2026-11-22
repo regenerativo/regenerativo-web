@@ -10202,3 +10202,7 @@ html body .lv .etiqueta.mk-descartada { color: var(--lv-gris, #999); }
   html body .lv .mk-idea { flex-direction: column; gap: 10px; }
   html body .lv .mk-acc { justify-content: flex-start; }
 }
+/* Navegación fluida: al cambiar de apartado solo entra el contenido, con un fundido suave */
+html body .lv .cont.lv-entra { animation: lv-entra 0.35s ease both; }
+@keyframes lv-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { html body .lv .cont.lv-entra { animation: none; } }

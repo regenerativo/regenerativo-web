@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=149';
-import * as M from './modulos.js?v=149';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=149';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=149';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=149';
+import * as D from './datos.js?v=150';
+import * as M from './modulos.js?v=150';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=150';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=150';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=150';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -185,6 +185,7 @@ async function irSeguro() {
 }
 
 // ---------------- Marco general ----------------
+let firmaMarco = '';
 function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '', eyebrow = '' }) {
   D.escucharCambios(programarRefresco).catch(() => {});
   document.body.classList.remove('ingreso');  // el pie del ingreso (Por regenerativo fijo abajo) no debe quedar encima del menú
@@ -201,7 +202,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/encargos">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
   const tituloPag = h1 || (ruta.includes(' / ') ? ruta.split(' / ').pop() : titulo);
   const ceja = eyebrow || (enc ? 'Encargo' : '');
-  raiz.innerHTML = `
+  const htmlMarco = `
   <div class="lv">
     <header class="lv-top">
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
@@ -242,6 +243,27 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     <div class="lv-velo" id="lv-velo"></div>
     ${s.admin ? `<a class="lv-claude" href="https://claude.ai/project/01a07ee0-6e6e-76ae-8f6f-875a422348d9" target="_blank" rel="noopener" title="Abrir el chat de regenerativo con Claude" aria-label="Abrir el chat de regenerativo con Claude"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg><span>Claude</span></a>` : ''}
   </div>`;
+  // Navegación fluida: si el menú es el mismo (misma sección del portal o del mismo encargo), solo cambia el contenido;
+  // el menú, la barra de arriba y las pestañas se quedan quietos y el indicador se desliza a la opción nueva.
+  const firma = [s.email, enc ? 'encargo:' + enc.href : 'general:' + (enlacesGen.match(/href="[^"]*"/g) || []).join(',')].join('|');
+  const lvViejo = raiz.querySelector(':scope > .lv');
+  if (lvViejo && firmaMarco === firma && lvViejo.querySelector('.main')) {
+    const t = document.createElement('div'); t.innerHTML = htmlMarco;
+    const lvN = t.querySelector('.lv');
+    const mainN = lvN.querySelector('.main'); mainN.querySelector('.cont')?.classList.add('lv-entra');
+    lvViejo.querySelector('.main').replaceWith(mainN);
+    const navV = lvViejo.querySelector('.lv-lado > .lv-nav'), navN = lvN.querySelector('.lv-lado > .lv-nav');
+    if (navV && navN && navV.innerHTML !== navN.innerHTML) navV.innerHTML = navN.innerHTML;
+    const subV = lvViejo.querySelector('.lv-top-sub'), subN = lvN.querySelector('.lv-top-sub'); if (subV && subN) subV.textContent = subN.textContent;
+    const islaV = lvViejo.querySelector('#lv-isla'), islaN = lvN.querySelector('#lv-isla');
+    if (islaV && islaN) [...islaV.querySelectorAll('a')].forEach(x => { const h = x.getAttribute('href'); const y = [...navN.querySelectorAll('a')].find(z => z.getAttribute('href') === h); if (y) x.classList.toggle('activo', y.classList.contains('activo')); });
+    armarTabs();
+    lvViejo.querySelector('#lado')?.classList.remove('abierto'); lvViejo.querySelector('#lv-velo')?.classList.remove('si');
+    moverIndicador();
+    return;
+  }
+  firmaMarco = firma;
+  raiz.innerHTML = htmlMarco;
   $('#salir').onclick = async () => { await D.dejarDeEscuchar(); await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
   armarIsla();
