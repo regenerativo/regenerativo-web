@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=142';
-import * as M from './modulos.js?v=142';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=142';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=142';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=142';
+import * as D from './datos.js?v=143';
+import * as M from './modulos.js?v=143';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=143';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=143';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=143';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -312,7 +312,7 @@ function marcoAcceso(form) {
       <span class="lv-ceja">Portal de encargos</span>
       <div class="lv-acc-rota" aria-live="off">
         <div class="lv-acc-frase on"><h1>No intervenimos,<br>regeneramos.</h1><p class="lv-acc-cita">Génesis 1.27</p></div>
-        <div class="lv-acc-frase" aria-hidden="true"><p class="lv-acc-h1">Together<br>is more.<img src="/assets/reg-plus3.png" alt="+++"></p><p class="lv-acc-cita">Eclesiastés 4.9-12</p></div>
+        <div class="lv-acc-frase" aria-hidden="true"><p class="lv-acc-h1">Together<br>is more.</p><p class="lv-acc-cita">Eclesiastés 4.9-12</p></div>
       </div>
       <ul class="lv-acc-puntos"><li><i></i>Propuestas, contratos y documentos</li><li><i></i>Avance y cronograma del encargo</li><li><i></i>Conversación directa con el equipo</li></ul>
     </section>
@@ -462,7 +462,7 @@ async function vistaInicio(s) {
         ${anillos()}
         <div class="ha-in ha-rota">${VERSICULOS.map((v, i) => `<div class="ha-frase${i ? '' : ' on'}"${i ? ' aria-hidden="true"' : ''}>
           <span class="lv-ceja">Sobre regenerativo</span>
-          <p class="ha-tit">${v.titulo}${v.mas ? '<img src="/assets/reg-plus3.png" alt="+++">' : ''}</p>
+          <p class="ha-tit">${v.titulo}</p>
           <p class="ha-lead">${esc(v.lead)}</p>
           <p class="ha-txt">${esc(v.texto)}</p>
           <blockquote class="ha-verso">${esc(v.verso)}</blockquote>
@@ -1962,7 +1962,7 @@ async function vistaBasePrecios(s, pestana) {
   partir();
 })();
 
-// Acceso: alterna "No intervenimos, regeneramos." y "Together is more. +++" con un desvanecido lento
+// Acceso: alterna "No intervenimos, regeneramos." y "Together is more." con un desvanecido lento
 setInterval(() => {
   const fr = document.querySelectorAll('.lv-acc-frase');
   if (fr.length < 2 || document.hidden) return;
