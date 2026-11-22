@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=152';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=153';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -386,6 +386,10 @@ export const insumos = () => q(c => c.from('insumos').select('*').order('nombre'
 export const actualizarInsumo = (id, cambios) => q(c => c.from('insumos').update(cambios).eq('id', id)).then(ok);
 
 export const ganttTareas = encargoId => q(c => c.from('gantt_tareas').select('*').eq('encargo_id', encargoId).order('orden')).then(ok);
+export async function reemplazarTareas(encargoId, filas) {
+  await q(c => c.from('gantt_tareas').delete().eq('encargo_id', encargoId)).then(ok);
+  if (filas.length) await q(c => c.from('gantt_tareas').insert(filas)).then(ok);
+}
 export const actualizarTarea = (id, cambios) => q(c => c.from('gantt_tareas').update(cambios).eq('id', id)).then(ok);
 
 export function ordenCodigo(a, b) {

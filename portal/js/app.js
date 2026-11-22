@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=152';
-import * as M from './modulos.js?v=152';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=152';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=152';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=152';
+import * as D from './datos.js?v=153';
+import * as M from './modulos.js?v=153';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=153';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=153';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=153';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -166,7 +166,7 @@ async function irSeguro() {
       finAntes = pedido;
       const v = await vistaFinanzas(p[1], p[2]);
       if (location.hash !== pedido) return;   // si ya se pidió otro mes, esta respuesta vieja no se pinta
-      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, acciones: `<span class="fin-vista ${v.vista.cls}" title="${esc(v.vista.titulo)}">${esc(v.vista.txt)}</span>` + btnIco('ajustes', 'Ajustes de finanzas', 'id="fin-ajustes"'), eyebrow: v.eyebrow });
+      marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, acciones: v.rend ? '' : `<span class="fin-vista ${v.vista.cls}" title="${esc(v.vista.titulo)}">${esc(v.vista.txt)}</span>` + btnIco('ajustes', 'Ajustes de finanzas', 'id="fin-ajustes"'), eyebrow: v.eyebrow });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
@@ -185,7 +185,7 @@ async function irSeguro() {
 }
 
 // ---------------- Marco general ----------------
-let firmaMarco = '';
+let firmaMarco = '', hashMarco = '';
 function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '', eyebrow = '' }) {
   D.escucharCambios(programarRefresco).catch(() => {});
   document.body.classList.remove('ingreso');  // el pie del ingreso (Por regenerativo fijo abajo) no debe quedar encima del menú
@@ -205,6 +205,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   const htmlMarco = `
   <div class="lv">
     <header class="lv-top">
+      ${enc ? `<a href="#/" class="lv-volver-top" aria-label="Volver al portal" title="Volver al portal"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5l-6.5 6.5 6.5 6.5"/></svg></a>` : ''}
       <a href="#/" class="logo-reg" aria-label="regenerativo, inicio del portal">regenerativo</a>
       <span class="lv-top-sub">${esc(enc ? enc.nombre : 'Portal de encargos')}</span>
       ${s.admin ? `<a class="lv-claude-top" href="https://claude.ai/project/01a07ee0-6e6e-76ae-8f6f-875a422348d9" target="_blank" rel="noopener" title="Abrir el chat de regenerativo con Claude" aria-label="Abrir el chat de regenerativo con Claude"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg></a>` : ''}
@@ -247,6 +248,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   // el menú, la barra de arriba y las pestañas se quedan quietos y el indicador se desliza a la opción nueva.
   const firma = [s.email, enc ? 'encargo:' + enc.href : 'general:' + (enlacesGen.match(/href="[^"]*"/g) || []).join(',')].join('|');
   const lvViejo = raiz.querySelector(':scope > .lv');
+  const otraPagina = location.hash !== hashMarco; hashMarco = location.hash;   // al entrar a otra página (o a un encargo) se empieza arriba
   if (lvViejo && firmaMarco === firma && lvViejo.querySelector('.main')) {
     const t = document.createElement('div'); t.innerHTML = htmlMarco;
     const lvN = t.querySelector('.lv');
@@ -260,10 +262,12 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     armarTabs();
     lvViejo.querySelector('#lado')?.classList.remove('abierto'); lvViejo.querySelector('#lv-velo')?.classList.remove('si');
     moverIndicador();
+    if (otraPagina) scrollTo(0, 0);
     return;
   }
   firmaMarco = firma;
   raiz.innerHTML = htmlMarco;
+  if (otraPagina) scrollTo(0, 0);
   $('#salir').onclick = async () => { await D.dejarDeEscuchar(); await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
   armarIsla();
@@ -306,7 +310,7 @@ function armarTabs() {
   const prim = com ? [...enl.filter(a => a !== com).slice(0, 3), com] : enl.slice(0, 4);
   const resto = enl.filter(a => !prim.includes(a));
   const masActivo = resto.some(a => a.classList.contains('activo')) || !!document.querySelector('.lv-nav a.volver');
-  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Propuesta preliminar$/, 'Preliminar')}</span></a>`).join('')}
+  tabs.innerHTML = `<div class="lv-tabs-in"><span class="lv-tab-ind" aria-hidden="true"></span>${prim.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${a.querySelector('svg')?.outerHTML || ''}<span>${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim().replace(/^Base de precios$/, 'Precios').replace(/^Actas e informes$/, 'Actas').replace(/^Documentos enviados$/, 'Enviados').replace(/^Propuesta preliminar$/, 'Preliminar').replace(/^Programación$/, 'Gantt').replace(/^Coordinación administrativa$/, 'Admin.').replace(/^Coordinación técnica$/, 'Técnica')}</span></a>`).join('')}
     <button type="button" id="abrir-menu" class="${masActivo ? 'activo' : ''}"><svg class="ico-menu im-mas" viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg><span>Más</span></button></div>`;
   const cerrar = () => { lado.classList.remove('abierto'); velo.classList.remove('si'); };
   $('#abrir-menu').onclick = e => { e.stopPropagation(); lado.classList.add('abierto'); velo.classList.add('si'); };
@@ -678,9 +682,20 @@ async function enviadosCliente(ctx, pintar) {
     caja.innerHTML = cargandoCli('Cargando documentos…');
     try { const l = accion === 'cli_enviados' ? await enviadosDe(ctx.e.id, fresco) : ((await conLimite(D.onedrive(accion, { encargo_id: ctx.e.id }))).archivos || []);
       if (!document.body.contains(caja)) return;
-      caja.innerHTML = listaDocsCli(l, pref) || `<p class="sub">${vacio}</p>`; bajar(l, pref, caja); }
+      caja.innerHTML = listaDocsCli(l, pref) || `<p class="sub">${vacio}</p>`; bajar(l, pref, caja);
+      const n = $(`#${id} .cli-n`); if (n) n.textContent = l.length ? String(l.length) : ''; }
     catch (err) { if (!document.body.contains(caja)) return; caja.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', id); caja.querySelector('[data-reintentar]').onclick = () => cargar(accion, id, pref, vacio, true); }
   };
+  // Enviados y Recibidos se despliegan o se recogen tocando su título (Recibidos empieza recogido para no tener que bajar tanto)
+  document.querySelectorAll('.cli-docs').forEach(sec => {
+    const cab = sec.querySelector('.cli-docs-cab'); const h = cab.querySelector('h3');
+    h.insertAdjacentHTML('beforeend', '<span class="cli-n"></span><svg class="cli-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>');
+    cab.setAttribute('role', 'button'); cab.tabIndex = 0;
+    const plegar = v => { sec.classList.toggle('plegado', v); cab.setAttribute('aria-expanded', String(!v)); };
+    plegar(sec.id === 'cli-rec');
+    cab.onclick = () => plegar(!sec.classList.contains('plegado'));
+    cab.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); cab.onclick(); } };
+  });
   cargar('cli_enviados', 'cli-env', 'ie', 'Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.');
   cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
   $('#cli-subir').onclick = () => $('#cli-arch').click();
@@ -724,6 +739,70 @@ async function propuestaCliente(ctx, pintar, html, fresco = false) {
 }
 
 // Presupuesto y Programación: el documento de la carpeta del encargo, solo para ver (se edita en OneDrive)
+// ---------------- Programación: el cronograma se edita en Excel (carpeta PROGRAMACIÓN) y aquí se ve como Gantt ----------------
+const fechaExcel = v => {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number' || /^\d+(\.\d+)?$/.test(v)) { const d = new Date(Date.UTC(1899, 11, 30) + Math.round(Number(v)) * 864e5); return d.toISOString().slice(0, 10); }
+  const m = String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/); if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  const m2 = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m2 ? m2[0] : null;
+};
+async function leerCronograma(base64) {
+  await cargarJSZip();
+  const zip = await JSZip.loadAsync(base64, { base64: true });
+  const xml = async n => new DOMParser().parseFromString(await zip.file(n).async('string'), 'application/xml');
+  const ss = []; if (zip.file('xl/sharedStrings.xml')) [...(await xml('xl/sharedStrings.xml')).getElementsByTagName('si')].forEach(si => ss.push([...si.getElementsByTagName('t')].map(t => t.textContent).join('')));
+  const wb = await xml('xl/workbook.xml'), rels = await xml('xl/_rels/workbook.xml.rels');
+  const hojas = [...wb.getElementsByTagName('sheet')].filter(h => h.getAttribute('state') !== 'hidden');
+  const col = r => { let n = 0; for (const ch of r.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  for (const h of hojas) {
+    const rid = [...h.attributes].find(x => /(^|:)id$/.test(x.name) && x.name !== 'sheetId')?.value;
+    const t = [...rels.getElementsByTagName('Relationship')].find(r => r.getAttribute('Id') === rid)?.getAttribute('Target'); if (!t) continue;
+    const hoja = await xml('xl/' + t.replace(/^\/?xl\//, ''));
+    const grid = [...hoja.getElementsByTagName('row')].map(r => { const fila = []; [...r.getElementsByTagName('c')].forEach(c => { const v = c.getElementsByTagName('v')[0]?.textContent ?? c.getElementsByTagName('t')[0]?.textContent ?? ''; fila[col(c.getAttribute('r'))] = c.getAttribute('t') === 's' ? ss[Number(v)] : (c.getAttribute('t') === 'str' || c.getAttribute('t') === 'inlineStr' ? v : (v === '' ? '' : Number(v))); }); return fila; });
+    const iCab = grid.findIndex(f => f.some(x => /actividad|tarea|descripci|item/i.test(String(x ?? ''))) && f.some(x => /inicio|comienzo/i.test(String(x ?? ''))));
+    if (iCab < 0) continue;
+    const cab = grid[iCab].map(x => String(x ?? '').toLowerCase());
+    const busca = (re, no) => cab.findIndex(x => re.test(x) && !(no && no.test(x)));
+    const cN = busca(/actividad|tarea|descripci/), cI = busca(/inicio|comienzo/, /real/), cF = busca(/fin|final|termina|entrega/, /real/), cD = busca(/d[ií]as|duraci/),
+      cIR = busca(/inicio.*real|real.*inicio/), cFR = busca(/fin.*real|real.*fin/), cA = busca(/avance|progreso|%/);
+    const tareas = [];
+    grid.slice(iCab + 1).forEach(f => {
+      const nombre = String(f[cN] ?? '').trim(), ini = fechaExcel(f[cI]);
+      if (!nombre || !ini) return;
+      const fin = cF >= 0 ? fechaExcel(f[cF]) : null;
+      const dias = cD >= 0 ? Math.round(Number(f[cD]) || 0) : 0;
+      let av = cA >= 0 ? Number(f[cA]) || 0 : null; if (av != null && av > 1) av = av / 100;
+      tareas.push({ nombre, inicio_esperado: ini, fin, dias_esperados: dias, inicio_real: cIR >= 0 ? fechaExcel(f[cIR]) : undefined, fin_real: cFR >= 0 ? fechaExcel(f[cFR]) : undefined, avance: av ?? undefined });
+    });
+    if (tareas.length) return tareas;
+  }
+  return [];
+}
+async function programacionExcel(ctx, pintar) {
+  pintar('<section class="panel visor" id="visor"><p class="sub">Leyendo el cronograma de la carpeta PROGRAMACIÓN…</p></section><div id="g-web"></div>');
+  const el = $('#visor');
+  let r; try { r = await D.onedrive('visor', { encargo_id: ctx.e.id, modulo: 'gantt' }); } catch (err) { el.innerHTML = `<p class="sub">No se pudo abrir la carpeta: ${esc(msg(err))}</p>`; return; }
+  if (!r.archivo) { el.innerHTML = `<p class="sub">Todavía no hay cronograma en la carpeta ${esc(r.carpeta || 'PROGRAMACIÓN')}. Cuando subas el Excel del cronograma, aquí se verá como Gantt.</p>`; return; }
+  const a = r.archivo;
+  const cab = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · se edita en Excel y aquí se ve como Gantt</span></div>${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en Excel</a>` : ''}</div>`;
+  let tareas = [];
+  if (/\.xlsx$/i.test(a.nombre)) {
+    try { const f = await D.onedrive('archivo_encargo', { encargo_id: ctx.e.id, carpeta: r.carpeta, ruta: a.ruta }); tareas = await leerCronograma(f.base64); } catch (_) { tareas = []; }
+  }
+  if (!tareas.length) { el.innerHTML = cab + (a.vista ? `<div class="visor-marco"><iframe src="${esc(a.vista)}" title="${esc(a.nombre)}" loading="lazy" allowfullscreen></iframe></div>` : '') + '<p class="sub">No encontré en el Excel una tabla con columnas de actividad e inicio para dibujar el Gantt.</p>'; return; }
+  // Días de trabajo de cada actividad: los del Excel, o los que hay entre su inicio y su fin (según los días de trabajo del encargo)
+  tareas.forEach(t => { if (!t.dias_esperados) t.dias_esperados = Math.max(1, t.fin ? diasDeTrabajo(t.inicio_esperado, t.fin, ctx.e.dias_trabajo, ctx.fest) : 1); delete t.fin; });
+  // El Excel manda: si cambió, se reemplazan las tareas del portal (las fechas reales y el avance escritos en el portal se conservan si el Excel no los trae)
+  const antes = await D.ganttTareas(ctx.e.id).catch(() => []);
+  const firma = l => l.map(t => [t.nombre, t.inicio_esperado, t.dias_esperados].join('|')).join('¦');
+  if (ctx.admin && firma(antes) !== firma(tareas)) {
+    const filas = tareas.map((t, i) => { const v = antes.find(x => x.nombre === t.nombre) || {}; return { encargo_id: ctx.e.id, orden: i + 1, nombre: t.nombre, inicio_esperado: t.inicio_esperado, dias_esperados: t.dias_esperados, inicio_real: t.inicio_real !== undefined ? t.inicio_real : (v.inicio_real || null), fin_real: t.fin_real !== undefined ? t.fin_real : (v.fin_real || null), avance: t.avance !== undefined ? t.avance : (v.avance || 0) }; });
+    try { await D.reemplazarTareas(ctx.e.id, filas); } catch (err) { el.innerHTML = cab + `<p class="sub">No se pudo actualizar el Gantt: ${esc(msg(err))}</p>`; return; }
+  }
+  const v = await M.VISTAS.gantt(ctx);
+  el.innerHTML = cab; $('#g-web').innerHTML = v.html; if (v.montar) v.montar();
+}
+
 async function visorDocumento(ctx, modulo, el) {
   el.innerHTML = '<p class="sub">Buscando el documento…</p>';
   let r; try { r = await D.onedrive('visor', { encargo_id: ctx.e.id, modulo }); } catch (err) { el.innerHTML = `<p class="sub">No se pudo abrir el documento: ${esc(msg(err))}</p>`; return false; }
@@ -1119,6 +1198,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     if (k === 'finanzas') return s.facturacion;
     if (['contrato', 'adendas'].includes(k)) return false;
     if (k === 'propuesta') return esCliente && web[k] > 0;
+    if (k === 'gantt' && esCliente) return true;   // el cliente siempre ve Programación (si no hay cronograma, se le dice)
     if (k === 'presupuesto' || k === 'gantt') return admin || web[k] > 0 || (od[k] || 0) > 0;
     return admin || web[k] > 0;
   };
@@ -1297,6 +1377,13 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const v = web.propuesta > 0 && M.VISTAS.propuesta ? await M.VISTAS.propuesta(ctx) : null;
     return propuestaCliente(ctx, pintar, v);
   }
+  if (seccion === 'gantt' && esCliente) {
+    const v = web.gantt > 0 ? await M.VISTAS.gantt(ctx) : null;
+    pintar(v ? v.html : '<div class="vacio">Este encargo todavía no tiene cronograma de obra.</div>');
+    if (v?.montar) v.montar();
+    return;
+  }
+  if (seccion === 'gantt' && !D.MODO_DEMO) return programacionExcel(ctx, pintar);
   if ((seccion === 'presupuesto' || seccion === 'gantt') && !D.MODO_DEMO) {
     const v = web[seccion] > 0 && M.VISTAS[seccion] ? await M.VISTAS[seccion](ctx) : null;
     pintar(`<section class="panel visor" id="visor"></section>${v ? `<section class="panel"><h3>${seccion === 'gantt' ? 'Programación en el portal' : 'Presupuesto en el portal'}</h3></section>` + v.html : ''}`);
@@ -1348,7 +1435,7 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
       <section class="panel"><div class="od-cab"><h3 class="tit-ing">Ingresos</h3><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button></div>${tabla(ings, 'ingreso')}</section>
       <section class="panel"><div class="od-cab"><h3 class="tit-gas">Gastos</h3><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>${tabla(gass, 'gasto')}</section>
     </div>
-    ${admin ? `<section class="panel cc-nueva"><div class="od-cab"><h3>Cuenta de cobro</h3>${e.pagado_total ? '' : '<button class="btn mini" id="cc-nueva"><span class="mas">+</span> Nueva cuenta de cobro</button>'}</div>
+    ${admin ? `<section class="panel cc-nueva"><div class="od-cab"><h3>Cuenta de cobro</h3>${e.pagado_total ? '' : '<button class="btn mini" id="cc-nueva" aria-label="Nueva cuenta de cobro"><span class="mas">+</span> Nueva<span class="cc-largo"> cuenta de cobro</span></button>'}</div>
       <p class="sub">${e.pagado_total ? 'Este encargo ya está pagado: no lleva más cuentas de cobro.' : 'Se arma con el membrete de regenerativo y los datos del encargo, y queda en Word y PDF en LEGALES / 04 CUENTAS DE COBRO.'}</p></section>` : ''}
     ${admin ? '<section class="panel od" id="od"></section>' : ''}`;
   pintar(html);
@@ -1754,7 +1841,7 @@ async function vistaPropuestas(s) {
         <tbody>${f.map(p => `
           <tr style="--acc-w:${((accionesPropuesta(p).match(/<(button|a) /g) || []).length) * 40 + 8}px">
             <td class="sub col-opc">${esc(p.codigo)}</td>
-            <td><b>${esc(p.nombre)}</b><div class="sub">${servs(p).map(esc).join(' · ') || 'Sin servicio'}<span class="solo-movil"> · ${esc(p.codigo)}</span></div><div class="sub solo-movil">${esc(p.cliente?.nombre || 'Sin cliente')} · ${p.honorarios ? cop(p.honorarios) : 'Sin valor'} · ${p.fecha_envio ? 'Enviada ' + fecha(p.fecha_envio) : 'Sin fecha de envío'}</div></td>
+            <td class="prop-nombre" data-abrir="${p.id}" title="Ver la descripción de la propuesta"><b>${esc(p.nombre)}</b><div class="sub">${servs(p).map(esc).join(' · ') || 'Sin servicio'}<span class="solo-movil"> · ${esc(p.codigo)}</span></div><div class="sub solo-movil">${esc(p.cliente?.nombre || 'Sin cliente')} · ${p.honorarios ? cop(p.honorarios) : 'Sin valor'} · ${p.fecha_envio ? 'Enviada ' + fecha(p.fecha_envio) : 'Sin fecha de envío'}</div></td>
             <td class="col-opc">${xxx(p.cliente?.nombre)}</td>
             <td class="num col-opc">${p.honorarios ? cop(p.honorarios) : '—'}</td>
             <td class="col-opc">${`<label class="fecha-envio" title="Fecha de envío · clic para cambiarla">${p.fecha_envio ? fecha(p.fecha_envio) : '<span class="xxx">Sin fecha</span>'}${ico('editar')}<input type="date" data-fenvio="${p.id}" value="${p.fecha_envio || ''}" aria-label="Fecha de envío"></label>${p.estado === 'en_espera' && p.fecha_envio ? `<div class="sub">${quedan(p.fecha_envio)}</div>` : ''}`}</td>
@@ -1763,6 +1850,8 @@ async function vistaPropuestas(s) {
           </tr>`).join('')}</tbody></table></div>`
       : `<div class="vacio">${lista.length ? 'Ninguna propuesta coincide.' : 'Todavía no hay propuestas preliminares.'}</div>`;
     document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => accion(b.dataset.acc, lista.find(p => p.id === b.dataset.id)));
+    // Tocar el nombre de la propuesta abre su descripción (los mismos detalles del botón «Detalles»)
+    document.querySelectorAll('[data-abrir]').forEach(td => td.onclick = () => modalPropuesta(lista.find(p => p.id === td.dataset.abrir)));
     // Documentos de cada propuesta (Word y PDF) leídos de su carpeta en OneDrive
     document.querySelectorAll('[data-docs]').forEach(async el => {
       const pintarDocs = a => {

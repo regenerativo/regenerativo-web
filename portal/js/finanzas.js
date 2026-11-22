@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=152';
-import { cop, fecha, iso } from './formato.js?v=152';
-import { btnIco, ico } from './iconos.js?v=152';
-import { leerMonai } from './monai.js?v=152';
+import * as D from './datos.js?v=153';
+import { cop, fecha, iso } from './formato.js?v=153';
+import { btnIco, ico } from './iconos.js?v=153';
+import { leerMonai } from './monai.js?v=153';
 // Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
 const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };
@@ -252,7 +252,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
   // Lo que se está viendo, para la esquina superior derecha: General o el proyecto elegido
   const encSel = encargos.find(e => e.id === lista);
   const vista = encSel ? { txt: encSel.nombre.replace(/^\s*\d{2}\s+I\s+/, ''), cls: 'proy', titulo: encSel.nombre } : lista === 'general' ? { txt: 'Gastos generales', cls: 'general', titulo: 'Solo lo que no pertenece a ningún proyecto' } : { txt: 'General', cls: 'general', titulo: 'Todo regenerativo' };
-  return { html: htmlFinal, mes, mesTxt, eyebrow, vista, montar: recargar => {
+  return { html: htmlFinal, mes, mesTxt, eyebrow, vista, rend: REND.ver, montar: recargar => {
     document.querySelectorAll('[data-rend]').forEach(b => b.onclick = () => { REND.ver = b.dataset.rend === '1'; recargar(); });
     if (REND.ver && $('#rend-hist')) D.finHistorial().then(h => { $('#rend-hist').innerHTML = historialHtml(h, cats); }).catch(e => { $('#rend-hist').innerHTML = `<p class="sub">No se pudo leer el historial: ${esc(e.message)}</p>`; });
     if (REND.ver) return;

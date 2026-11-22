@@ -10208,3 +10208,32 @@ html body .lv .cont.lv-entra { animation: lv-entra 0.35s ease both; }
 @media (prefers-reduced-motion: reduce) { html body .lv .cont.lv-entra { animation: none; } }
 /* Marketing: los 5 filtros siempre a la vista (pasan a dos líneas si no caben) */
 @media (max-width: 640px) { html body .lv #mk-seg { flex-wrap: wrap; overflow: visible; border-radius: 22px; } }
+/* Propuestas: el nombre abre la descripción */
+html body .lv td.prop-nombre { cursor: pointer; }
+html body .lv td.prop-nombre:hover b { color: var(--lv-gris, #999); }
+/* Celular: volver al portal arriba a la izquierda (dentro de un encargo) */
+html body .lv .lv-volver-top { display: none; }
+@media (max-width: 1023px) {
+  html body .lv .lv-volver-top { display: flex; flex: none; align-items: center; justify-content: center; width: 36px; height: 36px; margin: 0 -6px 0 -10px; border-radius: 99px; color: #1e221d; }
+  html body .lv .lv-volver-top:active { transform: scale(0.92); }
+}
+/* Celular: el botón de cada recuadro siempre al lado del título (como + Gasto / + Ingreso) */
+@media (max-width: 640px) {
+  html body .lv .od-cab { align-items: center; column-gap: 10px; }
+  html body .lv .od-cab > h3 { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  html body .lv .od-cab > .btn, html body .lv .od-cab > button, html body .lv .od-cab > a { flex: none; }
+  html body .lv .cc-largo { display: none; }
+  /* Al cambiar de apartado solo un fundido, sin desplazamiento: nada salta */
+  html body .lv .cont.lv-entra { animation-name: lv-entra-suave; }
+}
+@keyframes lv-entra-suave { from { opacity: 0; } to { opacity: 1; } }
+/* Paneles que cargan de OneDrive: reservan su espacio para que lo de abajo no salte */
+html body .lv .panel.od:empty, html body .lv .panel.visor:empty { min-height: 120px; }
+/* Portal del cliente: Enviados y Recibidos se despliegan o se recogen */
+html body .lv .cli-docs-cab { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+html body .lv .cli-docs-cab h3 { display: flex; align-items: center; gap: 10px; }
+html body .lv .cli-docs-cab .cli-n:not(:empty) { font-size: 13px; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 99px; background: rgba(30, 34, 29, 0.06); display: inline-flex; align-items: center; justify-content: center; }
+html body .lv .cli-docs-cab .cli-chev { margin-left: auto; transition: transform 0.35s ease; }
+html body .lv .cli-docs.plegado .cli-chev { transform: rotate(-90deg); }
+html body .lv .cli-docs.plegado .cli-docs-l, html body .lv .cli-docs.plegado .cli-subir, html body .lv .cli-docs.plegado .cli-subir-ayuda, html body .lv .cli-docs.plegado #cli-aviso { display: none; }
+html body .lv .cli-docs.plegado .cli-docs-cab p.sub { display: none; }
