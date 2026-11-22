@@ -4,6 +4,7 @@
 //   'poner_documento'     → {ruta, valor}: agrega el renglón "Documento del cliente" a un Word
 //   'ordenar_datos'       → ordena los datos del encargo (contacto primero) y resalta los importantes
 //   'reemplazar_todo'     → cambia todos los renglones con un texto dado y el código del encabezado
+//   'grises'              → todos los grises pasan al gris regenerativo (BFBFBF)
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { unzipSync, zipSync, strFromU8, strToU8 } from "npm:fflate@0.8.2";
 
@@ -172,6 +173,19 @@ Deno.serve(async (req) => {
         z[k] = strToU8(h);
       }
       await subir(at, ruta, zipSync(z));
+      return json({ ok: true, conteo });
+    }
+    if (b.accion === "grises") {
+      // {ruta?}: todos los grises del documento, encabezados y pies pasan al gris regenerativo (el de «Servicios», BFBFBF)
+      const ruta = String(b.ruta || `${PROPUESTAS}/SCREG_2XXXX_PROPUESTA.docx`);
+      const buf = await bajar(at, ruta); if (!buf) return json({ error: "No encontré el Word: " + ruta }, 404);
+      const z = unzipSync(new Uint8Array(buf)); const conteo: Record<string, number> = {};
+      for (const k of Object.keys(z)) if (/^word\/(document|header\d*|footer\d*)\.xml$/.test(k)) {
+        const x = strFromU8(z[k]); let n = 0;
+        const y = x.replace(/<w:color w:val="(6E6E6E|7F7F7F|808080|A6A6A6|999999|595959|8A8A8A|767171|AEAAAA|D9D9D9|BFBFBF)"[^>]*\/>/g, (m) => { if (m === '<w:color w:val="BFBFBF"/>') return m; n++; return '<w:color w:val="BFBFBF"/>'; });
+        if (n) { z[k] = strToU8(y); conteo[k] = n; }
+      }
+      if (Object.keys(conteo).length) await subir(at, ruta, zipSync(z));
       return json({ ok: true, conteo });
     }
     if (b.accion === "leer_clientes") {
