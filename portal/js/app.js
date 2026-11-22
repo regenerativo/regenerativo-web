@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=144';
-import * as M from './modulos.js?v=144';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=144';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=144';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=144';
+import * as D from './datos.js?v=145';
+import * as M from './modulos.js?v=145';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=145';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=145';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=145';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -507,7 +507,8 @@ function itemComentario(c, admin) {
     <div class="lv-com-cab"><span class="lv-ava">${esc(ini)}</span><b>${esc(c.autor_nombre || 'Cliente')}</b>
       <span class="lv-chip ${c.estado === 'abierto' ? 'por-iniciar' : 'en-curso'}"><i></i>${c.estado === 'abierto' ? 'Sin resolver' : 'Resuelto'}</span>
       <span class="lv-tipo">${c.tipo === 'duda' ? 'Duda' : 'Comentario'}</span><time>${fechaHora(c.creado)}</time></div>
-    <p class="lv-com-t">${esc(c.texto).replace(/\n/g, '<br>')}</p>
+    <p class="lv-com-t">${esc(c.texto).replace(/\n/g, '<br>')}${c.editado ? ' <span class="sub">(editado)</span>' : ''}</p>
+    ${!admin && !c.respuesta && c.estado === 'abierto' && c.autor_nombre !== 'regenerativo' ? `<div class="lv-com-acc"><button type="button" class="btn sec mini" data-com-editar="${c.id}">Editar</button><button type="button" class="btn sec mini" data-com-borrar="${c.id}">Eliminar</button></div>` : ''}
     ${c.respuesta ? `<div class="lv-resp"><b>regenerativo</b>${c.respondido ? ` <time>${fechaHora(c.respondido)}</time>` : ''}<p>${esc(c.respuesta).replace(/\n/g, '<br>')}</p></div>` : ''}
     ${admin && c.estado === 'resuelto' && c.autor_nombre !== 'regenerativo' ? `<button type="button" class="btn sec mini lv-reabrir" data-id="${c.id}">Reabrir</button>` : ''}
     ${admin && c.estado === 'abierto' ? `<form class="lv-resp-f" data-id="${c.id}"><textarea name="respuesta" rows="2" placeholder="Responder al cliente…">${esc(c.respuesta || '')}</textarea>
@@ -567,6 +568,23 @@ function vistaComentarios(ctx, coms, pintar) {
     const b = f.querySelector('button'); b.disabled = true;
     try { const r = await D.responderComentario(f.dataset.id, { respuesta: f.respuesta.value.trim() || null, estado: f.resolver.checked ? 'resuelto' : 'abierto' }); if (r && !r.enviado && r.motivo) alert('Respuesta guardada. No se envió el correo al cliente: ' + r.motivo); ctx.recargar(); }
     catch (err) { alert(msg(err)); b.disabled = false; }
+  });
+  // El cliente corrige o borra lo que escribió (solo mientras regenerativo no lo haya respondido)
+  document.querySelectorAll('[data-com-editar]').forEach(b => b.onclick = () => {
+    const c = coms.find(x => x.id === b.dataset.comEditar), li = b.closest('li');
+    li.querySelector('.lv-com-acc').outerHTML = `<form class="lv-resp-f lv-edit-f"><textarea name="t" rows="3">${esc(c.texto)}</textarea>
+      <div class="lv-fila-fin"><button type="button" class="btn sec" data-cancelar>Cancelar</button><button class="btn" type="submit">Guardar cambios</button></div></form>`;
+    li.querySelector('.lv-com-t').hidden = true;
+    const f = li.querySelector('.lv-edit-f'); f.t.focus();
+    f.querySelector('[data-cancelar]').onclick = () => ctx.recargar();
+    f.onsubmit = async ev => { ev.preventDefault(); const bt = f.querySelector('[type=submit]'); bt.disabled = true;
+      try { await D.editarMiComentario(c.id, f.t.value); D.onedrive('aviso_comentario', { comentario_id: c.id }).catch(() => {}); ctx.recargar(); }
+      catch (err) { alert(msg(err)); bt.disabled = false; } };
+  });
+  document.querySelectorAll('[data-com-borrar]').forEach(b => b.onclick = async () => {
+    if (!confirm('¿Eliminar este comentario? No se puede deshacer.')) return;
+    b.disabled = true;
+    try { await D.borrarMiComentario(b.dataset.comBorrar); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; }
   });
   document.querySelectorAll('.lv-reabrir').forEach(b => b.onclick = async () => { b.disabled = true; try { await D.responderComentario(b.dataset.id, { estado: 'abierto' }); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; } });
 }

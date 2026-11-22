@@ -10131,17 +10131,7 @@ html body .lv .lv-lado .lv-nav.con-mas { -webkit-mask-image: linear-gradient(to 
 }
 
 /* ── Liquid Glass ──
-   Fondo con luz de color muy suave (azul mar, lima bosque, lila cielo) para que el vidrio se perciba;
-   superficies translúcidas con desenfoque, borde de luz y reflejo en el canto superior. */
-html body .lv::before {
-  content: ""; position: fixed; inset: -10vmax; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(38vmax 30vmax at 12% 8%, rgba(0, 163, 203, 0.13), transparent 70%),
-    radial-gradient(34vmax 28vmax at 92% 18%, rgba(223, 223, 63, 0.16), transparent 70%),
-    radial-gradient(40vmax 34vmax at 70% 92%, rgba(231, 220, 227, 0.55), transparent 70%),
-    radial-gradient(30vmax 26vmax at 8% 85%, rgba(0, 163, 203, 0.08), transparent 70%),
-    #f7f7f4;
-}
+   Fondo blanco de siempre; superficies translúcidas con desenfoque, borde de luz y reflejo en el canto superior. */
 html body .lv section.panel, html body .lv .kpi, html body .lv .lv-card, html body .lv .lv-lado, html body .lv .lv-tabs-in, html body .lv .modal {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.56)) !important;
   -webkit-backdrop-filter: blur(26px) saturate(1.8); backdrop-filter: blur(26px) saturate(1.8);

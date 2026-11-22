@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=144';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=145';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -448,6 +448,18 @@ export async function comentar(encargoId, texto, tipo = 'comentario', autorNombr
   if (error) throw error;
   const aviso = avisar ? await onedrive('aviso_comentario', { comentario_id: data.id }).catch(e => ({ enviado: false, motivo: e.message })) : null;
   return { comentario: data, aviso };
+}
+// El cliente corrige o borra su propio comentario mientras no esté respondido
+export async function editarMiComentario(id, texto) {
+  const { error } = await (await cliente()).rpc('editar_mi_comentario', { p_id: id, p_texto: texto }); if (error) throw error;
+}
+export async function borrarMiComentario(id) {
+  const { error } = await (await cliente()).rpc('borrar_mi_comentario', { p_id: id }); if (error) throw error;
+}
+// Historial de cambios de los movimientos (solo administración)
+export async function finHistorial(limite = 60) {
+  const { data, error } = await (await cliente()).from('fin_historial').select('*').order('creado', { ascending: false }).limit(limite);
+  if (error) throw error; return data || [];
 }
 export async function responderComentario(id, cambios) {
   const c = await cliente();
