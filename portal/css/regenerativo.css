@@ -10145,3 +10145,29 @@ html body .lv .btn.sec, html body .lv .lv-seg, html body .lv .chip { -webkit-bac
 html body .lv .mon-barra i, html body .lv .barra > i, html body .lv .progreso > i, html body .lv .lv-prog > i {
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 55%) !important; background-blend-mode: soft-light;
 }
+
+/* Finanzas → Rendimiento (solo administración) */
+html body .lv .rend-sel { display: inline-flex; gap: 6px; margin: 0 0 18px; }
+html body .lv .rend-kpis .kpi.neg .va { color: #8b1a1a; }
+html body .lv .rend-obs { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 10px; }
+html body .lv .rend-obs li { display: flex; gap: 12px; align-items: baseline; line-height: 1.5; }
+html body .lv .rend-obs i { flex: 0 0 9px; height: 9px; border-radius: 50%; background: #c2c21f; transform: translateY(-1px); }
+html body .lv .rend-obs li.alto i { background: #8b1a1a; }
+html body .lv .rend-obs li.bajo i { background: #b088a6; }
+html body .lv .rend-obs li.bien i { background: #00a3cb; }
+html body .lv .rend-cat, html body .lv .rend-enc, html body .lv .rend-hist { list-style: none; margin: 10px 0 0; padding: 0; }
+html body .lv .rend-cat li { display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dotted rgba(153, 153, 153, 0.55); }
+html body .lv .rend-cn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html body .lv .rend-b { position: relative; height: 12px; }
+html body .lv .rend-b i { position: absolute; left: 0; top: 0; height: 12px; border-radius: 6px; background: linear-gradient(180deg, #a33a3a, #800000); }
+html body .lv .rend-b s { position: absolute; left: 0; top: 0; height: 12px; border-radius: 6px; border: 1.5px solid rgba(128, 0, 0, 0.35); }
+html body .lv .rend-v { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html body .lv .rend-v em { display: block; font-style: normal; font-size: 12px; }
+html body .lv .rend-v em.sube { color: #8b1a1a; }
+html body .lv .rend-v em.baja { color: #00708b; }
+html body .lv .rend-enc li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px dotted rgba(153, 153, 153, 0.55); }
+html body .lv .rend-enc li .sub { grid-column: 1; }
+html body .lv .rend-u { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-variant-numeric: tabular-nums; color: #00708b; }
+html body .lv .rend-u.neg { color: #8b1a1a; }
+html body .lv .rend-hist li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px dotted rgba(153, 153, 153, 0.55); overflow-wrap: anywhere; }
+@media (max-width: 600px) { html body .lv .rend-cat li { grid-template-columns: minmax(0, 1fr) auto; } html body .lv .rend-b { grid-column: 1 / -1; grid-row: 2; } }

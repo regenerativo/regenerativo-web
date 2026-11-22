@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=145';
-import { cop, fecha, iso } from './formato.js?v=145';
-import { btnIco, ico } from './iconos.js?v=145';
-import { leerMonai } from './monai.js?v=145';
+import * as D from './datos.js?v=146';
+import { cop, fecha, iso } from './formato.js?v=146';
+import { btnIco, ico } from './iconos.js?v=146';
+import { leerMonai } from './monai.js?v=146';
 // Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
 const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };
@@ -61,7 +61,8 @@ export const icoCat = n => `<svg class="ico-cat ic-${claveCat(n)}" viewBox="0 0 
 
 // Por confirmar: «ver todos» y el filtro de origen se mantienen al confirmar (la lista no se vuelve a cerrar)
 const PEND = { todos: false, origen: '' };
-const GRAF = { vista: 'anio' };   // gráfica de Finanzas: 'anio' (12 meses del año) o 'seis' (últimos 6 meses)
+const GRAF = { vista: 'anio' };
+const REND = { ver: false };   // Finanzas: 'Movimientos' o 'Rendimiento' (solo administración)   // gráfica de Finanzas: 'anio' (12 meses del año) o 'seis' (últimos 6 meses)
 // De dónde viene cada movimiento: correo (lectura automática), MONAI (importación) o escrito a mano en el portal
 const ORIGENES = { correo: 'Correo', monai: 'MONAI', portal: 'Portal' };
 const origenDe = x => x.origen === 'correo' || x.origen === 'monai' ? x.origen : 'portal';
@@ -167,6 +168,9 @@ export async function vistaFinanzas(mesSel, listaSel) {
     const m = {}; delMes.filter(x => x.categoria_id === c.id).forEach(x => { const k = x.subcategoria || 'Sin subcategoría'; m[k] = (m[k] || 0) + Number(x.valor); });
     return { ...c, subs: Object.entries(m).sort((a, b) => b[1] - a[1]) };
   }).filter(d => d.subs.length > 1 || d.subs[0][0] !== d.nombre);
+  const admin = await D.esAdmin().catch(() => false);
+  const selector = admin ? `<div class="rend-sel" role="group" aria-label="Vista de finanzas"><button type="button" class="chip-f${REND.ver ? '' : ' on'}" data-rend="0">Movimientos</button><button type="button" class="chip-f${REND.ver ? ' on' : ''}" data-rend="1">Rendimiento</button></div>` : '';
+  const htmlRend = admin && REND.ver ? rendimiento({ movs, cats, porEnc, a, m, mes, suma }) : '';
   const html = `
     ${pend.length ? `<section class="pend" id="por-confirmar">
       <div class="pend-cab"><h3>Por confirmar <span class="pend-n">${pend.length}</span></h3><span class="sub">Elige tipo, categoría y a qué pertenece. No cuentan en los totales hasta que les des ✓.</span></div>
@@ -244,10 +248,14 @@ export async function vistaFinanzas(mesSel, listaSel) {
     </section>
 `;
 
+  const htmlFinal = selector + (htmlRend || html);
   // Lo que se está viendo, para la esquina superior derecha: General o el proyecto elegido
   const encSel = encargos.find(e => e.id === lista);
   const vista = encSel ? { txt: encSel.nombre.replace(/^\s*\d{2}\s+I\s+/, ''), cls: 'proy', titulo: encSel.nombre } : lista === 'general' ? { txt: 'Gastos generales', cls: 'general', titulo: 'Solo lo que no pertenece a ningún proyecto' } : { txt: 'General', cls: 'general', titulo: 'Todo regenerativo' };
-  return { html, mes, mesTxt, eyebrow, vista, montar: recargar => {
+  return { html: htmlFinal, mes, mesTxt, eyebrow, vista, montar: recargar => {
+    document.querySelectorAll('[data-rend]').forEach(b => b.onclick = () => { REND.ver = b.dataset.rend === '1'; recargar(); });
+    if (REND.ver && $('#rend-hist')) D.finHistorial().then(h => { $('#rend-hist').innerHTML = historialHtml(h, cats); }).catch(e => { $('#rend-hist').innerHTML = `<p class="sub">No se pudo leer el historial: ${esc(e.message)}</p>`; });
+    if (REND.ver) return;
     document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: iso(new Date()), encargo_id: ['todo', 'general'].includes(lista) ? null : lista }, cats, encargos, recargar));
     document.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, encargos, recargar));
     document.querySelectorAll('[data-origen]').forEach(b => b.onclick = () => {
@@ -506,4 +514,75 @@ function modalPresupuesto(cats, recargar) {
     }
     fondo.remove(); recargar();
   };
+}
+
+
+// ── Rendimiento (solo apardo@): cómo va regenerativo, en qué se va la plata y qué revisar ──
+function rendimiento({ movs, cats, porEnc, a, m, mes, suma }) {
+  const mk = (y, mm) => `${y}-${String(mm).padStart(2, '0')}`;
+  const ant = m === 1 ? mk(a - 1, 12) : mk(a, m - 1);
+  const delM = k => movs.filter(x => mesDe(x.fecha) === k);
+  const ing = suma(delM(mes), 'ingreso'), gas = suma(delM(mes), 'gasto');
+  const anio = movs.filter(x => (x.fecha || '').startsWith(String(a)));
+  const yIng = suma(anio, 'ingreso'), yGas = suma(anio, 'gasto');
+  const pct = (n, d) => d ? Math.round(n / d * 100) : 0;
+  // Caja estimada: todo lo recibido menos todo lo gastado (no incluye aportes ni retiros del socio)
+  const saldo = suma(movs, 'ingreso') - suma(movs, 'gasto');
+  const ult3 = [1, 2, 3].map(i => { const d = new Date(a, m - 1 - i, 1); return mk(d.getFullYear(), d.getMonth() + 1); });
+  const prom3 = ult3.reduce((s, k) => s + suma(delM(k), 'gasto'), 0) / 3;
+  const mesesCaja = prom3 ? saldo / prom3 : null;
+  // Gasto por categoría: este mes contra el anterior
+  const porCat = k => { const o = {}; delM(k).filter(x => x.tipo === 'gasto').forEach(x => { const c = cats.find(c => c.id === x.categoria_id)?.nombre || 'Sin categoría'; o[c] = (o[c] || 0) + Number(x.valor); }); return o; };
+  const cA = porCat(mes), cB = porCat(ant);
+  const filasCat = [...new Set([...Object.keys(cA), ...Object.keys(cB)])].map(n => ({ n, v: cA[n] || 0, p: cB[n] || 0 })).sort((x, y) => y.v - x.v);
+  const maxCat = Math.max(1, ...filasCat.map(f => Math.max(f.v, f.p)));
+  // 12 meses
+  const nM = matchMedia('(max-width: 600px)').matches ? 6 : 12;   // en el celular caben 6 meses
+  const serie = Array.from({ length: nM }, (_, i) => { const d = new Date(a, m - nM + i, 1); const k = mk(d.getFullYear(), d.getMonth() + 1); return { k, ing: suma(delM(k), 'ingreso'), gas: suma(delM(k), 'gasto') }; });
+  // Encargos: lo recibido menos lo gastado en cada uno
+  const encs = porEnc.filter(r => r.esperado || r.recibido).map(r => { const g = suma(movs.filter(x => x.encargo_id === r.e.id), 'gasto'); return { n: r.e.nombre, rec: r.recibido, g, u: r.recibido - g, pc: r.porCobrar, e: r.e }; }).sort((x, y) => y.u - x.u);
+  // Observaciones automáticas
+  const obs = [];
+  if (ing < gas) obs.push(['alto', `Este mes los gastos (${cop(gas)}) superan los ingresos (${cop(ing)}).`]);
+  filasCat.filter(f => f.p >= 100000 && f.v > f.p * 1.3).slice(0, 3).forEach(f => obs.push(['medio', `${f.n} subió ${pct(f.v - f.p, f.p)} % frente al mes anterior (${cop(f.p)} → ${cop(f.v)}).`]));
+  const hoyIso = iso(new Date());
+  encs.filter(r => r.pc > 0).forEach(r => {
+    const ult = movs.filter(x => x.encargo_id === r.e.id && x.tipo === 'ingreso').map(x => x.fecha).sort().pop();
+    const dias = ult ? Math.round((new Date(hoyIso) - new Date(ult)) / 864e5) : null;
+    if (dias === null || dias > 30) obs.push(['medio', `${r.n.replace(/^\s*\d{2}\s+I\s+/, '')}: falta cobrar ${cop(r.pc)}${dias === null ? ' y aún no tiene pagos.' : ` y el último pago fue hace ${dias} días.`}`]);
+  });
+  const sinCat = delM(mes).filter(x => x.tipo === 'gasto' && !x.categoria_id).length;
+  if (sinCat) obs.push(['bajo', `${sinCat} gasto${sinCat > 1 ? 's' : ''} de este mes sin categoría: no se ven en el análisis por categoría.`]);
+  if (mesesCaja !== null && mesesCaja < 2) obs.push(['alto', `Con el gasto promedio de los últimos 3 meses, la caja estimada alcanza para ${mesesCaja.toFixed(1)} meses.`]);
+  if (yIng && pct(yIng - yGas, yIng) >= 30) obs.push(['bien', `Margen del año en ${pct(yIng - yGas, yIng)} %: lo que entra cubre con holgura lo que sale.`]);
+  if (!obs.length) obs.push(['bien', 'Sin alertas este mes.']);
+  const kpi = (t, v, s, cls = '') => `<div class="kpi ${cls}"><div class="et">${t}</div><div class="va">${v}</div><div class="su">${s}</div></div>`;
+  return `
+  <div class="kpis kpis-4 rend-kpis">
+    ${kpi('Resultado del mes', cop(ing - gas), ing ? `Margen ${pct(ing - gas, ing)} % · ${MESES[m - 1]}` : 'Sin ingresos este mes', ing - gas < 0 ? 'neg' : '')}
+    ${kpi('Resultado del año', cop(yIng - yGas), yIng ? `Margen ${pct(yIng - yGas, yIng)} % · ${a}` : 'Sin ingresos en el año', yIng - yGas < 0 ? 'neg' : '')}
+    ${kpi('Caja estimada', cop(saldo), 'Todo lo recibido menos todo lo gastado')}
+    ${kpi('Alcanza para', mesesCaja === null ? '—' : `${mesesCaja.toFixed(1)} meses`, prom3 ? `Gasto promedio ${cop(Math.round(prom3))}/mes` : 'Sin gastos recientes')}
+  </div>
+  <section class="panel"><h3>Observaciones</h3><ul class="rend-obs">${obs.map(([n, t]) => `<li class="${n}"><i></i><span>${esc(t)}</span></li>`).join('')}</ul></section>
+  <section class="panel"><h3>Últimos ${nM} meses</h3>${barras(serie)}</section>
+  <div class="dos">
+    <section class="panel"><h3>Gasto por categoría</h3><p class="sub">${MESES[m - 1]} contra el mes anterior</p>
+      ${filasCat.length ? `<ul class="rend-cat">${filasCat.map(f => `<li><span class="rend-cn">${esc(f.n)}</span><span class="rend-b"><i style="width:${f.v / maxCat * 100}%"></i><s style="width:${f.p / maxCat * 100}%"></s></span><span class="rend-v">${cop(f.v)}${f.p ? `<em class="${f.v > f.p ? 'sube' : 'baja'}">${f.v > f.p ? '▲' : '▼'} ${Math.abs(pct(f.v - f.p, f.p))} %</em>` : ''}</span></li>`).join('')}</ul>` : '<p class="sub">Sin gastos este mes.</p>'}</section>
+    <section class="panel"><h3>Encargos</h3><p class="sub">Lo recibido menos lo gastado en cada uno</p>
+      ${encs.length ? `<ul class="rend-enc">${encs.map(r => `<li><b>${esc(r.n)}</b><span class="sub">Recibido ${cop(r.rec)} · gastos ${cop(r.g)}${r.pc ? ` · por cobrar ${cop(r.pc)}` : ''}</span><span class="rend-u ${r.u < 0 ? 'neg' : ''}">${cop(r.u)}</span></li>`).join('')}</ul>` : '<p class="sub">Sin encargos con movimientos.</p>'}</section>
+  </div>
+  <section class="panel"><h3>Historial de cambios</h3><p class="sub">Quién creó, confirmó, editó o eliminó cada movimiento</p><div id="rend-hist"><p class="sub">Cargando…</p></div></section>`;
+}
+function historialHtml(h, cats) {
+  if (!h.length) return '<p class="sub">Todavía no hay cambios registrados. Desde hoy queda todo anotado.</p>';
+  const cat = id => cats.find(c => c.id === id)?.nombre || '—';
+  const CAMPOS = { valor: 'valor', fecha: 'fecha', tipo: 'tipo', categoria_id: 'categoría', subcategoria: 'subcategoría', encargo_id: 'encargo', descripcion: 'descripción', estado: 'estado', hora: 'hora' };
+  const txt = (k, v) => v == null || v === '' ? '—' : k === 'valor' ? cop(v) : k === 'categoria_id' ? cat(v) : k === 'encargo_id' ? 'otro encargo' : String(v);
+  return `<ul class="rend-hist">${h.map(x => {
+    const d = x.despues || x.antes || {};
+    const cambios = x.antes && x.despues ? Object.keys(CAMPOS).filter(k => JSON.stringify(x.antes[k]) !== JSON.stringify(x.despues[k])).map(k => `${CAMPOS[k]}: ${esc(txt(k, x.antes[k]))} → ${esc(txt(k, x.despues[k]))}`) : [];
+    const cuando = new Date(x.creado).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' });
+    return `<li><span class="sub">${esc(cuando)} · ${esc(x.quien || '—')}</span><b>${esc(x.accion)}: ${esc(d.descripcion || 'movimiento')} · ${cop(d.valor || 0)}</b>${cambios.length ? `<span class="sub">${cambios.join(' · ')}</span>` : ''}</li>`;
+  }).join('')}</ul>`;
 }
