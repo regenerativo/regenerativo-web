@@ -3,6 +3,7 @@
 //   'leer_clientes'       → lee de cada propuesta los renglones del cliente (nombre, documento, NIT, cédula)
 //   'poner_documento'     → {ruta, valor}: agrega el renglón "Documento del cliente" a un Word
 //   'ordenar_datos'       → ordena los datos del encargo (contacto primero) y resalta los importantes
+//   'reemplazar_todo'     → cambia todos los renglones con un texto dado y el código del encabezado
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { unzipSync, zipSync, strFromU8, strToU8 } from "npm:fflate@0.8.2";
 
@@ -147,6 +148,31 @@ Deno.serve(async (req) => {
       const nuevo = ordenarDatos(xml, b); if (!nuevo) return json({ error: "No se pudo ordenar el bloque de datos." }, 422);
       z["word/document.xml"] = strToU8(nuevo); await subir(at, ruta, zipSync(z));
       return json({ ok: true, renglones: abrir(zipSync(z).buffer as ArrayBuffer).parrafos.map(textoParrafo).filter(t => /^[^:]{3,60}:/.test(t)).slice(0, 20) });
+    }
+    if (b.accion === "reemplazar_todo") {
+      // {ruta?, cambios:[{de, a}], encabezado:[{de, a}]}: cambia todos los renglones con ese texto y el código del encabezado
+      const ruta = String(b.ruta || `${PROPUESTAS}/SCREG_2XXXX_PROPUESTA.docx`);
+      const buf = await bajar(at, ruta); if (!buf) return json({ error: "No encontré el Word: " + ruta }, 404);
+      const { z, xml, parrafos } = abrir(buf); let nuevo = xml; const conteo: Record<string, number> = {};
+      const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      for (const c of (b.cambios || []) as { de: string; a: string }[]) {
+        let n = 0;
+        for (const p of parrafos) {
+          if (textoParrafo(p) !== c.de || !nuevo.includes(p)) continue;
+          let primero = true;
+          const r = p.replace(/<w:t(\s[^>]*)?>([^<]*)<\/w:t>/g, () => { const v = primero ? `<w:t xml:space="preserve">${esc(c.a)}</w:t>` : "<w:t></w:t>"; primero = false; return v; });
+          nuevo = nuevo.replace(p, r); n++;
+        }
+        conteo[c.de] = n;
+      }
+      z["word/document.xml"] = strToU8(nuevo);
+      for (const k of Object.keys(z)) if (/^word\/header\d*\.xml$/.test(k)) {
+        let h = strFromU8(z[k]);
+        for (const c of (b.encabezado || []) as { de: string; a: string }[]) { const n0 = h.split(esc(c.de)).length - 1; h = h.split(esc(c.de)).join(esc(c.a)); conteo["encabezado: " + c.de] = (conteo["encabezado: " + c.de] || 0) + n0; }
+        z[k] = strToU8(h);
+      }
+      await subir(at, ruta, zipSync(z));
+      return json({ ok: true, conteo });
     }
     if (b.accion === "leer_clientes") {
       const { data: ps } = await admin.from("propuestas").select("codigo,nombre,archivo_ruta").not("archivo_ruta", "is", null);
