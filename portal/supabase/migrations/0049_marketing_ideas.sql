@@ -14,7 +14,11 @@ create table if not exists public.marketing_ideas (
 alter table public.marketing_ideas enable row level security;
 drop policy if exists marketing_admin on public.marketing_ideas;
 create policy marketing_admin on public.marketing_ideas for all to authenticated using (public.es_admin()) with check (public.es_admin());
-alter publication supabase_realtime add table public.marketing_ideas;
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and tablename='marketing_ideas') then
+    alter publication supabase_realtime add table public.marketing_ideas;
+  end if;
+end $$;
 
 insert into public.marketing_ideas (area, titulo, detalle, orden) values
 ('Inicio', 'Suscripción a las publicaciones', 'Al final del Inicio, un campo corto de correo para recibir cada publicación nueva. Los correos quedan guardados aquí en el portal.', 10),
