@@ -80,6 +80,20 @@ Deno.serve(async (req) => {
       const prueba = nuevo ? abrir(nuevo.buffer as ArrayBuffer).parrafos.map(textoParrafo).filter(t => /cliente\s*:/i.test(t)) : [];
       return json({ ok: true, cambiado: !!nuevo, renglones: prueba });
     }
+    if (b.accion === "reemplazar_renglones") {
+      // {ruta?, cambios:[{de, a}]}: cambia el texto de los renglones cuyo texto completo es 'de' (conserva el formato)
+      const ruta = String(b.ruta || `${PROPUESTAS}/SCREG_2XXXX_PROPUESTA.docx`);
+      const buf = await bajar(at, ruta); if (!buf) return json({ error: "No encontré el Word: " + ruta }, 404);
+      const { z, xml, parrafos } = abrir(buf); let nuevo = xml; const hechos: string[] = [];
+      for (const c of (b.cambios || []) as { de: string; a: string }[]) {
+        const p = parrafos.find(q => textoParrafo(q) === c.de); if (!p) continue;
+        let primero = true;
+        const r = p.replace(/<w:t(\s[^>]*)?>([^<]*)<\/w:t>/g, () => { const v = primero ? `<w:t xml:space="preserve">${c.a.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</w:t>` : "<w:t></w:t>"; primero = false; return v; });
+        nuevo = nuevo.replace(p, r); hechos.push(c.de + " → " + c.a);
+      }
+      if (hechos.length) { z["word/document.xml"] = strToU8(nuevo); await subir(at, ruta, zipSync(z)); }
+      return json({ ok: true, hechos });
+    }
     if (b.accion === "leer_clientes") {
       const { data: ps } = await admin.from("propuestas").select("codigo,nombre,archivo_ruta").not("archivo_ruta", "is", null);
       const out: unknown[] = [];
