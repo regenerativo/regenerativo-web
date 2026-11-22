@@ -94,6 +94,20 @@ Deno.serve(async (req) => {
       if (hechos.length) { z["word/document.xml"] = strToU8(nuevo); await subir(at, ruta, zipSync(z)); }
       return json({ ok: true, hechos });
     }
+    if (b.accion === "insertar_despues") {
+      // {ruta?, despues: "Documento del cliente", lineas: ["Correo del cliente: XXX", ...]}: renglones nuevos con el mismo formato
+      const ruta = String(b.ruta || `${PROPUESTAS}/SCREG_2XXXX_PROPUESTA.docx`);
+      const buf = await bajar(at, ruta); if (!buf) return json({ error: "No encontré el Word: " + ruta }, 404);
+      const { z, xml, parrafos } = abrir(buf);
+      const lineas = (b.lineas || []) as string[];
+      const faltan = lineas.filter(l => !parrafos.some(p => textoParrafo(p).startsWith(l.split(":")[0] + ":")));
+      if (!faltan.length) return json({ ok: true, hechos: [] });
+      const base = parrafos.find(p => textoParrafo(p).startsWith(String(b.despues || ""))); if (!base) return json({ error: "No encontré el renglón base." }, 404);
+      const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      const nuevos = faltan.map(l => { let primero = true; return base.replace(/<w:t(\s[^>]*)?>([^<]*)<\/w:t>/g, () => { const v = primero ? `<w:t xml:space="preserve">${esc(l)}</w:t>` : "<w:t></w:t>"; primero = false; return v; }).replace(/ w14:paraId="[^"]*"/g, "").replace(/ w14:textId="[^"]*"/g, ""); }).join("");
+      z["word/document.xml"] = strToU8(xml.replace(base, base + nuevos)); await subir(at, ruta, zipSync(z));
+      return json({ ok: true, hechos: faltan });
+    }
     if (b.accion === "leer_clientes") {
       const { data: ps } = await admin.from("propuestas").select("codigo,nombre,archivo_ruta").not("archivo_ruta", "is", null);
       const out: unknown[] = [];
