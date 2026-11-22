@@ -10206,3 +10206,5 @@ html body .lv .etiqueta.mk-descartada { color: var(--lv-gris, #999); }
 html body .lv .cont.lv-entra { animation: lv-entra 0.35s ease both; }
 @keyframes lv-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { html body .lv .cont.lv-entra { animation: none; } }
+/* Marketing: los 5 filtros siempre a la vista (pasan a dos líneas si no caben) */
+@media (max-width: 640px) { html body .lv #mk-seg { flex-wrap: wrap; overflow: visible; border-radius: 22px; } }
