@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=146';
-import * as M from './modulos.js?v=146';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=146';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=146';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=146';
+import * as D from './datos.js?v=147';
+import * as M from './modulos.js?v=147';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=147';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=147';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=147';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -13,6 +13,29 @@ window.alert = m => {
   t.onclick = () => t.remove();
   setTimeout(() => t.classList.add('fuera'), dura); setTimeout(() => t.remove(), dura + 600);
 };
+
+// Ventanas de confirmación y de pregunta con la gráfica de regenerativo (en vez de las grises del sistema)
+function dialogo(mensaje, { ok = 'Aceptar', peligro = false, campo = false, valor = '', opcional = false } = {}) {
+  return new Promise(res => {
+    const fondo = document.createElement('div'); fondo.className = 'modal-fondo dialogo-fondo';
+    const [tit, ...resto] = String(mensaje).split('\n\n');
+    const e = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    fondo.innerHTML = `<form class="modal dialogo" role="dialog" aria-modal="true"><h2>${e(tit)}</h2>${resto.length ? `<p class="sutil">${e(resto.join(' '))}</p>` : ''}
+      ${campo ? `<input name="v" value="${e(valor)}" autocomplete="off" style="width:100%">` : ''}
+      <div class="pie-modal pie-dialogo"><button type="button" class="btn sec" data-no>Cancelar</button><button class="btn${peligro ? ' peligro' : ''}" type="submit">${e(ok)}</button></div></form>`;
+    document.body.appendChild(fondo);
+    const f = fondo.querySelector('form'), inp = f.querySelector('input');
+    const cerrar = v => { fondo.remove(); document.removeEventListener('keydown', tecla, true); res(v); };
+    const tecla = ev => { if (ev.key === 'Escape') { ev.stopPropagation(); cerrar(campo ? null : false); } };
+    document.addEventListener('keydown', tecla, true);
+    f.querySelector('[data-no]').onclick = () => cerrar(campo ? null : false);
+    fondo.addEventListener('click', ev => { if (ev.target === fondo) cerrar(campo ? null : false); });
+    f.onsubmit = ev => { ev.preventDefault(); if (!campo) return cerrar(true); const v = inp.value.trim(); if (!v && !opcional) { inp.focus(); return; } cerrar(v); };
+    setTimeout(() => (inp || f.querySelector('[type=submit]')).focus(), 50);
+  });
+}
+window.confirmar = (m, o) => dialogo(m, o);
+window.preguntar = (m, o = {}) => dialogo(m, { ...o, campo: true });
 
 // Mensajes de Supabase en español
 function msg(err) {
@@ -582,7 +605,7 @@ function vistaComentarios(ctx, coms, pintar) {
       catch (err) { alert(msg(err)); bt.disabled = false; } };
   });
   document.querySelectorAll('[data-com-borrar]').forEach(b => b.onclick = async () => {
-    if (!confirm('¿Eliminar este comentario? No se puede deshacer.')) return;
+    if (!await confirmar('¿Eliminar este comentario?\n\nNo se puede deshacer.', { ok: 'Eliminar', peligro: true })) return;
     b.disabled = true;
     try { await D.borrarMiComentario(b.dataset.comBorrar); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; }
   });
@@ -909,7 +932,7 @@ async function modalEncargo(e = null) {
   $('#cancelar', fondo).onclick = () => fondo.remove();
   f.cliente_id.onchange = async () => {
     if (f.cliente_id.value !== '__nuevo') return;
-    const nombre = prompt('Nombre o razón social del cliente');
+    const nombre = await preguntar('Nombre o razón social del cliente', { ok: 'Crear cliente' });
     if (!nombre) { f.cliente_id.value = ''; return; }
     const c = await D.crearCliente({ tipo: 'empresa', nombre: nombre.trim() });
     f.cliente_id.insertAdjacentHTML('afterbegin', `<option value="${c.id}">${esc(c.nombre)}</option>`);
@@ -1030,7 +1053,7 @@ async function modalValores(e, prop, onListo) {
       try { await D.guardarAdicional(a); adics = await D.adicionalesEncargo(e.id); pintarM(); } catch (err) { avisar(msg(err)); } };
     fondo.querySelectorAll('[data-ad]').forEach(f => f.onsubmit = async ev => { ev.preventDefault();
       try { await D.guardarAdicional({ ...leerAd(f), id: f.dataset.ad }); adics = await D.adicionalesEncargo(e.id); pintarM(); } catch (err) { avisar(msg(err)); } });
-    fondo.querySelectorAll('[data-borrar-ad]').forEach(b => b.onclick = async () => { if (!confirm('¿Borrar este adicional?')) return;
+    fondo.querySelectorAll('[data-borrar-ad]').forEach(b => b.onclick = async () => { if (!await confirmar('¿Borrar este adicional?', { ok: 'Borrar', peligro: true })) return;
       try { await D.borrarAdicional(b.dataset.borrarAd); adics = await D.adicionalesEncargo(e.id); pintarM(); } catch (err) { avisar(msg(err)); } });
     const recargarMovs = async () => { movs = await D.finMovimientosEncargo(e.id).catch(() => movs); document.body.appendChild(fondo); pintarM(); };
     fondo.querySelectorAll('[data-mov]').forEach(b => b.onclick = () => { fondo.remove(); modalMov(movs.find(m => m.id === b.dataset.mov), cats, encs, recargarMovs, () => document.body.appendChild(fondo)); });
@@ -1648,17 +1671,17 @@ async function vistaPropuestas(s) {
       const hoy = new Date().toISOString().slice(0, 10);
       if (acc === 'enviar') await D.actualizarPropuesta(p.id, { estado: 'en_espera', fecha_envio: hoy });
       if (acc === 'no') {
-        const motivo = prompt('¿Por qué no despegó? (opcional)') ?? null;
+        const motivo = await preguntar('¿Por qué no despegó?\n\nOpcional: escribe el motivo o deja el espacio vacío.', { ok: 'Guardar', opcional: true });
         if (motivo === null) return;
         await D.actualizarPropuesta(p.id, { estado: 'no_despego', fecha_decision: hoy, motivo: motivo || 'Sin motivo' });
       }
       if (acc === 'reabrir') await D.actualizarPropuesta(p.id, { estado: 'en_espera', fecha_envio: hoy, motivo: null, fecha_decision: null });
       if (acc === 'despego') {
-        if (!confirm(`¿${p.nombre} despegó? Se crea el encargo con toda la información de la cotización.`)) return;
+        if (!await confirmar(`¿${p.nombre} despegó?\n\nSe crea el encargo con toda la información de la cotización.`, { ok: 'Sí, despegó' })) return;
         await despegarYAbrir(p); return;
       }
       if (acc === 'eliminar') {
-        if (!confirm(`¿Eliminar la propuesta ${p.codigo} · ${p.nombre}?\n\nSe borra del portal y su carpeta en OneDrive (ZL_REG_PROPUESTAS) pasa a la papelera, donde se puede recuperar durante 93 días.`)) return;
+        if (!await confirmar(`¿Eliminar la propuesta ${p.codigo} · ${p.nombre}?\n\nSe borra del portal y su carpeta en OneDrive (ZL_REG_PROPUESTAS) pasa a la papelera, donde se puede recuperar durante 93 días.`, { ok: 'Eliminar', peligro: true })) return;
         const r = await D.onedrive('eliminar_propuesta', { propuesta_id: p.id });
         alert(r.carpeta ? `Propuesta eliminada.\nCarpeta enviada a la papelera de OneDrive: ${r.carpeta}` : 'Propuesta eliminada. No tenía carpeta en OneDrive.');
         ir(); return;
@@ -1880,7 +1903,7 @@ async function modalPropuesta(p = null) {
   };
   f.cliente_id.onchange = async () => {
     if (f.cliente_id.value !== '__nuevo') return;
-    const nombre = prompt('Nombre o razón social del cliente');
+    const nombre = await preguntar('Nombre o razón social del cliente', { ok: 'Crear cliente' });
     if (!nombre) { f.cliente_id.value = ''; return; }
     const c = await D.crearCliente({ tipo: 'empresa', nombre: nombre.trim().toUpperCase() });
     f.cliente_id.insertAdjacentHTML('afterbegin', `<option value="${c.id}">${esc(c.nombre)}</option>`);

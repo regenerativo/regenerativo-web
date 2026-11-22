@@ -10171,3 +10171,13 @@ html body .lv .rend-u { grid-column: 2; grid-row: 1 / span 2; align-self: center
 html body .lv .rend-u.neg { color: #8b1a1a; }
 html body .lv .rend-hist li { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px dotted rgba(153, 153, 153, 0.55); overflow-wrap: anywhere; }
 @media (max-width: 600px) { html body .lv .rend-cat li { grid-template-columns: minmax(0, 1fr) auto; } html body .lv .rend-b { grid-column: 1 / -1; grid-row: 2; } }
+
+/* Ventanas propias de confirmación / pregunta */
+html body .modal-fondo.dialogo-fondo { z-index: 3000; }
+html body .modal.dialogo { max-width: 440px; width: calc(100% - 32px); }
+html body .modal.dialogo h2 { font-size: 18px; line-height: 1.35; margin: 0 0 8px; text-wrap: balance; }
+html body .modal.dialogo .sutil { margin: 0 0 14px; line-height: 1.5; }
+html body .modal.dialogo input { min-height: 46px; font-size: 16px; margin: 4px 0 14px; }
+html body .modal .pie-modal.pie-dialogo { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+@media (max-width: 480px) { html body .modal .pie-modal.pie-dialogo .btn { flex: 1 1 calc(50% - 5px); } }
+html body .modal.dialogo .btn.peligro { background: var(--lv-vino, #800000) !important; border-color: var(--lv-vino, #800000) !important; color: #fff !important; }

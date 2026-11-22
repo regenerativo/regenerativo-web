@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=146';
-import { cop, fecha, iso } from './formato.js?v=146';
-import { btnIco, ico } from './iconos.js?v=146';
-import { leerMonai } from './monai.js?v=146';
+import * as D from './datos.js?v=147';
+import { cop, fecha, iso } from './formato.js?v=147';
+import { btnIco, ico } from './iconos.js?v=147';
+import { leerMonai } from './monai.js?v=147';
 // Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
 const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };
@@ -288,7 +288,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
       };
       fila.querySelector('[data-no]').onclick = async () => { await D.finGuardarMovimiento({ id: fila.dataset.pend, estado: 'descartado' }); salir(fila); };
     });
-    const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (confirm('¿Borrar todos los movimientos de ejemplo?')) { await D.finBorrarEjemplos(); recargar(); } };
+    const be = $('#borrar-ej'); if (be) be.onclick = async () => { if (await confirmar('¿Borrar todos los movimientos de ejemplo?', { ok: 'Borrar', peligro: true })) { await D.finBorrarEjemplos(); recargar(); } };
     // Engranaje de la cabecera: presupuesto del mes, categorías e importación de MONAI
     const bg = $('#fin-ajustes'); if (bg) bg.onclick = () => {
       const f = document.createElement('div'); f.className = 'modal-fondo';
@@ -411,7 +411,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
       catch (err) { $('#aviso', fondo).textContent = 'No se pudo subir: ' + err.message; }
     };
   }
-  const b = $('#borrar', fondo); if (b) b.onclick = async () => { if (confirm('¿Borrar este movimiento?')) { await D.finBorrarMovimiento(m.id); fondo.remove(); recargar(); } };
+  const b = $('#borrar', fondo); if (b) b.onclick = async () => { if (await confirmar('¿Borrar este movimiento?\n\nQueda registrado en el historial de cambios.', { ok: 'Borrar', peligro: true })) { await D.finBorrarMovimiento(m.id); fondo.remove(); recargar(); } };
   f.onsubmit = async ev => {
     ev.preventDefault();
     const v = Object.fromEntries(new FormData(f));

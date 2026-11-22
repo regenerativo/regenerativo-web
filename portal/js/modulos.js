@@ -1,8 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=146';
-import { descargarPDF } from './pdf.js?v=146';
-import { btnIco } from './iconos.js?v=146';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=146';
+import * as D from './datos.js?v=147';
+import { descargarPDF } from './pdf.js?v=147';
+import { btnIco } from './iconos.js?v=147';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=147';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -83,8 +83,8 @@ function montarBarra(ctx, d, tipo, cuerpoImpresion) {
       if (acc === 'enviar') { await D.actualizarDocumento(d.id, { estado: 'enviado' }); return ctx.recargar(); }
       if (acc === 'firmar') { await D.actualizarDocumento(d.id, { estado: 'firmado' }); return ctx.recargar(); }
       if (acc === 'aprobar') {
-        const nombre = prompt('¿Quién aprobó por parte del cliente? (nombre completo)'); if (!nombre) return;
-        const cedula = prompt('¿Cómo lo aprobó? (p. ej. correo del 10/11, firma, reunión)'); if (!cedula) return;
+        const nombre = await preguntar('¿Quién aprobó por parte del cliente?\n\nNombre completo.', { ok: 'Siguiente' }); if (!nombre) return;
+        const cedula = await preguntar('¿Cómo lo aprobó?\n\nPor ejemplo: correo del 10/11, firma o reunión.', { ok: 'Aprobar' }); if (!cedula) return;
         await D.aprobarDocumento(d.id, nombre, cedula); return ctx.recargar();
       }
       const cuerpo = cuerpoImpresion();
