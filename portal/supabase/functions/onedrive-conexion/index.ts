@@ -496,7 +496,7 @@ async function visorCarpeta(at: string, encargoId: string, modulo: string) {
   if (!carpeta) return { archivo: null };
   const sel = "$top=200&$select=id,name,file,webUrl,size,lastModifiedDateTime";
   const l = ((await graph(at, `/me/drive/root:/${enc(`${base}/${carpeta}`)}:/children?${sel}`))?.value || []).filter((x: any) => x.file);
-  const peso = (n: string) => /\.pdf$/i.test(n) ? 0 : /\.xlsx?$/i.test(n) ? 1 : 2;
+  const peso = (n: string) => modulo === "gantt" ? (/\.xlsx$/i.test(n) ? 0 : /\.pdf$/i.test(n) ? 1 : 2) : (/\.pdf$/i.test(n) ? 0 : /\.xlsx?$/i.test(n) ? 1 : 2);
   l.sort((a: any, b: any) => (peso(a.name) - peso(b.name)) || (b.lastModifiedDateTime > a.lastModifiedDateTime ? 1 : -1));
   const f = l.find((x: any) => peso(x.name) < 2) || l[0];
   if (!f) return { archivo: null, carpeta };
