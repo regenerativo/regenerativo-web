@@ -1,8 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=153';
-import { descargarPDF } from './pdf.js?v=153';
-import { btnIco } from './iconos.js?v=153';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=153';
+import * as D from './datos.js?v=154';
+import { descargarPDF } from './pdf.js?v=154';
+import { btnIco } from './iconos.js?v=154';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=154';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -351,7 +351,10 @@ export async function datosGantt(ctx) {
 
 async function gantt(ctx) {
   const g = await datosGantt(ctx);
-  if (!g.filas.length) return { html: vacioDoc(ctx, 'cronograma') };
+  const todo = !!ctx.editarTodo, editable = ctx.admin || ctx.rol === 'equipo';
+  const nueva = todo ? `<button class="btn sec mini" id="g-nueva"${g.filas.length >= 15 ? ' disabled title="El Excel tiene 15 filas de actividades"' : ''}>+ Actividad</button>` : '';
+  const estadoGuardar = '<span class="sub" id="g-guarda" aria-live="polite"></span>';
+  if (!g.filas.length) return { html: todo ? `<div class="vacio">Todavía no hay actividades en el cronograma.<div style="margin-top:12px">${nueva}</div>${estadoGuardar}</div>` : vacioDoc(ctx, 'cronograma'), montar: () => montarGantt(ctx, g) };
   const { filas, corte } = g;
   const fechas = filas.flatMap(f => [aFecha(f.inicio_esperado), f.finEsp, aFecha(f.inicio_real), aFecha(f.fin_real)]).filter(Boolean);
   const min = new Date(Math.min(...fechas, corte)); min.setDate(min.getDate() - 1);
@@ -359,15 +362,21 @@ async function gantt(ctx) {
   const dias = Math.round((max - min) / 86400000) + 1;
   const W = 22, x = d => Math.round((aFecha(d) - min) / 86400000) * W;
   const lineas = Array.from({ length: dias }, (_, i) => { const d = new Date(min); d.setDate(d.getDate() + i); return d; });
-  const editable = ctx.admin || ctx.rol === 'equipo';
+  const resp = ctx.e.responsables || [];
+  const selResp = f => `<select data-t="${f.id}" data-k="responsable_id"><option value="">—</option>${resp.map(r => `<option value="${r.id}"${r.id === f.responsable_id ? ' selected' : ''}>${r.numero}. ${esc(r.nombre)}</option>`).join('')}</select>`;
   const tabla = `<div class="tabla-cont"><table class="tabla-gantt"><thead><tr><th>N°</th><th>Actividad</th><th class="col-opc">Resp.</th><th class="num">Peso</th>
-    <th class="col-opc">Inicio esp.</th><th class="num col-opc">Días</th><th class="col-opc">Fin esp.</th><th>Inicio real</th><th>Fin real</th><th class="num">Avance</th><th class="num col-opc">Esperado</th><th>Estado</th></tr></thead><tbody>
-    ${filas.map((f, i) => `<tr><td>${i + 1}</td><td>${esc(f.nombre)}</td><td class="col-opc">${f.resp ? `${f.resp.numero}. ${esc(f.resp.nombre)}` : '—'}</td><td class="num">${pct(f.peso)}</td>
-      <td class="col-opc">${fecha(f.inicio_esperado)}</td><td class="num col-opc">${f.dias_esperados}</td><td class="col-opc">${fecha(f.finEsp)}</td>
+    <th class="col-opc">Inicio esp.</th><th class="num col-opc">Días</th><th class="col-opc">Fin esp.</th><th>Inicio real</th><th>Fin real</th><th class="num">Avance</th><th class="num col-opc">Esperado</th><th>Estado</th>${todo ? '<th></th>' : ''}</tr></thead><tbody>
+    ${filas.map((f, i) => `<tr><td>${i + 1}</td>
+      <td>${todo ? `<input class="g-nom" data-t="${f.id}" data-k="nombre" value="${esc(f.nombre)}">` : esc(f.nombre)}</td>
+      <td class="col-opc">${todo ? selResp(f) : (f.resp ? `${f.resp.numero}. ${esc(f.resp.nombre)}` : '—')}</td>
+      <td class="num">${todo ? `<input class="cant" data-t="${f.id}" data-k="peso_manual" value="${Math.round(f.peso * 1000) / 10}" inputmode="decimal">%` : pct(f.peso)}</td>
+      <td class="col-opc">${todo ? `<input type="date" data-t="${f.id}" data-k="inicio_esperado" value="${f.inicio_esperado || ''}">` : fecha(f.inicio_esperado)}</td>
+      <td class="num col-opc">${todo ? `<input class="cant" data-t="${f.id}" data-k="dias_esperados" value="${f.dias_esperados || ''}" inputmode="numeric">` : f.dias_esperados}</td><td class="col-opc">${fecha(f.finEsp)}</td>
       <td>${editable ? `<input type="date" data-t="${f.id}" data-k="inicio_real" value="${f.inicio_real || ''}">` : fecha(f.inicio_real)}</td>
       <td>${editable ? `<input type="date" data-t="${f.id}" data-k="fin_real" value="${f.fin_real || ''}">` : fecha(f.fin_real)}</td>
       <td class="num">${editable ? `<input class="cant" data-t="${f.id}" data-k="avance" value="${Math.round(f.avance * 100)}" inputmode="numeric">%` : pct(f.avance)}</td>
-      <td class="num col-opc">${pct(f.esperado)}</td><td><span class="etiqueta t-${f.estado}">${ESTADOS_TAREA[f.estado]}</span></td></tr>`).join('')}
+      <td class="num col-opc">${pct(f.esperado)}</td><td><span class="etiqueta t-${f.estado}">${ESTADOS_TAREA[f.estado]}</span></td>
+      ${todo ? `<td><button class="g-borrar" data-borrar="${f.id}" title="Quitar actividad" aria-label="Quitar ${esc(f.nombre)}">×</button></td>` : ''}</tr>`).join('')}
     </tbody></table></div>`;
   const grafico = `<div class="gantt-cont"><div class="gantt" style="width:${dias * W + 220}px">
     <div class="g-cab" style="margin-left:220px">${lineas.map(d => `<div class="g-dia${d.getDay() === 1 ? ' lunes' : ''}" style="width:${W}px">${d.getDay() === 1 ? `<span>${fecha(d).slice(0, 5)}</span>` : ''}</div>`).join('')}</div>
@@ -389,17 +398,50 @@ async function gantt(ctx) {
     <div class="kpi"><div class="et">Esperado al corte</div><div class="va">${pct(g.esperadoTotal)}</div><div class="barra"><i style="width:${g.esperadoTotal * 100}%;background:var(--esperado)"></i></div></div>
     <div class="kpi"><div class="et">Avance real</div><div class="va">${pct(g.realTotal)}</div><div class="barra"><i style="width:${g.realTotal * 100}%"></i></div></div>
     <div class="kpi"><div class="et">Estado de la obra</div><div class="va" style="font-size:20px">${g.realTotal + 0.005 >= g.esperadoTotal ? 'A tiempo' : 'Con retraso'}</div><div class="su">${pct(g.realTotal - g.esperadoTotal)} frente a lo esperado</div></div></div>`;
-  const cuerpoXls = () => `<h1>Cronograma ${esc(ctx.e.nombre)}</h1>${tabla.replace(/<input[^>]*value="([^"]*)"[^>]*>%?/g, '$1')}`;
-  return { html: kp + `<div class="barra-doc"><div class="sub">${editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.'}</div><div class="barra-acc">${ctx.esCliente ? '' : btnIco('excel', 'Descargar Excel', 'id="xls-g"')}</div></div>` + grafico + tabla,
-    montar: () => {
-      const b = $('#xls-g'); if (b) b.onclick = () => descargar(nombreArchivo(ctx.e, 'gantt', { fecha: iso(new Date()) }, 'xls'), cuerpoXls(), 'xls');
-      document.querySelectorAll('[data-t]').forEach(inp => inp.onchange = async () => {
-        let v = inp.value;
-        if (inp.dataset.k === 'avance') v = Math.min(1, Math.max(0, Number(v) / 100));
-        else v = v || null;
-        try { await D.actualizarTarea(inp.dataset.t, { [inp.dataset.k]: v }); ctx.recargar(); } catch (err) { alert(err.message); }
-      });
-    } };
+  const cuerpoXls = () => `<h1>Cronograma ${esc(ctx.e.nombre)}</h1>${tabla.replace(/<select[\s\S]*?<\/select>/g, '').replace(/<button[^>]*>×<\/button>/g, '').replace(/<input[^>]*value="([^"]*)"[^>]*>%?/g, '$1')}`;
+  const ayuda = todo ? 'Edita aquí cualquier dato; se guarda también en el Excel del encargo.' : editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.';
+  return { html: kp + `<div class="barra-doc"><div class="sub">${ayuda} ${estadoGuardar}</div><div class="barra-acc">${nueva}${ctx.esCliente || ctx.alGuardar ? '' : btnIco('excel', 'Descargar Excel', 'id="xls-g"')}</div></div>` + grafico + tabla,
+    montar: () => { const b = $('#xls-g'); if (b) b.onclick = () => descargar(nombreArchivo(ctx.e, 'gantt', { fecha: iso(new Date()) }, 'xls'), cuerpoXls(), 'xls'); montarGantt(ctx, g); } };
+}
+// Guardar un cambio del Gantt: portal primero, luego el Excel (si hay), y se vuelve a pintar
+let ganttOcupado = false;
+async function guardarGantt(ctx, accion) {
+  if (ganttOcupado) return; ganttOcupado = true;
+  try { await guardarGantt0(ctx, accion); } finally { ganttOcupado = false; }
+}
+async function guardarGantt0(ctx, accion) {
+  const aviso = $('#g-guarda');
+  document.querySelectorAll('.tabla-gantt input, .tabla-gantt select, .tabla-gantt button, #g-nueva').forEach(x => { x.disabled = true; });
+  if (aviso) aviso.textContent = ctx.alGuardar ? 'Guardando en el portal y en el Excel…' : 'Guardando…';
+  try { await accion(); } catch (err) { alert('No se pudo guardar: ' + (err.message || err)); ctx.recargar(); return; }
+  if (ctx.alGuardar) { try { await ctx.alGuardar(); } catch (err) { alert('Se guardó en el portal, pero no se pudo pasar al Excel: ' + (err.message || err)); } }
+  ctx.recargar();
+}
+function montarGantt(ctx, g) {
+  document.querySelectorAll('.tabla-gantt [data-t]').forEach(inp => inp.onchange = () => {
+    const k = inp.dataset.k; let v = inp.value;
+    if (k === 'avance') v = Math.min(1, Math.max(0, Number(v) / 100));
+    else if (k === 'peso_manual') v = v === '' ? null : Math.min(1, Math.max(0, Number(String(v).replace(',', '.')) / 100));
+    else if (k === 'dias_esperados') v = Math.max(1, Math.round(Number(v) || 1));
+    else if (k === 'nombre') { v = v.trim(); if (!v) { inp.value = g.filas.find(f => f.id === inp.dataset.t)?.nombre || ''; return; } }
+    else v = v || null;
+    if (k === 'inicio_esperado' && !v) { inp.value = g.filas.find(f => f.id === inp.dataset.t)?.inicio_esperado || ''; return; }
+    const f0 = g.filas.find(f => f.id === inp.dataset.t) || {};
+    const igual = (a, b) => (a == null || a === '' ? null : String(typeof a === 'number' || !isNaN(a) && a !== '' && !/^\d{4}-/.test(a) ? Math.round(Number(a) * 1e4) : a)) === (b == null || b === '' ? null : String(typeof b === 'number' || !isNaN(b) && b !== '' && !/^\d{4}-/.test(b) ? Math.round(Number(b) * 1e4) : b));
+    if (igual(v, k === 'peso_manual' ? f0.peso_manual : f0[k])) return;
+    guardarGantt(ctx, () => D.actualizarTarea(inp.dataset.t, { [k]: v }));
+  });
+  document.querySelectorAll('[data-borrar]').forEach(b => b.onclick = () => {
+    const f = g.filas.find(x => x.id === b.dataset.borrar);
+    if (b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = 'Quitar'; b.classList.add('seguro'); setTimeout(() => { if (b.isConnected) { b.dataset.seguro = ''; b.textContent = '×'; b.classList.remove('seguro'); } }, 3500); return; }
+    guardarGantt(ctx, () => D.borrarTarea(f.id));
+  });
+  const n = $('#g-nueva');
+  if (n) n.onclick = () => {
+    const ult = g.filas.at(-1);
+    const ini = ult?.finEsp ? iso(new Date(ult.finEsp.getTime() + 86400000)) : (ctx.e.inicio || iso(new Date()));
+    guardarGantt(ctx, () => D.crearTarea({ encargo_id: ctx.e.id, orden: (ult?.orden || 0) + 1, nombre: 'Nueva actividad', inicio_esperado: ini, dias_esperados: 1, avance: 0 }));
+  };
 }
 
 // ---------------- Informes ----------------

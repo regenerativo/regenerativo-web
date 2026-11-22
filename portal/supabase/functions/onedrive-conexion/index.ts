@@ -17,6 +17,7 @@
 //   'archivo_encargo'  → {encargo_id, carpeta, ruta, pdf?}: descarga uno
 //   'explorar_reg' / 'archivo_reg' → {ruta}: folders de toda la carpeta REG (solo administración)
 //   'aviso_respuesta' → {comentario_id}: correo al cliente con la respuesta de regenerativo
+//   'gantt_excel'     → {encargo_id, crear?}: (administración y equipo) pasa el cronograma del portal al Excel de PROGRAMACIÓN; crear=true lo crea desde la plantilla
 //   'revisar_envios'  → {clave}: (cada hora, pg_cron) correo al cliente con los documentos nuevos de DOC _ ENV
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -503,6 +504,63 @@ async function visorCarpeta(at: string, encargoId: string, modulo: string) {
   try { vista = (await graph(at, `/me/drive/items/${f.id}/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }))?.getUrl || ""; } catch (_) { /* sin vista previa */ }
   return { carpeta, archivo: { nombre: f.name, fecha: f.lastModifiedDateTime, web: f.webUrl, vista, ruta: f.name } };
 }
+
+// ---------------- Cronograma (Gantt) ⇄ Excel de la carpeta PROGRAMACIÓN ----------------
+// Escribe en el Excel del encargo (plantilla REG_TEM DOCUMENTAL/PROGRAMACIÓN) lo que hay en el portal:
+// datos generales, actividades (máx. 15) y responsables. Solo celdas de entrada: las fórmulas y la gráfica del Excel se recalculan solas.
+const DIAS_TXT: Record<string, string> = { lv: "Lunes a viernes", ls: "Lunes a sábado", todos: "Todos los días" };
+const serial = (f: string | null) => { if (!f) return ""; const [y, m, d] = f.slice(0, 10).split("-").map(Number); return (Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5; };
+async function excelCronograma(at: string, encargoId: string, crear: boolean) {
+  const base = await baseEncargo(encargoId);
+  let carpeta = await primeraCarpeta(at, base, CARPETAS_VISOR.gantt);
+  if (!carpeta) { if (!crear) return null; await asegurarCarpeta(at, base); carpeta = "PROGRAMACIÓN"; await asegurarCarpeta(at, `${base}/${carpeta}`); }
+  const l = ((await graph(at, `/me/drive/root:/${enc(`${base}/${carpeta}`)}:/children?$top=200&$select=id,name,file,webUrl,lastModifiedDateTime`))?.value || [])
+    .filter((x: any) => x.file && /\.xlsx$/i.test(x.name)).sort((a: any, b: any) => (b.lastModifiedDateTime > a.lastModifiedDateTime ? 1 : -1));
+  if (l[0]) return { item: l[0], carpeta };
+  if (!crear) return null;
+  const pl = ((await graph(at, `/me/drive/root:/${enc(`${PLANTILLA}/PROGRAMACIÓN`)}:/children?$select=id,name,file`))?.value || []).find((x: any) => x.file && /\.xlsx$/i.test(x.name));
+  if (!pl) throw new Error("No encontré la plantilla del cronograma en REG_TEM DOCUMENTAL/PROGRAMACIÓN.");
+  const bin = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${pl.id}/content`, { headers: { Authorization: `Bearer ${at}` } });
+  if (!bin.ok) throw new Error("No se pudo leer la plantilla del cronograma.");
+  const { data: e } = await admin.from("encargos").select("codigo,nombre").eq("id", encargoId).single();
+  const nombre = `SCREG_${e?.codigo || "2XXXX"}_${String(e?.nombre || "").replace(/^\d{2}\s+I\s+/i, "").toUpperCase()}_CRONOGRAMA.xlsx`.replace(/[\\/:*?"<>|]/g, " ");
+  const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${base}/${carpeta}/${nombre}`)}:/content`, {
+    method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/octet-stream" }, body: await bin.arrayBuffer(),
+  });
+  const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || "No se pudo crear el Excel del cronograma.");
+  return { item: d, carpeta };
+}
+async function ganttExcel(at: string, encargoId: string, crear = false) {
+  const x = await excelCronograma(at, encargoId, crear);
+  if (!x) return { archivo: null };
+  const [{ data: e }, { data: resp }, { data: tareas }] = await Promise.all([
+    admin.from("encargos").select("codigo,nombre,direccion,ciudad,inicio,fin,dias_trabajo,cliente:clientes(nombre)").eq("id", encargoId).single(),
+    admin.from("encargo_responsables").select("id,numero,nombre,cargo").eq("encargo_id", encargoId).order("numero"),
+    admin.from("gantt_tareas").select("*").eq("encargo_id", encargoId).order("orden"),
+  ]);
+  if ((tareas || []).length > 15) throw new Error("El Excel del cronograma tiene 15 filas de actividades; el encargo tiene " + tareas!.length + ".");
+  if ((resp || []).length > 10) throw new Error("El Excel del cronograma tiene 10 filas de responsables.");
+  const num = new Map((resp || []).map((r: any) => [r.id, r.numero]));
+  const n = (tareas || []).length;
+  const fila = (i: number) => (tareas || [])[i];
+  const col = (f: (t: any) => unknown, ancho = 1) => Array.from({ length: 15 }, (_, i) => { const t = fila(i); return t ? ([] as unknown[]).concat(f(t)) : Array(ancho).fill(""); });
+  const ses = await graph(at, `/me/drive/items/${x.item.id}/workbook/createSession`, { method: "POST", body: JSON.stringify({ persistChanges: true }) });
+  const h = { "workbook-session-id": ses.id };
+  const poner = (dir: string, values: unknown[][]) => graph(at, `/me/drive/items/${x.item.id}/workbook/worksheets('GANTT')/range(address='${dir}')`, { method: "PATCH", headers: h, body: JSON.stringify({ values }) });
+  try {
+    const ubic = [e?.direccion, e?.ciudad].filter(Boolean).join(", ");
+    await poner("D4:D7", [[e?.nombre || "XXX"], [e?.codigo ? `SCREG_${e.codigo}` : "SCREG_2XXXX"], [(e as any)?.cliente?.nombre || "XXX"], [ubic || "XXX"]]);
+    await poner("J5:J7", [[serial(e?.inicio)], [serial(e?.fin)], [DIAS_TXT[e?.dias_trabajo || "ls"] || "Lunes a sábado"]]);
+    await poner("C13:D27", col((t) => [t.nombre, num.get(t.responsable_id) ?? ""], 2));
+    await poner("F13:H27", col((t) => [t.peso_manual != null ? Number(t.peso_manual) : (n ? 1 / n : ""), serial(t.inicio_esperado), t.dias_esperados ?? ""], 3));
+    await poner("J13:K27", col((t) => [serial(t.inicio_real), serial(t.fin_real)], 2));
+    await poner("M13:M27", col((t) => [Number(t.avance) || 0]));
+    await poner("C35:D44", Array.from({ length: 10 }, (_, i) => { const r = (resp || [])[i]; return r ? [r.nombre, r.cargo || ""] : ["", ""]; }));
+  } finally {
+    await graph(at, `/me/drive/items/${x.item.id}/workbook/closeSession`, { method: "POST", headers: h, body: "{}" }).catch(() => {});
+  }
+  return { archivo: { nombre: x.item.name, web: x.item.webUrl, carpeta: x.carpeta } };
+}
 async function subirRecibido(at: string, encargoId: string, nombre: string, base64: string) {
   const base = await baseEncargo(encargoId);
   const carpeta = (await primeraCarpeta(at, base, CARPETAS_RECIBIDOS)) || "DOC _ REC";
@@ -548,6 +606,18 @@ Deno.serve(async (req) => {
       if (sin?.length) { const at0 = await accesoGraph(); for (const p of sin) { try { await carpetaPropuesta(at0, p.id); } catch (_) { /* siguiente */ } } }
       return json(await revisarEnvios());
     }
+    // Mantenimiento (clave del cron): sube a la librería de plantillas un archivo publicado en el repositorio de regenerativo
+    if (b.accion === "plantilla_desde_repo") {
+      const { data: k } = await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle();
+      if (!k?.refresh_token || b.clave !== k.refresh_token) return json({ error: "Sin acceso." }, 403);
+      const url = String(b.url || ""), ruta = rutaSegura(String(b.ruta || ""));
+      if (!url.startsWith("https://raw.githubusercontent.com/regenerativo/regenerativo-web/") || !ruta.startsWith(PLANTILLA + "/")) return json({ error: "No permitido." }, 400);
+      const f = await fetch(url); if (!f.ok) return json({ error: "No se pudo leer " + url }, 400);
+      const at0 = await accesoGraph();
+      const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(ruta)}:/content`, { method: "PUT", headers: { Authorization: `Bearer ${at0}`, "Content-Type": "application/octet-stream" }, body: await f.arrayBuffer() });
+      const d = await r.json(); if (!r.ok) return json({ error: d?.error?.message || "No se pudo subir" }, 500);
+      return json({ ok: true, web: d.webUrl, tamano: d.size });
+    }
     // Acciones que puede usar cualquier persona invitada al encargo (clientes incluidos)
     if (["aviso_comentario", "cli_enviados", "cli_archivo", "cli_recibidos", "cli_subir", "visor"].includes(b.accion)) {
       const { data: yo } = await usuario.auth.getUser();
@@ -573,6 +643,11 @@ Deno.serve(async (req) => {
       const archivo = await archivoEncargo(at, b.encargo_id, "", ruta, !!b.pdf);
       if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente descargó un documento", ruta.split("/").pop() || ruta);
       return json(archivo);
+    }
+    if (b.accion === "gantt_excel") {
+      const { data: rol } = await usuario.rpc("rol_en_encargo", { p_encargo: b.encargo_id });
+      if (!esAdmin && rol !== "equipo") return json({ error: "Sin acceso." }, 403);
+      return json(await ganttExcel(await accesoGraph(), b.encargo_id, !!b.crear && !!esAdmin));
     }
     if (!esAdmin) return json({ error: "Solo administración." }, 403);
     if (b.accion === "url") {

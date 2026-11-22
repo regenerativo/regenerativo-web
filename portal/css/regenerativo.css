@@ -10237,3 +10237,10 @@ html body .lv .cli-docs-cab .cli-chev { margin-left: auto; transition: transform
 html body .lv .cli-docs.plegado .cli-chev { transform: rotate(-90deg); }
 html body .lv .cli-docs.plegado .cli-docs-l, html body .lv .cli-docs.plegado .cli-subir, html body .lv .cli-docs.plegado .cli-subir-ayuda, html body .lv .cli-docs.plegado #cli-aviso { display: none; }
 html body .lv .cli-docs.plegado .cli-docs-cab p.sub { display: none; }
+/* Gantt editable (administración): nombre, responsable y quitar */
+.tabla-gantt input.g-nom { width: 200px; padding: 5px 8px; }
+.tabla-gantt select { padding: 5px 6px; width: 150px; }
+.g-borrar { border: 0; background: none; color: var(--gris); font-size: 18px; line-height: 1; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
+.g-borrar:hover { color: var(--vino); }
+.g-borrar.seguro { font-size: 12px; color: var(--vino); background: #f4e6e6; }
+#g-guarda { margin-left: 6px; }

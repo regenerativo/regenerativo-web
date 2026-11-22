@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=153';
-import * as M from './modulos.js?v=153';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=153';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=153';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=153';
+import * as D from './datos.js?v=154';
+import * as M from './modulos.js?v=154';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=154';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=154';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=154';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -752,55 +752,108 @@ async function leerCronograma(base64) {
   const xml = async n => new DOMParser().parseFromString(await zip.file(n).async('string'), 'application/xml');
   const ss = []; if (zip.file('xl/sharedStrings.xml')) [...(await xml('xl/sharedStrings.xml')).getElementsByTagName('si')].forEach(si => ss.push([...si.getElementsByTagName('t')].map(t => t.textContent).join('')));
   const wb = await xml('xl/workbook.xml'), rels = await xml('xl/_rels/workbook.xml.rels');
-  const hojas = [...wb.getElementsByTagName('sheet')].filter(h => h.getAttribute('state') !== 'hidden');
+  const hojas = [...wb.getElementsByTagName('sheet')].filter(h => h.getAttribute('state') !== 'hidden')
+    .sort((a, b) => /gantt|cronograma|programaci/i.test(b.getAttribute('name')) - /gantt|cronograma|programaci/i.test(a.getAttribute('name')));
   const col = r => { let n = 0; for (const ch of r.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
   for (const h of hojas) {
     const rid = [...h.attributes].find(x => /(^|:)id$/.test(x.name) && x.name !== 'sheetId')?.value;
     const t = [...rels.getElementsByTagName('Relationship')].find(r => r.getAttribute('Id') === rid)?.getAttribute('Target'); if (!t) continue;
     const hoja = await xml('xl/' + t.replace(/^\/?xl\//, ''));
     const grid = [...hoja.getElementsByTagName('row')].map(r => { const fila = []; [...r.getElementsByTagName('c')].forEach(c => { const v = c.getElementsByTagName('v')[0]?.textContent ?? c.getElementsByTagName('t')[0]?.textContent ?? ''; fila[col(c.getAttribute('r'))] = c.getAttribute('t') === 's' ? ss[Number(v)] : (c.getAttribute('t') === 'str' || c.getAttribute('t') === 'inlineStr' ? v : (v === '' ? '' : Number(v))); }); return fila; });
-    const iCab = grid.findIndex(f => f.some(x => /actividad|tarea|descripci|item/i.test(String(x ?? ''))) && f.some(x => /inicio|comienzo/i.test(String(x ?? ''))));
+    // Encabezado de una fila, o de dos (p. ej. ESPERADO / REAL arriba e INICIO / FIN abajo, como en la plantilla de regenerativo)
+    const txt = x => String(x ?? '').trim();
+    const esIni = f => (f || []).some(x => /^(fecha )?(de )?(inicio|comienzo)/i.test(txt(x)));
+    const iCab = grid.findIndex((f, i) => f.some(x => txt(x).length < 30 && /^(actividad|tarea|descripci|[ií]tem)/i.test(txt(x))) && (esIni(f) || esIni(grid[i + 1])));
     if (iCab < 0) continue;
-    const cab = grid[iCab].map(x => String(x ?? '').toLowerCase());
+    let cab, desde = iCab + 1;
+    if (esIni(grid[iCab])) cab = grid[iCab].map(x => txt(x).toLowerCase());
+    else {
+      const arriba = grid[iCab], abajo = grid[iCab + 1], n = Math.max(arriba.length, abajo.length); let grupo = '';
+      cab = Array.from({ length: n }, (_, i) => { if (txt(arriba[i])) grupo = txt(arriba[i]); else if (!txt(abajo[i])) grupo = ''; return `${grupo} ${txt(abajo[i])}`.trim().toLowerCase(); });
+      desde = iCab + 2;
+    }
     const busca = (re, no) => cab.findIndex(x => re.test(x) && !(no && no.test(x)));
-    const cN = busca(/actividad|tarea|descripci/), cI = busca(/inicio|comienzo/, /real/), cF = busca(/fin|final|termina|entrega/, /real/), cD = busca(/d[ií]as|duraci/),
-      cIR = busca(/inicio.*real|real.*inicio/), cFR = busca(/fin.*real|real.*fin/), cA = busca(/avance|progreso|%/);
+    const cN = busca(/actividad|tarea|descripci/), cI = busca(/inicio|comienzo/, /real/), cF = busca(/fin|final|termina|entrega/, /real|inicio/), cD = busca(/d[ií]as|duraci/, /real/),
+      cIR = busca(/inicio.*real|real.*inicio/), cFR = busca(/fin.*real|real.*fin/), cA = busca(/avance|progreso|%/), cP = busca(/^peso/), cR = busca(/responsable.*n°|responsable.*n[uú]m|^resp/, /nombre/);
     const tareas = [];
-    grid.slice(iCab + 1).forEach(f => {
-      const nombre = String(f[cN] ?? '').trim(), ini = fechaExcel(f[cI]);
-      if (!nombre || !ini) return;
+    for (const f of grid.slice(desde)) {
+      if (/^total/i.test(txt(f[1] ?? f[0]))) break;
+      const nombre = txt(f[cN]), ini = fechaExcel(f[cI]);
+      if (!nombre || !ini) continue;
       const fin = cF >= 0 ? fechaExcel(f[cF]) : null;
       const dias = cD >= 0 ? Math.round(Number(f[cD]) || 0) : 0;
       let av = cA >= 0 ? Number(f[cA]) || 0 : null; if (av != null && av > 1) av = av / 100;
-      tareas.push({ nombre, inicio_esperado: ini, fin, dias_esperados: dias, inicio_real: cIR >= 0 ? fechaExcel(f[cIR]) : undefined, fin_real: cFR >= 0 ? fechaExcel(f[cFR]) : undefined, avance: av ?? undefined });
-    });
-    if (tareas.length) return tareas;
+      let peso = cP >= 0 && txt(f[cP]) !== '' ? Number(f[cP]) : null; if (peso != null && peso > 1) peso = peso / 100;
+      tareas.push({ nombre, inicio_esperado: ini, fin, dias_esperados: dias, inicio_real: cIR >= 0 ? fechaExcel(f[cIR]) : undefined, fin_real: cFR >= 0 ? fechaExcel(f[cFR]) : undefined, avance: av ?? undefined,
+        peso_manual: cP >= 0 ? (isNaN(peso) ? null : peso) : undefined, resp_num: cR >= 0 && txt(f[cR]) !== '' ? Number(f[cR]) : (cR >= 0 ? null : undefined) });
+    }
+    // Responsables (tabla con RESPONSABLE y ROL) y datos generales (INICIO DE OBRA, FIN DE OBRA, DÍAS DE TRABAJO)
+    let responsables;
+    const iR = grid.findIndex((f, i) => i > iCab && f.some(x => /^responsable$/i.test(txt(x))) && f.some(x => /^rol/i.test(txt(x))));
+    if (iR >= 0) {
+      const cRn = grid[iR].findIndex(x => /^responsable$/i.test(txt(x))), cRr = grid[iR].findIndex(x => /^rol/i.test(txt(x)));
+      responsables = [];
+      for (const f of grid.slice(iR + 1)) { if (!f.length || txt(f[cRn - 1]) === '' && txt(f[cRn]) === '') break; if (txt(f[cRn])) responsables.push({ nombre: txt(f[cRn]), cargo: txt(f[cRr]) || null }); }
+    }
+    const junto = re => { for (const f of grid.slice(0, iCab)) { const i = f.findIndex(x => re.test(txt(x))); if (i >= 0) { const v = f.slice(i + 1, i + 3).find(x => txt(x) !== ''); return v ?? null; } } return undefined; };
+    const general = { inicio: junto(/^inicio de obra/i), fin: junto(/^fin de obra/i), dias: junto(/^d[ií]as de trabajo/i) };
+    return { tareas, responsables, general, encontrado: true };
   }
-  return [];
+  return { tareas: [], encontrado: false };
 }
 async function programacionExcel(ctx, pintar) {
+  // Equipo: ve y edita el Gantt del portal (cada cambio se pasa al Excel). La lectura del Excel la hace administración.
+  if (!ctx.admin) { const v = await M.VISTAS.gantt({ ...ctx, alGuardar: () => D.onedrive('gantt_excel', { encargo_id: ctx.e.id }) }); pintar(v.html); if (v.montar) v.montar(); return; }
   pintar('<section class="panel visor" id="visor"><p class="sub">Leyendo el cronograma de la carpeta PROGRAMACIÓN…</p></section><div id="g-web"></div>');
   const el = $('#visor');
+  // Cada cambio en el portal se escribe en el Excel antes de volver a pintar (así el Excel y el portal quedan iguales)
+  const alGuardar = async () => { const r = await D.onedrive('gantt_excel', { encargo_id: ctx.e.id, crear: true }); if (!r?.archivo) throw new Error('No se pudo escribir en el Excel.'); };
+  const pintarGantt = async (cab, nota = '') => {
+    const v = await M.VISTAS.gantt({ ...ctx, editarTodo: true, alGuardar });
+    el.innerHTML = cab + nota; $('#g-web').innerHTML = v.html; if (v.montar) v.montar();
+  };
   let r; try { r = await D.onedrive('visor', { encargo_id: ctx.e.id, modulo: 'gantt' }); } catch (err) { el.innerHTML = `<p class="sub">No se pudo abrir la carpeta: ${esc(msg(err))}</p>`; return; }
-  if (!r.archivo) { el.innerHTML = `<p class="sub">Todavía no hay cronograma en la carpeta ${esc(r.carpeta || 'PROGRAMACIÓN')}. Cuando subas el Excel del cronograma, aquí se verá como Gantt.</p>`; return; }
-  const a = r.archivo;
-  const cab = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · se edita en Excel y aquí se ve como Gantt</span></div>${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en Excel</a>` : ''}</div>`;
-  let tareas = [];
-  if (/\.xlsx$/i.test(a.nombre)) {
-    try { const f = await D.onedrive('archivo_encargo', { encargo_id: ctx.e.id, carpeta: r.carpeta, ruta: a.ruta }); tareas = await leerCronograma(f.base64); } catch (_) { tareas = []; }
+  const a = r.archivo && /\.xlsx$/i.test(r.archivo.nombre) ? r.archivo : null;
+  if (!a) {
+    const cab0 = `<div class="visor-cab"><div><b>Cronograma</b><span class="sub">Todavía no hay Excel del cronograma en ${esc(r.carpeta || 'PROGRAMACIÓN')}. Se crea desde la plantilla de regenerativo al guardar el primer cambio, o con el botón.</span></div><button class="btn sec mini" id="g-crear">Crear Excel</button></div>`;
+    await pintarGantt(cab0);
+    $('#g-crear').onclick = async ev => { ev.target.disabled = true; ev.target.textContent = 'Creando…'; try { await alGuardar(); ctx.recargar(); } catch (err) { alert('No se pudo crear el Excel: ' + msg(err)); ev.target.disabled = false; ev.target.textContent = 'Crear Excel'; } };
+    return;
   }
-  if (!tareas.length) { el.innerHTML = cab + (a.vista ? `<div class="visor-marco"><iframe src="${esc(a.vista)}" title="${esc(a.nombre)}" loading="lazy" allowfullscreen></iframe></div>` : '') + '<p class="sub">No encontré en el Excel una tabla con columnas de actividad e inicio para dibujar el Gantt.</p>'; return; }
-  // Días de trabajo de cada actividad: los del Excel, o los que hay entre su inicio y su fin (según los días de trabajo del encargo)
+  const cab = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · lo que cambies aquí o en el Excel queda en los dos</span></div>${a.web ? `<a class="btn sec mini" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en Excel</a>` : ''}</div>`;
+  let x = { tareas: [] };
+  try { const f = await D.onedrive('archivo_encargo', { encargo_id: ctx.e.id, carpeta: r.carpeta, ruta: a.ruta }); x = await leerCronograma(f.base64); } catch (_) { x = null; }
+  if (!x) return pintarGantt(cab, '<p class="sub">No se pudo leer el Excel; se muestra lo que hay en el portal.</p>');
+  if (!x.encontrado) return pintarGantt(cab, '<p class="sub">No encontré en el Excel una tabla con columnas de actividad e inicio; se muestra lo que hay en el portal.</p>');
+  const tareas = x.tareas;
   tareas.forEach(t => { if (!t.dias_esperados) t.dias_esperados = Math.max(1, t.fin ? diasDeTrabajo(t.inicio_esperado, t.fin, ctx.e.dias_trabajo, ctx.fest) : 1); delete t.fin; });
-  // El Excel manda: si cambió, se reemplazan las tareas del portal (las fechas reales y el avance escritos en el portal se conservan si el Excel no los trae)
-  const antes = await D.ganttTareas(ctx.e.id).catch(() => []);
-  const firma = l => l.map(t => [t.nombre, t.inicio_esperado, t.dias_esperados].join('|')).join('¦');
-  if (ctx.admin && firma(antes) !== firma(tareas)) {
-    const filas = tareas.map((t, i) => { const v = antes.find(x => x.nombre === t.nombre) || {}; return { encargo_id: ctx.e.id, orden: i + 1, nombre: t.nombre, inicio_esperado: t.inicio_esperado, dias_esperados: t.dias_esperados, inicio_real: t.inicio_real !== undefined ? t.inicio_real : (v.inicio_real || null), fin_real: t.fin_real !== undefined ? t.fin_real : (v.fin_real || null), avance: t.avance !== undefined ? t.avance : (v.avance || 0) }; });
-    try { await D.reemplazarTareas(ctx.e.id, filas); } catch (err) { el.innerHTML = cab + `<p class="sub">No se pudo actualizar el Gantt: ${esc(msg(err))}</p>`; return; }
+  // Datos generales del Excel → encargo (inicio, fin y días de trabajo)
+  const g = x.general || {}, cambiosE = {};
+  const dias = { 'lunes a viernes': 'lv', 'lunes a sábado': 'ls', 'lunes a sabado': 'ls', 'todos los días': 'todos', 'todos los dias': 'todos' }[String(g.dias ?? '').trim().toLowerCase()];
+  for (const k of ['inicio', 'fin']) { const v = g[k] == null ? null : fechaExcel(g[k]); if (g[k] !== undefined && v && v !== ctx.e[k]) cambiosE[k] = v; }
+  if (dias && dias !== ctx.e.dias_trabajo) cambiosE.dias_trabajo = dias;
+  let cambio = false;
+  if (Object.keys(cambiosE).length) { try { await D.actualizarEncargo(ctx.e.id, cambiosE); Object.assign(ctx.e, cambiosE); cambio = true; } catch (_) { /* sigue */ } }
+  // Responsables del Excel → encargo
+  let resp = ctx.e.responsables || [];
+  if (x.responsables) {
+    const firmaR = l => l.map(q => `${q.nombre}|${q.cargo || ''}`).join('¦');
+    if (firmaR(x.responsables) !== firmaR(resp)) {
+      try { await D.guardarResponsables(ctx.e.id, x.responsables); resp = await D.responsablesEncargo(ctx.e.id); ctx.e.responsables = resp; cambio = true; } catch (_) { /* sigue */ }
+    }
   }
-  const v = await M.VISTAS.gantt(ctx);
-  el.innerHTML = cab; $('#g-web').innerHTML = v.html; if (v.montar) v.montar();
+  // Actividades del Excel → portal (si cambiaron). Lo que el Excel no trae (fechas reales, avance) se conserva del portal.
+  const antes = await D.ganttTareas(ctx.e.id).catch(() => []);
+  const idResp = n => n == null ? null : (resp.find(q => q.numero === n)?.id || null);
+  const filas = tareas.map((t, i) => { const v = antes.find(q => q.nombre === t.nombre) || {}; return { encargo_id: ctx.e.id, orden: i + 1, nombre: t.nombre, inicio_esperado: t.inicio_esperado, dias_esperados: t.dias_esperados,
+    inicio_real: t.inicio_real !== undefined ? t.inicio_real : (v.inicio_real || null), fin_real: t.fin_real !== undefined ? t.fin_real : (v.fin_real || null), avance: t.avance !== undefined ? t.avance : (v.avance || 0),
+    peso_manual: t.peso_manual !== undefined ? t.peso_manual : (v.peso_manual ?? null), responsable_id: t.resp_num !== undefined ? idResp(t.resp_num) : (v.responsable_id || null),
+    presupuesto_actividad_id: v.presupuesto_actividad_id || null, notas: v.notas || null }; });
+  const firma = l => l.map(t => [t.nombre, t.inicio_esperado, t.dias_esperados, t.inicio_real || '', t.fin_real || '', Math.round(Number(t.avance || 0) * 1000), t.peso_manual == null ? '' : Math.round(Number(t.peso_manual) * 1000), t.responsable_id || ''].join('|')).join('¦');
+  if (firma(antes) !== firma(filas)) {
+    try { await D.reemplazarTareas(ctx.e.id, filas); cambio = true; } catch (err) { el.innerHTML = cab + `<p class="sub">No se pudo actualizar el Gantt: ${esc(msg(err))}</p>`; return; }
+  }
+  await pintarGantt(cab, cambio ? '<p class="sub">Se trajeron al portal los cambios hechos en el Excel.</p>' : '');
 }
 
 async function visorDocumento(ctx, modulo, el) {
