@@ -2,6 +2,7 @@
 //   'plantilla_documento' → agrega "Documento del cliente: XXX" a la plantilla SCREG_2XXXX_PROPUESTA.docx
 //   'leer_clientes'       → lee de cada propuesta los renglones del cliente (nombre, documento, NIT, cédula)
 //   'poner_documento'     → {ruta, valor}: agrega el renglón "Documento del cliente" a un Word
+//   'ordenar_datos'       → ordena los datos del encargo (contacto primero) y resalta los importantes
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { unzipSync, zipSync, strFromU8, strToU8 } from "npm:fflate@0.8.2";
 
@@ -65,6 +66,36 @@ function conDocumento(buf: ArrayBuffer, valor: string) {
   return zipSync(z);
 }
 
+// Ordena el bloque de renglones "Etiqueta: valor" y pone en negrita el valor de los importantes.
+function ordenarDatos(xml: string, o: any): string | null {
+  const RT = /<w:t(?:\s[^>]*)?>[^<]*<\/w:t>/g;
+  const txt = (p: string) => (p.match(RT) || []).map(t => t.replace(/<[^>]+>/g, "")).join("").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const lab = (p: string) => { const m = txt(p).match(/^([^:]{3,60}):/); return m ? m[1].trim().toLowerCase() : null; };
+  const orden: string[] = o.orden.map((x: string) => x.toLowerCase()), negrita: string[] = (o.negrita || []).map((x: string) => x.toLowerCase());
+  const ps: string[] = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  const blq = ps.filter(p => orden.includes(lab(p) || ""));
+  if (!blq.length) return null;
+  const base = blq.find(p => lab(p) === String(o.despues || "").toLowerCase()) || blq[0];
+  const conTexto = (p: string, t: string) => { let i = 0; return p.replace(/<w:t(\s[^>]*)?>[^<]*<\/w:t>/g, () => i++ ? "<w:t></w:t>" : `<w:t xml:space="preserve">${esc(t)}</w:t>`).replace(/ w14:(paraId|textId)="[^"]*"/g, ""); };
+  const nuevos = ((o.nuevas || []) as string[]).filter(l => !blq.some(p => lab(p) === l.split(":")[0].trim().toLowerCase())).map(l => conTexto(base, l));
+  const ini = xml.indexOf(blq[0]), finP = blq[blq.length - 1], fin = xml.indexOf(finP) + finP.length;
+  let resto = xml.slice(ini, fin); for (const p of blq) resto = resto.replace(p, "");
+  if (/<w:t[ >]/.test(resto)) return null;               // hay texto intercalado: no se toca
+  const todos = [...blq, ...nuevos];
+  const ord = orden.map(l => todos.find(p => lab(p) === l)).filter(Boolean) as string[];
+  const neg = (p: string) => {
+    const l = lab(p) || ""; if (!negrita.includes(l)) return p;
+    const t = txt(p), k = t.indexOf(":"), r = (p.match(/<w:r[ >][\s\S]*?<\/w:r>/) || [])[0]; if (!r) return p;
+    const rpr = (r.match(/<w:rPr>[\s\S]*?<\/w:rPr>/) || ["<w:rPr></w:rPr>"])[0];
+    const rprN = rpr.replace(/(w:ascii|w:hAnsi)="[^"]*"/g, `$1="${o.fuenteNegrita || "METRONICPRO-SEMIBOLD"}"`);
+    const corridas = `<w:r>${rpr}<w:t xml:space="preserve">${esc(t.slice(0, k + 1))} </w:t></w:r><w:r>${rprN}<w:t xml:space="preserve">${esc(t.slice(k + 1).trim())}</w:t></w:r>`;
+    const sinR = p.replace(/<w:r[ >][\s\S]*?<\/w:r>/g, "");
+    return sinR.replace(/<\/w:p>$/, corridas + "</w:p>");
+  };
+  return xml.slice(0, ini) + ord.map(neg).join("") + resto + xml.slice(fin);
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido." }, 405);
   const b = await req.json().catch(() => ({}));
@@ -107,6 +138,15 @@ Deno.serve(async (req) => {
       const nuevos = faltan.map(l => { let primero = true; return base.replace(/<w:t(\s[^>]*)?>([^<]*)<\/w:t>/g, () => { const v = primero ? `<w:t xml:space="preserve">${esc(l)}</w:t>` : "<w:t></w:t>"; primero = false; return v; }).replace(/ w14:paraId="[^"]*"/g, "").replace(/ w14:textId="[^"]*"/g, ""); }).join("");
       z["word/document.xml"] = strToU8(xml.replace(base, base + nuevos)); await subir(at, ruta, zipSync(z));
       return json({ ok: true, hechos: faltan });
+    }
+    if (b.accion === "ordenar_datos") {
+      // {ruta?, orden:[etiquetas], negrita:[etiquetas], nuevas:["Etiqueta: XXX"], despues}: ordena el bloque de datos del encargo
+      const ruta = String(b.ruta || `${PROPUESTAS}/SCREG_2XXXX_PROPUESTA.docx`);
+      const buf = await bajar(at, ruta); if (!buf) return json({ error: "No encontré el Word: " + ruta }, 404);
+      const { z, xml } = abrir(buf);
+      const nuevo = ordenarDatos(xml, b); if (!nuevo) return json({ error: "No se pudo ordenar el bloque de datos." }, 422);
+      z["word/document.xml"] = strToU8(nuevo); await subir(at, ruta, zipSync(z));
+      return json({ ok: true, renglones: abrir(zipSync(z).buffer as ArrayBuffer).parrafos.map(textoParrafo).filter(t => /^[^:]{3,60}:/.test(t)).slice(0, 20) });
     }
     if (b.accion === "leer_clientes") {
       const { data: ps } = await admin.from("propuestas").select("codigo,nombre,archivo_ruta").not("archivo_ruta", "is", null);
