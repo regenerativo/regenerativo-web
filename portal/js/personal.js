@@ -1,9 +1,9 @@
 // Finanzas personales de Andrés: lo mismo que tenía en MONAI (categorías y etiquetas en inglés, como él las escribe),
 // con Movimientos y Rendimiento como las finanzas de regenerativo. Tres tipos: ingreso, gasto y ahorro (el ahorro no cuenta como gasto).
-import * as D from './datos.js?v=160';
-import { cop, fecha, iso } from './formato.js?v=160';
-import { btnIco, ico } from './iconos.js?v=160';
-import { barras } from './finanzas.js?v=160';
+import * as D from './datos.js?v=161';
+import { cop, fecha, iso } from './formato.js?v=161';
+import { btnIco, ico } from './iconos.js?v=161';
+import { barras } from './finanzas.js?v=161';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,7 +15,7 @@ const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const masReciente = (a, b) => (a.fecha + (a.hora || '')) < (b.fecha + (b.hora || '')) ? 1 : -1;
 const TIPOS = { ingreso: 'Ingreso', gasto: 'Gasto', ahorro: 'Ahorro' };
 const SIGNO = { ingreso: '+', gasto: '−', ahorro: '' };
-const ESTADO = { vista: 'mov', graf: 'anio', eti: '', presModo: 'base', abierto: '', crecIng: 0, crecGas: 0, aclarar: false };
+const ESTADO = { vista: 'mov', graf: 'anio', eti: '', presModo: 'base', presVista: 'mes', abierto: '', crecIng: 0, crecGas: 0, aclarar: false };
 const emoji = c => `<span class="per-emo" style="--c:${esc(c?.color || '#BFBFBF')}">${esc(c?.emoji || '·')}</span>`;
 const DIEZMO = ['ministerio_diezmo', 'savings_diezmo'];
 const esDiezmo = x => (x.etiquetas || []).some(t => DIEZMO.includes(t)) || /diezmo/i.test(x.descripcion || '');
@@ -24,7 +24,7 @@ const num = v => Number(String(v ?? '').replace(/\D/g, '')) || 0;
 const miles = v => v ? Math.round(v).toLocaleString('es-CO').replace(/,/g, '.') : '';
 
 export async function vistaPersonal(mesSel) {
-  const [cats, etis, movs, pres, fijos, proys, items] = await Promise.all([D.perCategorias(), D.perEtiquetas(), D.perMovimientos(), D.perPresupuesto(), D.perFijos(), D.perProyectos(), D.perItems()]);
+  const [cats, etis, movs, pres, fijos, proys, items, aj] = await Promise.all([D.perCategorias(), D.perEtiquetas(), D.perMovimientos(), D.perPresupuesto(), D.perFijos(), D.perProyectos(), D.perItems(), D.perAjustes().catch(() => null)]);
   // Esperado de una categoría en un mes: el ajuste de ese mes o, si no hay, el plan base
   const espDe = (cid, k) => { const o = pres.find(p => p.categoria_id === cid && p.mes === k); const b = pres.find(p => p.categoria_id === cid && !p.mes); return Number((o ?? b)?.valor || 0); };
   const catDe = id => cats.find(c => c.id === id);
@@ -127,7 +127,7 @@ export async function vistaPersonal(mesSel) {
     <section class="panel panel-anio"><div class="od-cab"><h3>Ingresos y gastos</h3><span class="graf-vistas" role="group" aria-label="Periodo"><button type="button" class="chip-f${ESTADO.graf === 'anio' ? ' on' : ''}" data-graf="anio">Año ${a}</button><button type="button" class="chip-f${ESTADO.graf === 'seis' ? ' on' : ''}" data-graf="seis">6 meses</button></span></div>
       ${ESTADO.graf === 'anio' ? barras(serieAnio) + tablaAnio : barras(serie6)}</section>`;
 
-  const ctx = { movs, cats, etis, pres, fijos, proys, items, a, m, mes, modoAnio, suma, catDe, espDe };
+  const ctx = { movs, cats, etis, pres, fijos, proys, items, aj, a, m, mes, modoAnio, suma, catDe, espDe };
   const html = selector + (ESTADO.vista === 'rend' ? rendimiento(ctx) : ESTADO.vista === 'pres' ? vistaPres(ctx) : ESTADO.vista === 'proy' ? vistaProy(ctx) : htmlMov);
   return { html, eyebrow, mesTxt, rend: ESTADO.vista !== 'mov', montar: recargar => {
     const ir = (y, mm) => { location.hash = `#/personal/${mm ? `${y}-${mm}` : y}`; };
@@ -300,7 +300,7 @@ function ajustes(cats, etis, movs, mesTxt, recargar) {
   addEventListener('hashchange', cerrar);
   f.onclick = ev => { if (ev.target === f || ev.target.closest('[data-cerrar]')) return cerrar();
     const op = ev.target.closest('[data-op]')?.dataset.op; if (!op) return; cerrar();
-    if (op === 'alertas') modalAlertas();
+    if (op === 'alertas') modalAlertas(recargar);
     if (op === 'cats') modalCategorias(recargar);
     if (op === 'etis') modalEtiquetas(movs, recargar);
   };
@@ -346,7 +346,7 @@ async function modalEtiquetas(movs, recargar) {
 
 
 // ── Presupuesto: esperado contra real por categoría (como el Gantt), pagos fijos y proyección del año y del lustro ──
-function vistaPres({ movs, cats, fijos, pres, a, m, mes, modoAnio, suma, espDe }) {
+function vistaPres({ movs, cats, fijos, pres, aj, a, m, mes, modoAnio, suma, espDe }) {
   const activas = cats.filter(c => c.activa !== false);
   const delM = k => movs.filter(x => mesDe(x.fecha) === k);
   const realCat = (cid, k) => delM(k).filter(x => x.categoria_id === cid).reduce((s, x) => s + Number(x.valor), 0);
@@ -410,11 +410,39 @@ function vistaPres({ movs, cats, fijos, pres, a, m, mes, modoAnio, suma, espDe }
     <div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Año</th><th class="num">Ingresos</th><th class="num">Gastos</th><th class="num">Ahorro</th><th class="num">Disponible</th><th class="num">Ahorro acumulado</th><th class="num col-opc">Acumulado según tendencia</th></tr></thead><tbody>
     ${lustro.map(x => `<tr><td>${x.y}</td><td class="num ingreso">${nc(x.ingY)}</td><td class="num gasto">${nc(x.gasY)}</td><td class="num ahorro">${nc(x.ahoY)}</td><td class="num ${x.d < 0 ? 'xxx' : ''}">${nc(x.d)}</td><td class="num"><b>${nc(x.acu)}</b></td><td class="num col-opc">${nc(x.acuT)}</td></tr>`).join('')}
     </tbody></table></div>${!baseMes('ingreso') && !baseMes('gasto') ? '<p class="sub">Llena el plan base para que el lustro tenga números.</p>' : ''}</section>`;
-  return resumen + tabla + fijosHtml + anual + lus;
+  const umb = (aj?.umbrales?.length ? aj.umbrales : [80, 100]).slice().sort((x, y) => x - y);
+  const periodo = `<div class="pp-periodo"><div class="pp-mesnav"><button type="button" class="btn sec mini ico" data-pmes="-1" aria-label="Anterior">‹</button><b>${ESTADO.presVista === 'anio' ? a : `${MESES[m - 1]} ${a}`}</b><button type="button" class="btn sec mini ico" data-pmes="1" aria-label="Siguiente">›</button></div>
+    <span class="graf-vistas" role="group" aria-label="Vista"><button type="button" class="chip-f${ESTADO.presVista === 'mes' ? ' on' : ''}" data-pvista="mes">Mensual</button><button type="button" class="chip-f${ESTADO.presVista === 'anio' ? ' on' : ''}" data-pvista="anio">Anual</button></span>
+    <button type="button" class="pp-umb" id="pp-umb" title="Cambiar cuándo te aviso">${aj?.alertas === false ? 'Alertas apagadas' : `Aviso al correo al ${umb.map(u => u + ' %').join(', ').replace(/, ([^,]*)$/, ' y $1')}`} · cambiar</button></div>`;
+  if (ESTADO.presVista === 'anio') {
+    // Anual: cada categoría mes a mes (como un Gantt de colores) y la proyección
+    const hoyK = iso(new Date()).slice(0, 7);
+    const espA = t => Array.from({ length: 12 }, (_, i) => espT(t, mkMes(a, i + 1))).reduce((x, v) => x + v, 0);
+    const realA = t => movs.filter(x => x.tipo === t && (x.fecha || '').startsWith(String(a))).reduce((x, v) => x + Number(v.valor), 0);
+    const ingA = realA('ingreso'), dzA = movs.filter(x => (x.fecha || '').startsWith(String(a)) && esDiezmo(x)).reduce((x, v) => x + Number(v.valor), 0);
+    const resA = `<section class="panel"><div class="od-cab"><h3>Esperado contra real · ${a}</h3></div>
+      ${fila('Ingresos', espA('ingreso'), ingA, 'mas')}${fila('Gastos', espA('gasto'), realA('gasto'), 'menos')}${fila('Ahorro', espA('ahorro'), realA('ahorro'), 'mas')}${fila('Diezmo (10 % de lo que entró)', Math.round(ingA * 0.1), dzA, 'mas')}
+      <p class="sub mon-ley"><span class="ley-esp"></span>Esperado del año &nbsp; <span class="ley-real"></span>Real a la fecha</p></section>`;
+    const celda = (c, k) => { const e = espDe(c.id, k), r = realCat(c.id, k); const fut = k > hoyK;
+      const cls = fut ? 'fut' : !e ? (r ? 'sin' : 'vacia') : c.tipo === 'gasto' ? (r > e ? 'mal' : r >= e * 0.8 ? 'cerca' : 'bien') : (r >= e ? 'bien' : 'cerca');
+      return `<td class="pp-c ${cls}" data-ir-k="${k}" title="${esc(c.nombre)} · ${MESES[Number(k.slice(5)) - 1]}: ${cop(r)} de ${cop(e)}">${fut ? (e ? compacto(e) : '') : r ? compacto(r) : (e ? '0' : '')}</td>`; };
+    const grupoA = (t, titulo) => { const l = activas.filter(c => c.tipo === t); if (!l.length) return '';
+      return `<tr class="pp-grupo"><td colspan="14">${titulo}</td></tr>${l.map(c => { const eA = Array.from({ length: 12 }, (_, i) => espDe(c.id, mkMes(a, i + 1))).reduce((x, v) => x + v, 0);
+        const rA = movs.filter(x => x.categoria_id === c.id && (x.fecha || '').startsWith(String(a))).reduce((x, v) => x + Number(v.valor), 0);
+        return `<tr><td class="pp-cn">${emoji(c)} ${esc(c.nombre)}</td>${Array.from({ length: 12 }, (_, i) => celda(c, mkMes(a, i + 1))).join('')}<td class="num pp-tot ${t === 'gasto' && eA && rA > eA ? 'xxx' : ''}">${compacto(rA)}<span class="sub">de ${compacto(eA)}</span></td></tr>`; }).join('')}`; };
+    const mapa = `<section class="panel"><h3>Mes a mes</h3><p class="sub">Cada casilla es lo real del mes. <span class="pp-ley bien"></span>dentro de lo esperado &nbsp;<span class="pp-ley cerca"></span>cerca del tope &nbsp;<span class="pp-ley mal"></span>se pasó &nbsp;<span class="pp-ley fut"></span>lo esperado de los meses que vienen. Toca una casilla para ver ese mes.</p>
+      <div class="tabla-cont"><table class="t-compacta pp-mapa"><thead><tr><th>Categoría</th>${MESES.map(n => `<th class="num">${n.slice(0, 3)}</th>`).join('')}<th class="num">Año</th></tr></thead><tbody>${grupoA('ingreso', 'Ingresos')}${grupoA('gasto', 'Gastos')}${grupoA('ahorro', 'Ahorro')}</tbody></table></div></section>`;
+    return periodo + resA + mapa + anual + lus;
+  }
+  return periodo + resumen + tabla + fijosHtml;
 }
 const nc = v => (v < 0 ? '−' : '') + cop(Math.abs(v)).replace(' COP', '');
 function montarPres({ movs, cats, etis, proys, fijos, mes }, recargar) {
   const quieto = async fn => { const y = scrollY; await fn(); await recargar(); requestAnimationFrame(() => scrollTo(0, y)); };
+  document.querySelectorAll('[data-pvista]').forEach(b => b.onclick = () => quieto(async () => { ESTADO.presVista = b.dataset.pvista; }));
+  document.querySelectorAll('[data-pmes]').forEach(b => b.onclick = () => { const [y, mm] = mes.split('-').map(Number); const d = ESTADO.presVista === 'anio' ? new Date(y + Number(b.dataset.pmes), mm - 1, 1) : new Date(y, mm - 1 + Number(b.dataset.pmes), 1); location.hash = `#/personal/${mkMes(d.getFullYear(), d.getMonth() + 1)}`; });
+  document.querySelectorAll('[data-ir-k]').forEach(td => td.onclick = () => { ESTADO.presVista = 'mes'; location.hash = `#/personal/${td.dataset.irK}`; });
+  const pu = $('#pp-umb'); if (pu) pu.onclick = () => modalAlertas(recargar);
   document.querySelectorAll('[data-pmodo]').forEach(b => b.onclick = () => quieto(async () => { ESTADO.presModo = b.dataset.pmodo; }));
   document.querySelectorAll('[data-pres]').forEach(inp => {
     inp.oninput = () => { const n = inp.value.replace(/\D/g, ''); inp.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };
@@ -516,21 +544,28 @@ function montarProy({ items }, recargar) {
 }
 
 // ── Alertas al correo personal ──
-async function modalAlertas() {
+async function modalAlertas(recargar) {
   const aj = (await D.perAjustes()) || {};
   const f0 = document.createElement('div'); f0.className = 'modal-fondo';
   f0.innerHTML = `<form class="modal" id="pa"><h2>Alertas al correo</h2>
-    <p class="sub">Una revisión cada día a las 7:00 a. m. Te escribe solo cuando hay algo nuevo: una categoría que llega al % de aviso o pasa lo esperado, un pago fijo que vence en 3 días o venció, el resumen del mes el día 1 y proyectos con meta en 30 días.</p>
+    <p class="sub">Una revisión cada día a las 7:00 a. m. Te escribe solo cuando hay algo nuevo: una categoría que llega a uno de tus % de aviso (de lo esperado del mes), un pago fijo que vence en 3 días o venció, el resumen del mes el día 1 y proyectos con meta en 30 días.</p>
     <div class="grilla-form"><div class="ancho"><label>Correo</label><input name="correo" type="email" required value="${esc(aj.correo_alertas || '')}"></div>
-      <div><label>Avisar al llegar al</label><input name="pct" type="number" min="50" max="99" value="${aj.avisar_pct || 80}"></div>
+      <div class="ancho"><label>Avisarme cuando una categoría llegue al</label><div class="pp-umbs" id="pa-umbs"></div>
+        <div class="per-eti-nueva"><input id="pa-nuevo-u" type="number" min="1" max="300" placeholder="Otro %, p. ej. 20"><button type="button" class="btn sec mini" id="pa-agregar-u"><span class="mas">+</span> Agregar</button></div></div>
       <div><label class="lv-check"><input type="checkbox" name="on" ${aj.alertas !== false ? 'checked' : ''}> Alertas activas</label></div></div>
     <div class="aviso" id="pa-av"></div>
     <div class="pie-modal"><button type="button" class="btn sec" id="pa-prueba" style="margin-right:auto">Enviar prueba</button><button type="button" class="btn sec" id="pa-c">Cerrar</button><button class="btn">Guardar</button></div></form>`;
   document.body.appendChild(f0);
   const f = $('#pa', f0), av = t => { $('#pa-av', f0).textContent = t; };
-  const guardar = () => D.perGuardarAjustes({ ...(aj.dueno ? { dueno: aj.dueno } : {}), correo_alertas: f.correo.value.trim(), avisar_pct: Number(f.pct.value) || 80, alertas: f.on.checked });
+  let umbs = new Set((aj.umbrales?.length ? aj.umbrales : [80, 100]).map(Number));
+  const pintarU = () => { const l = [...new Set([20, 50, 80, 100, ...umbs])].sort((x, y) => x - y);
+    $('#pa-umbs', f0).innerHTML = l.map(u => `<button type="button" class="per-eti-t${umbs.has(u) ? ' on' : ''}" data-u="${u}">${u} %</button>`).join('');
+    f0.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { const u = Number(b.dataset.u); umbs.has(u) ? umbs.delete(u) : umbs.add(u); pintarU(); }); };
+  pintarU();
+  $('#pa-agregar-u', f0).onclick = () => { const v = Math.round(Number($('#pa-nuevo-u', f0).value)); if (v > 0 && v <= 300) { umbs.add(v); $('#pa-nuevo-u', f0).value = ''; pintarU(); } };
+  const guardar = () => D.perGuardarAjustes({ ...(aj.dueno ? { dueno: aj.dueno } : {}), correo_alertas: f.correo.value.trim(), umbrales: [...umbs].sort((x, y) => x - y), alertas: f.on.checked });
   $('#pa-c', f0).onclick = () => f0.remove();
-  f.onsubmit = async ev => { ev.preventDefault(); try { await guardar(); f0.remove(); } catch (err) { av(err.message); } };
+  f.onsubmit = async ev => { ev.preventDefault(); if (!umbs.size) { av('Elige al menos un porcentaje.'); return; } try { await guardar(); f0.remove(); recargar?.(); } catch (err) { av(err.message); } };
   $('#pa-prueba', f0).onclick = async ev => { const b = ev.target; b.disabled = true; av('Enviando…');
     try { await guardar(); await D.perProbarAlertas(); av(`Listo: revisa ${f.correo.value.trim()}.`); } catch (err) { av('No se pudo enviar: ' + err.message); } b.disabled = false; };
 }

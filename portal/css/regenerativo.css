@@ -10320,3 +10320,23 @@ html body .modal-cats .per-cat { grid-template-columns: 54px minmax(0, 1fr) 110p
   .per-fijo, .per-acl-fila { grid-template-columns: auto minmax(0, 1fr); } .per-fijo .mov-der, .per-acl-acc, .per-fijo .per-acl-acc { grid-column: 2; justify-content: flex-start; align-items: flex-start; }
   .pp-in { width: 96px; }
 }
+/* Presupuesto personal: periodo, vista mensual / anual y mapa mes a mes */
+.pp-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 16px; }
+.pp-mesnav { display: flex; align-items: center; gap: 8px; }
+.pp-mesnav b { font-weight: 400; font-size: 20px; min-width: 150px; text-align: center; text-transform: capitalize; }
+.pp-umb { border: 0; background: none; font: inherit; font-size: 13px; color: var(--petroleo); cursor: pointer; padding: 4px 0; text-align: left; }
+.pp-umbs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pp-mapa th, .pp-mapa td { white-space: nowrap; }
+.pp-mapa .pp-cn { min-width: 140px; }
+.pp-c { text-align: center; font-size: 12px; cursor: pointer; border-radius: 6px; padding: 6px 4px !important; min-width: 44px; }
+.pp-c.bien { background: #e3f4f8; color: #00586b; }
+.pp-c.cerca { background: #f4f4d6; color: #66661a; }
+.pp-c.mal { background: #f4e1e1; color: var(--vino); font-weight: 600; }
+.pp-c.fut { color: #bfbfbf; font-style: italic; }
+.pp-c.sin { color: var(--negro); }
+.pp-c:hover { outline: 1px solid var(--petroleo); }
+.pp-tot { display: flex; flex-direction: column; align-items: flex-end; }
+.pp-ley { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -1px; margin-right: 3px; }
+.pp-ley.bien { background: #e3f4f8; } .pp-ley.cerca { background: #f4f4d6; } .pp-ley.mal { background: #f4e1e1; } .pp-ley.fut { background: #fff; box-shadow: inset 0 0 0 1px #bfbfbf; }
+@media (max-width: 640px) { .pp-mesnav b { min-width: 0; font-size: 18px; } }
+.pp-periodo + .panel .od-cab h3, .per-vistas ~ .panel .od-cab h3 { white-space: normal; }

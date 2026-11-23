@@ -1,7 +1,7 @@
 // Alertas de las finanzas personales de Andrés a su correo personal (per_ajustes.correo_alertas).
 // La llama pg_cron cada día a las 7:00 a. m. de Bogotá (clave 'cron'). También se puede pedir desde el portal
 // (con la sesión del dueño) para una prueba: {prueba: true}.
-// Avisa una sola vez por cosa (per_alertas_enviadas): categoría al 80 % y al 100 % de lo esperado, pagos fijos que
+// Avisa una sola vez por cosa (per_alertas_enviadas): categoría al cruzar los % de aviso que él elige (per_ajustes.umbrales), pagos fijos que
 // vencen en 3 días o ya vencieron sin pagar, resumen del mes anterior el día 1 y proyectos con meta en 30 días.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -67,8 +67,15 @@ async function revisar(dueno: string, prueba: boolean) {
   for (const c of (cats || []).filter((c: any) => c.tipo === "gasto" && c.activa !== false)) {
     const e = esperado(c.id, mes), r = real(c.id, mes); if (!e) continue;
     const p = Math.round(r / e * 100);
-    if (p >= 100 && marcar(`cat:${c.id}:${mes}:100`)) cat.push(`<b>${esc(c.emoji || "")} ${esc(c.nombre)}</b>: ${cop(r)} de ${cop(e)} (${p} %). Ya pasaste lo esperado por ${cop(r - e)}.`);
-    else if (p >= (aj.avisar_pct || 80) && p < 100 && marcar(`cat:${c.id}:${mes}:${aj.avisar_pct || 80}`)) cat.push(`<b>${esc(c.emoji || "")} ${esc(c.nombre)}</b>: llevas ${cop(r)} de ${cop(e)} (${p} %). Te quedan ${cop(e - r)} este mes.`);
+    // Porcentajes de aviso que él eligió en la página: se avisa el más alto que se cruzó y no se había avisado
+    const umbrales = ((aj.umbrales && aj.umbrales.length) ? aj.umbrales : [aj.avisar_pct || 80, 100]).map(Number).filter((u: number) => u > 0).sort((a: number, b: number) => a - b);
+    const u = umbrales.filter((x: number) => p >= x).pop();
+    if (u == null) continue;
+    const yaMayor = umbrales.some((x: number) => x >= u && ya.has(`cat:${c.id}:${mes}:${x}`));
+    if (yaMayor && !prueba) continue;
+    marcar(`cat:${c.id}:${mes}:${u}`);
+    cat.push(p >= 100 ? `<b>${esc(c.emoji || "")} ${esc(c.nombre)}</b>: ${cop(r)} de ${cop(e)} (${p} %). Ya pasaste lo esperado por ${cop(r - e)}. Revisa tu presupuesto.`
+      : `<b>${esc(c.emoji || "")} ${esc(c.nombre)}</b>: ya vas en el ${p} % (${cop(r)} de ${cop(e)}). Te quedan ${cop(e - r)} este mes. Revisa tu presupuesto.`);
   }
   // 2. Pagos fijos: vencen en 3 días o ya vencieron, sin pago registrado este mes
   const fij: string[] = [];
