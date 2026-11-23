@@ -10273,3 +10273,5 @@ html body .modal-cats .per-cat { grid-template-columns: 54px minmax(0, 1fr) 110p
 .per-diezmo .dos-kpi > div { display: flex; flex-direction: column; gap: 4px; }
 .per-diezmo .dos-kpi b { font-size: 22px; font-weight: 400; }
 @media (max-width: 640px) { html body .modal-cats .per-cat { grid-template-columns: 48px minmax(0, 1fr); } .per-diezmo .dos-kpi { grid-template-columns: 1fr; } }
+.mov-ico.ahorro { color: #77771a; background: #f4f4d6 !important; }
+.mc-ico.ahorro { color: #77771a; }

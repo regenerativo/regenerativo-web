@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=158';
-import { cop, fecha, iso } from './formato.js?v=158';
-import { btnIco, ico } from './iconos.js?v=158';
-import { leerMonai } from './monai.js?v=158';
+import * as D from './datos.js?v=159';
+import { cop, fecha, iso } from './formato.js?v=159';
+import { btnIco, ico } from './iconos.js?v=159';
+import { leerMonai } from './monai.js?v=159';
 // Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
 const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };
@@ -32,6 +32,7 @@ const ICAT = {
   oficina: '<path d="M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M3 21h18M9 7h3M9 11h3M9 15h3"/>',
   legal: '<path d="M12 4v16M7 20h10M5 8h14M5 8l-2.5 6a3 3 0 0 0 5 0zM19 8l-2.5 6a3 3 0 0 0 5 0z"/>',
   materiales: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  ahorro: '<path d="M5 10.5a6.5 5.5 0 0 1 11.6-3.4l2.9-.6-.6 2.9c.7.9 1.1 2 1.1 3.1v1.5l-2 .5-.8 2.5H15l-.5-1.5h-4L10 17H7.8l-.8-2.6A5.5 5.5 0 0 1 5 10.5z"/><path d="M10 7.5h3"/>',
   formacion: '<path d="M3 9l9-4.5L21 9l-9 4.5z"/><path d="M7 11v4.5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V11M21 9v5"/>',
 };
 const claveCat = n => { n = (n || '').toLowerCase();
@@ -40,6 +41,7 @@ const claveCat = n => { n = (n || '').toLowerCase();
   if (/contab|legal|tr[áa]mite|notar/.test(n)) return 'legal';
   if (/material|muestra|maqueta/.test(n)) return 'materiales';
   if (/formaci|capacita|curso/.test(n)) return 'formacion';
+  if (/ahorro|reserva/.test(n)) return 'ahorro';
   return /honorario/.test(n) && !/n[óo]mina/.test(n) ? 'honorario' : /otro.*ingreso|otros/.test(n) ? 'otros' : /ingreso/.test(n) ? 'ingreso' : /n[óo]mina|recurso|salari/.test(n) ? 'nomina'
     : /herramienta/.test(n) ? 'herramienta' : /transporte/.test(n) ? 'transporte' : /vi[áa]tico|aliment/.test(n) ? 'viatico' : /deuda|banco|impuesto|cr[ée]dito/.test(n) ? 'deuda' : /suscrip/.test(n) ? 'suscripcion' : 'base'; };
 // Una sola regla para el valor y el saldo de un encargo (Inicio, Finanzas, el encargo y el cliente usan esta misma):
@@ -118,7 +120,9 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const SALARIO = cats.find(c => c.nombre === 'Nómina y honorarios')?.id;
   const esSal = x => x.categoria_id === SALARIO;
   // Los pagos al equipo (Nómina y honorarios, incluido lo que se paga Andrés) son un gasto más de la empresa
-  const ing = suma(delMes, 'ingreso'), gas = suma(delMes, 'gasto'), sal = suma(delMes.filter(esSal), 'gasto');
+  const ing = suma(delMes, 'ingreso'), gas = suma(delMes, 'gasto'), sal = suma(delMes.filter(esSal), 'gasto'), aho = suma(delMes, 'ahorro');
+  // Ahorro: plata que se aparta; no suma a los gastos de la operación
+  const catsAho = cats.filter(c => c.tipo === 'ahorro').map(c => ({ ...c, v: delMes.filter(x => x.categoria_id === c.id).reduce((t, x) => t + Number(x.valor), 0) }));
 
   // Valor de cada encargo: honorarios de la propuesta (o del documento web) + adendas aprobadas; menos lo recibido
   const porEnc = encargos.map(e => ({ e, ...cuentasEncargo(e, { props, docs, adics: adicsMan, movs }) }));
@@ -130,13 +134,13 @@ export async function vistaFinanzas(mesSel, listaSel) {
 
   // Todo el año del mes elegido: ingresos y egresos (gastos + salario) de cada mes
   const mesesAnio = Array.from({ length: 12 }, (_, i) => `${a}-${String(i + 1).padStart(2, '0')}`);
-  const serieAnio = mesesAnio.map(k => { const l = movs.filter(x => mesDe(x.fecha) === k && enLista(x)); return { k, ing: suma(l, 'ingreso'), gas: suma(l, 'gasto') }; });
-  const totAnio = serieAnio.reduce((t, x) => ({ ing: t.ing + x.ing, gas: t.gas + x.gas }), { ing: 0, gas: 0 });
+  const serieAnio = mesesAnio.map(k => { const l = movs.filter(x => mesDe(x.fecha) === k && enLista(x)); return { k, ing: suma(l, 'ingreso'), gas: suma(l, 'gasto'), aho: suma(l, 'ahorro') }; });
+  const totAnio = serieAnio.reduce((t, x) => ({ ing: t.ing + x.ing, gas: t.gas + x.gas, aho: t.aho + x.aho }), { ing: 0, gas: 0, aho: 0 });
   const nc = v => cop(v).replace(' COP', '');   // en la tabla del año el COP va en el encabezado
-  const tablaAnio = `<div class="tabla-cont"><table class="t-compacta t-anio"><thead><tr><th>Mes</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Balance <span class="sub">COP</span></th></tr></thead><tbody>
+  const tablaAnio = `<div class="tabla-cont"><table class="t-compacta t-anio"><thead><tr><th>Mes</th><th class="num">Ingresos</th><th class="num">Egresos</th><th class="num">Ahorro</th><th class="num">Balance <span class="sub">COP</span></th></tr></thead><tbody>
     ${serieAnio.map(x => { const [, mm] = x.k.split('-').map(Number); const b = x.ing - x.gas; const vacio = !x.ing && !x.gas;
-      return `<tr class="clic${x.k === mes && !modoAnio ? ' mes-actual' : ''}${vacio ? ' mes-vacio' : ''}" data-ir-mes="${x.k}"><td><span class="m-largo">${MESES[mm - 1]}</span><span class="m-corto">${MESES[mm - 1].slice(0, 3)}</span></td><td class="num ingreso">${x.ing ? nc(x.ing) : '—'}</td><td class="num gasto">${x.gas ? nc(x.gas) : '—'}</td><td class="num ${b < 0 ? 'xxx' : ''}">${vacio ? '—' : (b < 0 ? '−' : '') + nc(Math.abs(b))}</td></tr>`; }).join('')}
-    <tr class="total"><td>Total ${a}</td><td class="num">${nc(totAnio.ing)}</td><td class="num">${nc(totAnio.gas)}</td><td class="num ${totAnio.ing - totAnio.gas < 0 ? 'xxx' : ''}">${totAnio.ing - totAnio.gas < 0 ? '−' : ''}${nc(Math.abs(totAnio.ing - totAnio.gas))}</td></tr></tbody></table></div>`;
+      return `<tr class="clic${x.k === mes && !modoAnio ? ' mes-actual' : ''}${vacio ? ' mes-vacio' : ''}" data-ir-mes="${x.k}"><td><span class="m-largo">${MESES[mm - 1]}</span><span class="m-corto">${MESES[mm - 1].slice(0, 3)}</span></td><td class="num ingreso">${x.ing ? nc(x.ing) : '—'}</td><td class="num gasto">${x.gas ? nc(x.gas) : '—'}</td><td class="num ahorro">${x.aho ? nc(x.aho) : '—'}</td><td class="num ${b < 0 ? 'xxx' : ''}">${vacio ? '—' : (b < 0 ? '−' : '') + nc(Math.abs(b))}</td></tr>`; }).join('')}
+    <tr class="total"><td>Total ${a}</td><td class="num">${nc(totAnio.ing)}</td><td class="num">${nc(totAnio.gas)}</td><td class="num">${nc(totAnio.aho)}</td><td class="num ${totAnio.ing - totAnio.gas < 0 ? 'xxx' : ''}">${totAnio.ing - totAnio.gas < 0 ? '−' : ''}${nc(Math.abs(totAnio.ing - totAnio.gas))}</td></tr></tbody></table></div>`;
 
   // Todas las categorías de gasto, incluida Nómina y honorarios (pagos al equipo). En «Todo el año» el presupuesto mensual se multiplica por 12
   const catsGasto = cats.filter(c => c.tipo === 'gasto').map(c => ({ ...c, presupuesto_mensual: c.presupuesto_mensual == null ? null : Number(c.presupuesto_mensual) * (modoAnio ? 12 : 1), gastado: delMes.filter(x => x.categoria_id === c.id).reduce((s, x) => s + Number(x.valor), 0) }))
@@ -160,8 +164,8 @@ export async function vistaFinanzas(mesSel, listaSel) {
   const k = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   const balance = ing - gas;
   const listas = [['todo', 'General'], ['general', 'Gastos generales (sin proyecto)'], ...encargos.map(e => [e.id, e.nombre])];
-  const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))), ...colsIng.map(c => c.recibido));
-  const signo = x => x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : '';
+  const maxCat = Math.max(1, ...catsGasto.map(c => Math.max(c.gastado, Number(c.presupuesto_mensual || 0))), ...colsIng.map(c => c.recibido), ...catsAho.map(c => c.v));
+  const signo = x => x.tipo === 'ingreso' ? '+' : x.tipo === 'gasto' ? '−' : '';   // el ahorro va sin signo
   const H = 190;
   const subDe = x => x.subcategoria && x.subcategoria !== x.categoria?.nombre ? x.subcategoria : '';
   const desglose = catsGasto.filter(c => c.gastado).map(c => {
@@ -179,7 +183,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         <div class="pend-txt"><span class="sub">${chipOrigen(x)} ${conHora(x)}${x.medio ? ' · ' + esc(x.medio) : ''}${x.subcategoria ? ' · ' + esc(x.subcategoria) : ''}</span><b>${esc(x.descripcion || '')}</b>${x.nota_correo ? `<span class="pend-nota">${esc(x.nota_correo)}</span>` : ''}</div>
         <div class="pend-val ${x.tipo}">${signo(x)} ${cop(x.valor)}</div>
         <div class="pend-sel">
-          <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
+          <select data-f="tipo"><option value="gasto" ${x.tipo === 'gasto' ? 'selected' : ''}>Gasto de la empresa</option><option value="ingreso" ${x.tipo === 'ingreso' ? 'selected' : ''}>Ingreso</option><option value="ahorro" ${x.tipo === 'ahorro' ? 'selected' : ''}>Ahorro</option><option value="socio" ${x.tipo === 'socio' ? 'selected' : ''}>Personal / socio (no cuenta)</option></select>
           <select data-f="categoria_id">${opsCat(cats, x.tipo, x.categoria_id)}</select>
           <select data-f="encargo_id"><option value="">Regenerativo (general)</option>${encargos.map(e => `<option value="${e.id}" ${e.id === x.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select>
         </div>
@@ -193,7 +197,7 @@ export async function vistaFinanzas(mesSel, listaSel) {
         <div class="mon-total">
           <div class="mon-et">Balance de la operación</div>
           <div class="mon-cifra">${balance < 0 ? '−' : '+'}${cop(Math.abs(balance)).replace(' COP', '')}<span>COP</span></div>
-          <div class="mon-pills"><span class="pill-gas">− ${cop(gas)}</span><span class="pill-ing">+ ${cop(ing)}</span></div>
+          <div class="mon-pills"><span class="pill-gas">− ${cop(gas)}</span><span class="pill-ing">+ ${cop(ing)}</span><span class="pill-aho">${cop(aho)} ahorro</span></div>
           <div class="mon-sal"><span>Nómina y honorarios <b>${cop(sal)}</b> <small>(incluida en los gastos)</small></span></div>
           <div class="mon-filtros">
             <label class="per-sel"><span>Año</span><select id="sel-anio" aria-label="Año">${aniosDisp.map(y => `<option value="${y}" ${y === a ? 'selected' : ''}>${y}</option>`).join('')}</select></label>
@@ -218,10 +222,12 @@ export async function vistaFinanzas(mesSel, listaSel) {
             <div class="mon-val">${compacto(c.gastado)}</div>
             <div class="mon-pct ${exc ? 'xxx' : ''}">${p ? Math.round(c.gastado / p * 100) + ' %' : '—'}</div>
             <div class="mon-nom">${esc(c.nombre)}</div></button>`;
-        }).join('')}</div>
+        }).join('')}${catsAho.length ? '<span class="mon-sep" aria-hidden="true"></span>' : ''}${catsAho.map(c => `<button class="mon-col t-ahorro" data-cat="${c.id}" data-tipo="ahorro" title="Ver ahorro de ${esc(c.nombre)}">
+            <div class="mon-barra" style="height:${H}px"><div class="mon-gasto mon-ahorro" style="height:${Math.max(c.v ? 8 : 0, c.v / maxCat * H)}px"></div></div>
+            <div class="mon-ico">${icoCat(c.nombre)}</div><div class="mon-val">${compacto(c.v)}</div><div class="mon-pct">ahorro</div><div class="mon-nom">${esc(c.nombre)}</div></button>`).join('')}</div>
         ${desglose.length ? `<div class="mon-sub">${desglose.map(d => `<div class="ms-fila"><span class="ms-cat">${icoCat(d.nombre)} ${esc(d.nombre)}</span><span class="ms-chips">${d.subs.map(([n, v]) => `<span class="ms-chip">${esc(n)} <b>${compacto(v)}</b></span>`).join('')}</span></div>`).join('')}</div>` : ''}
-        <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
-        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" hidden style="display:none">Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
+        <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Presupuesto del mes &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <span class="ley-aho"></span>Ahorro${presTotal ? ` &nbsp;·&nbsp; ${Math.round(gas / presTotal * 100)} % del presupuesto` : ''}</p>
+        <div class="mon-mas">${pend.length ? `<a class="pend-aviso" href="#por-confirmar">${pend.length} por confirmar</a>` : ''}<button class="btn sec mini" id="importar-monai" hidden style="display:none">Importar MONAI</button><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn sec mini btn-aho" data-nuevo="ahorro">+ Ahorro</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
       </section>
       <section class="panel fin-lado">
         <div class="od-cab"><h3>Movimientos del ${modoAnio ? 'año' : 'mes'}</h3><span class="sub">${delMes.length}</span></div>
@@ -316,11 +322,11 @@ export async function vistaFinanzas(mesSel, listaSel) {
         .sort(masReciente);
       const tot = lst.reduce((t, m) => t + Number(m.valor), 0);
       const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
-      fondo.innerHTML = `<div class="modal modal-cat"><div class="mc-cab"><span class="mc-ico ${tipo}">${icoCat(sub || cat?.nombre)}</span><div><span class="lv-ceja">${tipo === 'ingreso' ? 'Ingresos' : 'Gastos'} · ${mesTxt}</span><h2>${esc(sub || cat?.nombre || '')}</h2></div><b class="mc-tot ${tipo}">${tipo === 'ingreso' ? '+' : '−'} ${cop(tot)}</b></div>
+      fondo.innerHTML = `<div class="modal modal-cat"><div class="mc-cab"><span class="mc-ico ${tipo}">${icoCat(sub || cat?.nombre)}</span><div><span class="lv-ceja">${tipo === 'ingreso' ? 'Ingresos' : tipo === 'ahorro' ? 'Ahorro' : 'Gastos'} · ${mesTxt}</span><h2>${esc(sub || cat?.nombre || '')}</h2></div><b class="mc-tot ${tipo}">${tipo === 'ingreso' ? '+' : tipo === 'ahorro' ? '' : '−'} ${cop(tot)}</b></div>
         ${lst.length ? `<div class="tabla-cont"><table class="t-compacta"><thead><tr><th>Fecha</th><th>Concepto</th><th class="col-opc">Encargo</th><th class="col-opc">Medio</th><th class="num">Valor</th></tr></thead><tbody>
           ${lst.map(m => `<tr class="clic" data-ed="${m.id}"><td>${esc(m.fecha.split('-').reverse().join('/'))}${m.hora ? ' · ' + horaTxt(m.hora) : ''}</td><td>${esc(m.descripcion || subDe(m) || '—')}</td><td class="col-opc">${esc(encargos.find(e => e.id === m.encargo_id)?.nombre || 'General')}</td><td class="col-opc">${esc(m.medio || '—')}</td><td class="num">${cop(m.valor)}</td></tr>`).join('')}
-          </tbody></table></div>` : `<p class="sub">No hay ${tipo === 'ingreso' ? 'ingresos' : 'gastos'} en ${esc(sub || cat?.nombre || '')} este mes.</p>`}
-        <div class="pie-modal"><button type="button" class="btn sec" data-cerrar>Cerrar</button><button type="button" class="btn" data-agregar><span class="mas">+</span> ${tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</button></div></div>`;
+          </tbody></table></div>` : `<p class="sub">No hay ${tipo === 'ingreso' ? 'ingresos' : tipo === 'ahorro' ? 'ahorro' : 'gastos'} en ${esc(sub || cat?.nombre || '')} este mes.</p>`}
+        <div class="pie-modal"><button type="button" class="btn sec" data-cerrar>Cerrar</button><button type="button" class="btn" data-agregar><span class="mas">+</span> ${tipo === 'ingreso' ? 'Ingreso' : tipo === 'ahorro' ? 'Ahorro' : 'Gasto'}</button></div></div>`;
       document.body.appendChild(fondo);
       fondo.onclick = ev => { if (ev.target === fondo || ev.target.closest('[data-cerrar]')) fondo.remove(); };
       fondo.querySelector('[data-agregar]').onclick = () => { fondo.remove(); modalMov(nuevo, cats, encargos, recargar); };
@@ -365,7 +371,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
   const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
   const opsCat = t => cats.filter(c => c.tipo === t).map(c => `<option value="${c.id}" ${c.id === m.categoria_id ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
   fondo.innerHTML = `<form class="modal" id="fm">
-    <h2>${m.id ? 'Editar' : 'Nuevo'} ${m.tipo === 'ingreso' ? 'ingreso' : m.tipo === 'socio' ? 'movimiento personal / socio' : 'gasto'}</h2>
+    <h2>${m.id ? 'Editar' : 'Nuevo'} ${m.tipo === 'ingreso' ? 'ingreso' : m.tipo === 'ahorro' ? 'ahorro' : m.tipo === 'socio' ? 'movimiento personal / socio' : 'gasto'}</h2>
     <div class="grilla-form">
       <div><label>Valor (COP)</label><input name="valor" inputmode="numeric" required value="${m.valor ? Number(m.valor).toLocaleString('es-CO').replace(/,/g, '.') : ''}"></div>
       <div><label>Fecha</label><input name="fecha" type="date" required value="${m.fecha || ''}"></div>
@@ -373,7 +379,7 @@ export function modalMov(m, cats, encargos, recargar, alCancelar) {
       ${m.tipo === 'socio' ? '' : `<div><label>Categoría</label><select name="categoria_id">${opsCat(m.tipo)}</select></div>
       <div><label>Subcategoría</label><select name="subcategoria"></select></div>`}
       <div class="ancho"><label>Pertenece a</label><select name="encargo_id"><option value="">Regenerativo (general)</option>${[['Encargos vigentes', encargos.filter(e => !['finalizado', 'cerrado'].includes(e.estado))], ['Finalizados y cancelados', encargos.filter(e => ['finalizado', 'cerrado'].includes(e.estado))]].filter(([, l]) => l.length).map(([g, l]) => `<optgroup label="${g}">${l.map(e => `<option value="${e.id}" ${e.id === m.encargo_id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</optgroup>`).join('')}</select>
-        <p class="sub" style="margin:4px 0 0">${m.tipo === 'gasto' ? 'Si el gasto es de un proyecto, elígelo: se descuenta de ese encargo y aparece en su módulo de Finanzas.' : 'Si el ingreso es de un proyecto, elígelo: cuenta como abono de ese encargo.'}</p></div>
+        <p class="sub" style="margin:4px 0 0">${m.tipo === 'ahorro' ? 'Normalmente el ahorro es de regenerativo (general).' : m.tipo === 'gasto' ? 'Si el gasto es de un proyecto, elígelo: se descuenta de ese encargo y aparece en su módulo de Finanzas.' : 'Si el ingreso es de un proyecto, elígelo: cuenta como abono de ese encargo.'}</p></div>
       <div class="ancho"><label>Concepto</label><input name="descripcion" value="${esc(m.descripcion || '')}" placeholder="${m.tipo === 'ingreso' ? 'Pago 50% al iniciar' : 'Taxi visita de obra'}"></div>
       <div><label>Medio de pago</label><input name="medio" list="medios" value="${esc(m.medio || '')}" placeholder="Transferencia, efectivo…"><datalist id="medios"><option value="Transferencia"><option value="Efectivo"><option value="Consignación"><option value="Tarjeta"><option value="Nequi"><option value="Daviplata"></datalist></div>
     </div>
@@ -477,8 +483,9 @@ async function modalCategorias(recargar) {
       <p class="sub">Cambia nombres y subcategorías, o desactiva las que ya no uses (sus movimientos se conservan).</p>
       <h3>Ingresos</h3>${cats.filter(c => c.tipo === 'ingreso').map(fila).join('')}
       <h3>Gastos</h3>${cats.filter(c => c.tipo === 'gasto').map(fila).join('')}
+      <h3>Ahorro</h3>${cats.filter(c => c.tipo === 'ahorro').map(fila).join('')}
       <h3>Nueva categoría</h3>
-      <form class="cat-fila nueva" id="cat-nueva"><select name="tipo"><option value="gasto">Gasto</option><option value="ingreso">Ingreso</option></select>
+      <form class="cat-fila nueva" id="cat-nueva"><select name="tipo"><option value="gasto">Gasto</option><option value="ingreso">Ingreso</option><option value="ahorro">Ahorro</option></select>
         <input name="nombre" placeholder="Nombre" required><input name="subcategorias" placeholder="Subcategorías separadas por coma"><span></span><button class="btn mini"><span class="mas">+</span> Agregar</button></form>
       <div class="aviso" id="cat-aviso"></div>
       <div class="pie-modal"><button type="button" class="btn" id="cat-listo">Listo</button></div></div>`;
@@ -560,7 +567,7 @@ function rendimiento({ movs, cats, porEnc, a, m, mes, suma }) {
   <div class="kpis kpis-4 rend-kpis">
     ${kpi('Resultado del mes', cop(ing - gas), ing ? `Margen ${pct(ing - gas, ing)} % · ${MESES[m - 1]}` : 'Sin ingresos este mes', ing - gas < 0 ? 'neg' : '')}
     ${kpi('Resultado del año', cop(yIng - yGas), yIng ? `Margen ${pct(yIng - yGas, yIng)} % · ${a}` : 'Sin ingresos en el año', yIng - yGas < 0 ? 'neg' : '')}
-    ${kpi('Caja estimada', cop(saldo), 'Todo lo recibido menos todo lo gastado')}
+    ${kpi('Caja estimada', cop(saldo), suma(movs, 'ahorro') ? `Recibido menos gastado · ${cop(suma(movs, 'ahorro'))} apartados en ahorro` : 'Todo lo recibido menos todo lo gastado')}
     ${kpi('Alcanza para', mesesCaja === null ? '—' : `${mesesCaja.toFixed(1)} meses`, prom3 ? `Gasto promedio ${cop(Math.round(prom3))}/mes` : 'Sin gastos recientes')}
   </div>
   <section class="panel"><h3>Observaciones</h3><ul class="rend-obs">${obs.map(([n, t]) => `<li class="${n}"><i></i><span>${esc(t)}</span></li>`).join('')}</ul></section>
