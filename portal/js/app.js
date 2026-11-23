@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=164';
-import * as M from './modulos.js?v=164';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=164';
-import { vistaPersonal } from './personal.js?v=164';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=164';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=164';
+import * as D from './datos.js?v=165';
+import * as M from './modulos.js?v=165';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=165';
+import { vistaPersonal } from './personal.js?v=165';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=165';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=165';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -127,15 +127,20 @@ async function revisarVersion() {
 setInterval(revisarVersion, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarVersion(); });
 
+let hashAntes = location.hash;
 async function ir() {
   clearTimeout(cargando);
   cargando = setTimeout(() => document.body.classList.add('cargando'), 150);
+  // Al cambiar de página se ve enseguida que está cargando (el contenido viejo se atenúa), aunque la nueva tarde en llegar
+  const base = h => (h || '').replace(/^#\/?/, '').split('/')[0];
+  if (base(location.hash) !== base(hashAntes)) document.body.classList.add('navegando');
+  hashAntes = location.hash;
   try { await irSeguro(); }
   catch (err) {
     console.error(err);
     raiz.innerHTML = `<div class="acceso"><div class="acceso-caja"><img src="/assets/33b2a586a276.png" alt=""><h1>Sin conexión</h1><p>${esc(msg(err))}</p>
       <button class="btn full" onclick="location.reload()">Reintentar</button></div></div>`;
-  } finally { clearTimeout(cargando); document.body.classList.remove('cargando'); }
+  } finally { clearTimeout(cargando); document.body.classList.remove('cargando', 'navegando'); }
 }
 
 async function irSeguro() {
@@ -485,11 +490,10 @@ const VERSICULOS = [   // tal como están en regenerativo.co/about
   { titulo: 'Together<br>is more.', mas: true, lead: 'Juntos es más.', texto: 'Creemos en lo colectivo: cada proyecto se hace con quienes lo habitan, con quienes lo materializan y con el lugar que lo recibe.', cita: 'Eclesiastés 4.9-12 RVC', verso: 'Dos son mejor que uno, porque sacan más provecho de sus esfuerzos. Si uno de ellos se tropieza, el otro lo levanta. ¡Pero ay de aquel que tropieza y no hay quien lo levante! Si dos se acuestan juntos, mutuamente se calientan; pero uno solo no puede calentarse. Uno solo puede ser vencido, pero dos presentan resistencia. El cordón de tres hilos no se rompe fácilmente.' },
 ];
 async function vistaInicio(s) {
-  const festLista = await D.festivos();
-  const fest = new Set(festLista.map(f => f.fecha));
-  const [lista, props, movs, honor, docs, coms, adicsMan] = await Promise.all([D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
+  const [festLista, lista, props, movs, honor, docs, coms, adicsMan] = await Promise.all([D.festivos(), D.encargos(), s.admin ? D.propuestas().catch(() => []) : [],
     s.facturacion ? D.finMovimientos().catch(() => []) : [], s.facturacion ? D.finPropuestasEncargos().catch(() => []) : [], s.facturacion ? D.finDocumentosCobro().catch(() => []) : [], s.admin ? D.comentariosAbiertos() : [],
     s.facturacion ? D.adicionalesTodos().catch(() => []) : []]);
+  const fest = new Set(festLista.map(f => f.fecha));
   const hoy = new Date().toISOString().slice(0, 10), mes = hoy.slice(0, 7);
   // Encargos vigentes: en curso y por iniciar (aprobados que aún no empiezan)
   const activos = lista.filter(e => e.estado === 'activo' || e.estado === 'por_iniciar').map(e => ({ ...e, tiempo: tiempoTranscurrido(e, fest) }));
