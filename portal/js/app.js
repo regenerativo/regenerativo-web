@@ -1,8 +1,8 @@
-import * as D from './datos.js?v=155';
-import * as M from './modulos.js?v=155';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=155';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=155';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=155';
+import * as D from './datos.js?v=156';
+import * as M from './modulos.js?v=156';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=156';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=156';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=156';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -2003,6 +2003,9 @@ async function leerPropuestaWord(archivo) {
   const filas = [...xml.getElementsByTagNameNS(W, 'tr')].map(f => [...f.getElementsByTagNameNS(W, 'tc')].map(texto));
   const h = filas.findIndex(c => c.some(x => /valor total/i.test(x)));
   if (h >= 0 && filas[h + 1]) { const v = filas[h + 1].filter(Boolean).at(-1) || ''; const n = v.replace(/[^\d]/g, ''); if (n) r.honorarios = Number(n); }
+  // Si hay descuento, el valor final es el de "COSTOS REGENERATIVO SIN IVA" (o el TOTAL del plan de pagos)
+  const final = filas.find(c => /costos? regenerativo/i.test(c[0] || '')) || filas.find(c => /^total$/i.test((c[0] || '').trim()));
+  if (final) { const n = (final.filter(Boolean).at(-1) || '').replace(/[^\d]/g, ''); if (n) r.honorarios = Number(n); }
   const m = archivo.name.toUpperCase().match(/SCREG_\d{5}/); if (m) r.codigo = m[0];
   return r;
 }
