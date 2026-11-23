@@ -10245,3 +10245,31 @@ html body .lv .cli-docs.plegado .cli-docs-cab p.sub { display: none; }
 .g-borrar.seguro { font-size: 12px; color: var(--vino); background: #f4e6e6; }
 #g-guarda { margin-left: 6px; }
 .solo-ver { display: inline-block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); border: 1px solid currentColor; border-radius: 999px; padding: 2px 10px; margin-right: 6px; }
+/* ---------- Finanzas personales ---------- */
+.per-emo { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; font-size: 14px; line-height: 1;
+  background: color-mix(in srgb, var(--c, #bfbfbf) 18%, #fff); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, #bfbfbf) 35%, transparent); }
+.mov-ico.per { background: none !important; }
+.per-etis { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.per-eti { font-size: 11px; color: var(--petroleo); background: #eef7fa; border-radius: 999px; padding: 1px 7px; }
+html body .lv .mon-col.t-ahorro .mon-gasto, .mon-ahorro { background: linear-gradient(180deg, #c9c94a, #8f8f1f) !important; }
+html body .lv .mon-col.t-ahorro .mon-pct { color: #77771a; }
+.pill-aho { background: #f4f4d6; color: #66661a; border-radius: 999px; padding: 4px 10px; font-size: 13px; }
+.ley-aho { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #a8a832; vertical-align: -1px; margin-right: 4px; }
+.mov-val.ahorro, td.num.ahorro, .mc-tot.ahorro { color: #77771a; }
+.btn-aho { border-color: #c9c94a !important; color: #66661a !important; }
+.ms-chip { border: 0; cursor: pointer; font: inherit; }
+.per-etis-ed { display: flex; flex-wrap: wrap; gap: 6px; max-height: 170px; overflow-y: auto; padding: 2px; }
+.per-eti-t { border: 1px solid var(--linea, #e4e4e2); background: #fff; border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; color: var(--negro); display: inline-flex; align-items: center; gap: 6px; }
+.per-eti-t.on { background: var(--petroleo); border-color: var(--petroleo); color: #fff; }
+.per-eti-t small { color: var(--gris); }
+.per-eti-t button { border: 0; background: none; cursor: pointer; color: var(--gris); font-size: 15px; padding: 0 2px; }
+.per-eti-sep { flex-basis: 100%; height: 0; border-top: 1px dotted #bfbfbf; margin: 2px 0; }
+.per-etis-lista { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.per-eti-nueva { display: flex; gap: 8px; }
+.per-eti-nueva input { flex: 1; min-width: 0; }
+html body .modal-cats .per-cat { grid-template-columns: 54px minmax(0, 1fr) 110px auto auto; }
+.per-emo-in { text-align: center; }
+.per-diezmo .dos-kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+.per-diezmo .dos-kpi > div { display: flex; flex-direction: column; gap: 4px; }
+.per-diezmo .dos-kpi b { font-size: 22px; font-weight: 400; }
+@media (max-width: 640px) { html body .modal-cats .per-cat { grid-template-columns: 48px minmax(0, 1fr); } .per-diezmo .dos-kpi { grid-template-columns: 1fr; } }

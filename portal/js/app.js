@@ -1,8 +1,9 @@
-import * as D from './datos.js?v=156';
-import * as M from './modulos.js?v=156';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=156';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=156';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=156';
+import * as D from './datos.js?v=157';
+import * as M from './modulos.js?v=157';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=157';
+import { vistaPersonal } from './personal.js?v=157';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=157';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=157';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -158,7 +159,7 @@ async function irSeguro() {
     if (p.length === 0) return esCliente ? await vistaEncargos(s) : await vistaInicio(s);
     if (p[0] === 'encargos' && !p[1]) return await vistaEncargos(s);
     if (p[0] === 'encargos' && p[1]) return await vistaExpediente(s, decodeURIComponent(p[1]), p[2] || 'resumen', p[3]);
-    const RESERVADAS = ['marketing', 'folders', 'finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
+    const RESERVADAS = ['personal', 'marketing', 'folders', 'finanzas', 'base-precios', 'ajustes', 'propuestas', 'acceso', 'recuperar', 'nueva-clave', 'encargos'];
     if (p[0] && !RESERVADAS.includes(p[0])) return await vistaExpediente(s, decodeURIComponent(p[0]), p[1] || 'resumen', p[2]);
     if (p[0] === 'finanzas' && s.facturacion) {
       const pedido = location.hash;
@@ -167,6 +168,14 @@ async function irSeguro() {
       const v = await vistaFinanzas(p[1], p[2]);
       if (location.hash !== pedido) return;   // si ya se pidió otro mes, esta respuesta vieja no se pinta
       marco(s, { titulo: 'Finanzas', ruta: 'Portal · solo perfil de facturación', activo: 'finanzas', html: v.html, acciones: v.rend ? '' : `<span class="fin-vista ${v.vista.cls}" title="${esc(v.vista.titulo)}">${esc(v.vista.txt)}</span>` + btnIco('ajustes', 'Ajustes de finanzas', 'id="fin-ajustes"'), eyebrow: v.eyebrow });
+      v.montar(ir); return;
+    }
+    // Finanzas personales: solo la cuenta de Andrés (y la base solo le muestra sus propias filas)
+    if (p[0] === 'personal' && esDueno(s)) {
+      const pedido = location.hash;
+      const v = await vistaPersonal(p[1]);
+      if (location.hash !== pedido) return;
+      marco(s, { titulo: 'Finanzas personales', ruta: 'Finanzas personales', activo: 'personal', html: v.html, eyebrow: v.eyebrow, acciones: btnIco('ajustes', 'Ajustes de finanzas personales', 'id="per-ajustes"') });
       v.montar(ir); return;
     }
     if (p[0] === 'base-precios' && s.admin) return await vistaBasePrecios(s, p[1]);
@@ -184,6 +193,9 @@ async function irSeguro() {
   }
 }
 
+// Finanzas personales: solo la cuenta de Andrés
+const esDueno = s => (s?.email || '').toLowerCase() === 'apardo@regenerativo.co';
+
 // ---------------- Marco general ----------------
 let firmaMarco = '', hashMarco = '';
 function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo = '', enc = null, h1 = '', bajada = '', eyebrow = '' }) {
@@ -195,6 +207,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     ${s.admin ? `<a href="#/propuestas" class="${activo === 'propuestas' ? 'activo' : ''}">${icoMenu('propuestas')}<span>Propuestas</span></a>` : ''}
     ${s.soloFinanzas ? '' : `<a href="#/encargos" class="${activo === 'encargos' ? 'activo' : ''}">${icoMenu('encargos')}<span>Encargos</span></a>`}
     ${s.facturacion ? `<a href="#/finanzas" class="${activo === 'finanzas' ? 'activo' : ''}">${icoMenu('finanzas')}<span>Finanzas</span></a>` : ''}
+    ${esDueno(s) ? `<a href="#/personal" class="${activo === 'personal' ? 'activo' : ''}">${icoMenu('personal')}<span>Finanzas personales</span></a>` : ''}
     ${s.admin ? `<a href="#/marketing" class="${activo === 'marketing' ? 'activo' : ''}">${icoMenu('marketing')}<span>Marketing</span></a>` : ''}
     ${s.admin ? `<a href="#/folders" class="${activo === 'folders' ? 'activo' : ''}">${icoMenu('folders')}<span>Folders</span></a>` : ''}
     ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">${icoMenu('base')}<span>Base de precios</span></a>` : ''}

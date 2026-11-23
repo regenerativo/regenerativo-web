@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=156';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=157';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -505,6 +505,27 @@ export const finCrearCategoria = cat => q(c => c.from('fin_categorias').insert(c
 // MONAI: vista previa (aplicar = false) o importación (true) de la exportación CSV
 export const finImportarMonai = (filas, aplicar) => q(c => c.rpc('importar_monai', { p_filas: filas, p_aplicar: aplicar })).then(ok);
 
+// ---- Finanzas personales (solo el dueño ve sus filas; RLS por dueno = auth.uid()) ----
+export const perCategorias = () => q(c => c.from('per_categorias').select('*').order('orden')).then(ok);
+export const perEtiquetas = () => q(c => c.from('per_etiquetas').select('*').order('nombre')).then(ok);
+export const perMovimientos = () => q(async c => {   // en páginas de 1000 (límite del servidor)
+  const out = [];
+  for (let i = 0; ; i += 1000) { const { data, error } = await c.from('per_movimientos').select('*').order('fecha', { ascending: false }).order('id').range(i, i + 999); if (error) throw new Error(error.message); out.push(...data); if (data.length < 1000) return out; }
+});
+export const perGuardar = m => q(c => m.id ? c.from('per_movimientos').update(m).eq('id', m.id) : c.from('per_movimientos').insert(m)).then(ok);
+export const perBorrar = id => q(c => c.from('per_movimientos').delete().eq('id', id)).then(ok);
+export const perActualizarCategoria = (id, cambios) => q(c => c.from('per_categorias').update(cambios).eq('id', id)).then(ok);
+export const perCrearCategoria = cat => q(c => c.from('per_categorias').insert(cat)).then(ok);
+export const perCrearEtiqueta = nombre => q(c => c.from('per_etiquetas').insert({ nombre })).then(ok);
+export const perBorrarEtiqueta = id => q(c => c.from('per_etiquetas').delete().eq('id', id)).then(ok);
+// Importación de MONAI: inserta/actualiza por ref (id de MONAI) y quita los de MONAI que ya no están en el archivo
+export async function perImportar({ nuevos, cambios, quitar }) {
+  const c = await cliente();
+  for (let i = 0; i < nuevos.length; i += 300) { const { error } = await c.from('per_movimientos').insert(nuevos.slice(i, i + 300)); if (error) throw new Error(error.message); }
+  for (const x of cambios) { const { id, ...r } = x; const { error } = await c.from('per_movimientos').update(r).eq('id', id); if (error) throw new Error(error.message); }
+  for (let i = 0; i < quitar.length; i += 300) { const { error } = await c.from('per_movimientos').delete().in('id', quitar.slice(i, i + 300)); if (error) throw new Error(error.message); }
+}
+
 // Tiempo real: avisa cuando cambia algo en la base de datos (propuestas, encargos, finanzas, comentarios…)
 let _canal = null;
 export async function escucharCambios(cb) {
@@ -514,7 +535,7 @@ export async function escucharCambios(cb) {
   if (!data?.session) return;
   c.realtime.setAuth(data.session.access_token);
   _canal = c.channel('portal-cambios');
-  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables', 'marketing_ideas']
+  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables', 'marketing_ideas', 'per_movimientos', 'per_categorias']
     .forEach(t => _canal.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => cb(t)));
   _canal.subscribe();
 }
