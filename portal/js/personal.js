@@ -1,9 +1,9 @@
 // Finanzas personales de Andrés: lo mismo que tenía en MONAI (categorías y etiquetas en inglés, como él las escribe),
 // con Movimientos y Rendimiento como las finanzas de regenerativo. Tres tipos: ingreso, gasto y ahorro (el ahorro no cuenta como gasto).
-import * as D from './datos.js?v=157';
-import { cop, fecha, iso } from './formato.js?v=157';
-import { btnIco, ico } from './iconos.js?v=157';
-import { barras } from './finanzas.js?v=157';
+import * as D from './datos.js?v=158';
+import { cop, fecha, iso } from './formato.js?v=158';
+import { btnIco, ico } from './iconos.js?v=158';
+import { barras } from './finanzas.js?v=158';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -86,7 +86,6 @@ export async function vistaPersonal(mesSel) {
       <label class="per-sel per-proy"><span>Etiqueta</span><select id="sel-eti"><option value="">Todas</option>${etis.map(t => `<option value="${esc(t.nombre)}" ${t.nombre === ESTADO.eti ? 'selected' : ''}>#${esc(t.nombre)}</option>`).join('')}</select></label></div>`;
 
   const htmlMov = `
-    ${!movs.length ? `<div class="aviso-ej">Todavía no hay movimientos. Usa <b>Importar MONAI</b> en el engranaje de arriba para traer tu historial.</div>` : ''}
     <div class="fin-mon">
       <section class="mon">
         <div class="mon-total">
@@ -252,7 +251,6 @@ function ajustes(cats, etis, movs, mesTxt, recargar) {
       <button type="button" class="aj-rap" data-op="pres"><span>${ico('excel')}</span><b>Presupuesto del mes</b><small>Tope de gasto por categoría</small></button>
       <button type="button" class="aj-rap" data-op="cats"><span>${ico('editar')}</span><b>Categorías</b><small>Nombre, tipo y emoji</small></button>
       <button type="button" class="aj-rap" data-op="etis"><span>${ico('editar')}</span><b>Etiquetas</b><small>Crear o quitar etiquetas</small></button>
-      <button type="button" class="aj-rap" data-op="monai"><span>${ico('subir')}</span><b>Importar MONAI</b><small>Subir la exportación CSV</small></button>
     </div></div>`;
   const cerrar = () => { f.remove(); removeEventListener('hashchange', cerrar); };
   addEventListener('hashchange', cerrar);
@@ -261,7 +259,7 @@ function ajustes(cats, etis, movs, mesTxt, recargar) {
     if (op === 'pres') modalPresupuesto(cats.filter(c => c.tipo === 'gasto' && c.activa !== false), recargar);
     if (op === 'cats') modalCategorias(recargar);
     if (op === 'etis') modalEtiquetas(movs, recargar);
-    if (op === 'monai') modalMonai(cats, etis, movs, recargar); };
+  };
   document.body.appendChild(f);
 }
 function modalPresupuesto(cats, recargar) {
@@ -302,7 +300,7 @@ async function modalEtiquetas(movs, recargar) {
   const pintar = async () => {
     const etis = await D.perEtiquetas();
     const uso = t => movs.filter(x => (x.etiquetas || []).includes(t)).length;
-    f.innerHTML = `<div class="modal ancho"><h2>Etiquetas</h2><p class="sub">Igual que en MONAI: un movimiento puede tener varias. Quitar una etiqueta no la borra de los movimientos que ya la tienen.</p>
+    f.innerHTML = `<div class="modal ancho"><h2>Etiquetas</h2><p class="sub">Un movimiento puede tener varias. Quitar una etiqueta no la borra de los movimientos que ya la tienen.</p>
       <form class="per-eti-nueva" id="pe-n"><input name="n" placeholder="#nueva_etiqueta" required><button class="btn mini"><span class="mas">+</span> Crear</button></form>
       <div class="per-etis-lista">${etis.map(t => `<span class="per-eti-t">#${esc(t.nombre)} <small>${uso(t.nombre)}</small><button type="button" data-quitar="${t.id}" aria-label="Quitar ${esc(t.nombre)}">×</button></span>`).join('')}</div>
       <div class="aviso" id="pe-av"></div><div class="pie-modal"><button type="button" class="btn" id="pe-listo">Listo</button></div></div>`;

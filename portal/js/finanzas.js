@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=157';
-import { cop, fecha, iso } from './formato.js?v=157';
-import { btnIco, ico } from './iconos.js?v=157';
-import { leerMonai } from './monai.js?v=157';
+import * as D from './datos.js?v=158';
+import { cop, fecha, iso } from './formato.js?v=158';
+import { btnIco, ico } from './iconos.js?v=158';
+import { leerMonai } from './monai.js?v=158';
 // Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
 const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };
@@ -64,9 +64,9 @@ const PEND = { todos: false, origen: '' };
 const GRAF = { vista: 'anio' };
 const REND = { ver: false };   // Finanzas: 'Movimientos' o 'Rendimiento' (solo administración)   // gráfica de Finanzas: 'anio' (12 meses del año) o 'seis' (últimos 6 meses)
 // De dónde viene cada movimiento: correo (lectura automática), MONAI (importación) o escrito a mano en el portal
-const ORIGENES = { correo: 'Correo', monai: 'MONAI', portal: 'Portal' };
-const origenDe = x => x.origen === 'correo' || x.origen === 'monai' ? x.origen : 'portal';
-const chipOrigen = x => `<span class="origen o-${origenDe(x)}" title="${origenDe(x) === 'portal' ? 'Escrito a mano en el portal' : origenDe(x) === 'monai' ? 'Importado de MONAI' : 'Leído del correo'}">${ORIGENES[origenDe(x)]}</span>`;
+const ORIGENES = { correo: 'Correo', portal: 'Portal' };
+const origenDe = x => x.origen === 'correo' ? 'correo' : 'portal';
+const chipOrigen = x => `<span class="origen o-${origenDe(x)}" title="${origenDe(x) === 'portal' ? 'Registrado en el portal' : 'Leído del correo'}">${ORIGENES[origenDe(x)]}</span>`;
 const opsCat = (cats, tipo, sel) => tipo === 'socio' ? '<option value="">—</option>' : `<option value="" ${sel ? '' : 'selected'} disabled>Elige categoría</option>` + cats.filter(c => c.tipo === tipo).map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('');
 // Sugerencia para lo que llega por correo: el último movimiento confirmado del mismo comercio (Uber, Adobe, Claude…) dice su categoría y proyecto
 const RUIDO = new Set(['DL', 'DLO', 'BOLD', 'SA', 'SAS', 'PAGO', 'TRANSFERENCIA', 'COMPRA', 'RIDES', 'THE', 'CON', 'DEL', 'LOS', 'LAS']);
@@ -296,7 +296,6 @@ export async function vistaFinanzas(mesSel, listaSel) {
         <div class="aj-rapidos">
           <button type="button" class="aj-rap" data-op="pres"><span>${ico('excel')}</span><b>Presupuesto del mes</b><small>Cuánto se planea gastar en cada categoría</small></button>
           <button type="button" class="aj-rap" data-op="cats"><span>${ico('editar')}</span><b>Categorías</b><small>Nombres y subcategorías de ingresos y gastos</small></button>
-          <button type="button" class="aj-rap" data-op="monai"><span>${ico('subir')}</span><b>Importar MONAI</b><small>Subir la exportación CSV de MONAI</small></button>
         </div></div>`;
       const cerrar = () => { f.remove(); removeEventListener('hashchange', cerrar); };
       addEventListener('hashchange', cerrar);
