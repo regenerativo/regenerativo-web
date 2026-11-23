@@ -10214,7 +10214,7 @@ html body .lv td.prop-nombre:hover b { color: var(--lv-gris, #999); }
 /* Celular: volver al portal arriba a la izquierda (dentro de un encargo) */
 html body .lv .lv-volver-top { display: none; }
 @media (max-width: 1023px) {
-  html body .lv .lv-volver-top { display: flex; flex: none; align-items: center; justify-content: center; width: 36px; height: 36px; margin: 0 -6px 0 -10px; border-radius: 99px; color: #1e221d; }
+  html body .lv .lv-volver-top { display: flex; flex: none; align-items: center; justify-content: center; width: 44px; height: 44px; margin: 0 -10px 0 -14px; position: relative; z-index: 2; touch-action: manipulation; border-radius: 99px; color: #1e221d; }
   html body .lv .lv-volver-top:active { transform: scale(0.92); }
 }
 /* Celular: el botón de cada recuadro siempre al lado del título (como + Gasto / + Ingreso) */

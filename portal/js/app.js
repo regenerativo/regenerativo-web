@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=163';
-import * as M from './modulos.js?v=163';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=163';
-import { vistaPersonal } from './personal.js?v=163';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=163';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=163';
+import * as D from './datos.js?v=164';
+import * as M from './modulos.js?v=164';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=164';
+import { vistaPersonal } from './personal.js?v=164';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=164';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=164';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -294,6 +294,8 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   }
   firmaMarco = firma;
   raiz.innerHTML = htmlMarco;
+  // Flecha de volver (celular y iPad): va siempre al inicio del portal, aunque el navegador no siga el enlace
+  raiz.querySelectorAll('.lv-volver-top').forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); if (location.hash === '#/' || location.hash === '') ir(); else location.hash = '#/'; }));
   if (otraPagina) scrollTo(0, 0);
   $('#salir').onclick = async () => { await D.dejarDeEscuchar(); await D.salir(); location.hash = '#/acceso'; };
   armarTabs();
