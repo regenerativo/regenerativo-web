@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=165';
-import * as M from './modulos.js?v=165';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=165';
-import { vistaPersonal } from './personal.js?v=165';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=165';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=165';
+import * as D from './datos.js?v=166';
+import * as M from './modulos.js?v=166';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=166';
+import { vistaPersonal } from './personal.js?v=166';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=166';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=166';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -127,7 +127,7 @@ async function revisarVersion() {
 setInterval(revisarVersion, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) revisarVersion(); });
 
-let hashAntes = location.hash;
+var hashAntes = location.hash;   // var: ir() se llama antes de esta línea al abrir el portal
 async function ir() {
   clearTimeout(cargando);
   cargando = setTimeout(() => document.body.classList.add('cargando'), 150);
