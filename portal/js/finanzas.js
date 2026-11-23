@@ -1,8 +1,8 @@
 // Finanzas de regenerativo: ingresos, gastos y presupuesto de la empresa. Solo perfil de facturación.
-import * as D from './datos.js?v=161';
-import { cop, fecha, iso } from './formato.js?v=161';
-import { btnIco, ico } from './iconos.js?v=161';
-import { leerMonai } from './monai.js?v=161';
+import * as D from './datos.js?v=162';
+import { cop, fecha, iso } from './formato.js?v=162';
+import { btnIco, ico } from './iconos.js?v=162';
+import { leerMonai } from './monai.js?v=162';
 // Fecha y hora del movimiento: 17/11/2026 · 8:06 p. m.
 const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const horaTxt = h => { const [H, M] = String(h).split(':').map(Number); return `${(H % 12) || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'a. m.' : 'p. m.'}`; };

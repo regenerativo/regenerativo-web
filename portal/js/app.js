@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=161';
-import * as M from './modulos.js?v=161';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=161';
-import { vistaPersonal } from './personal.js?v=161';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=161';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=161';
+import * as D from './datos.js?v=162';
+import * as M from './modulos.js?v=162';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=162';
+import { vistaPersonal } from './personal.js?v=162';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=162';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=162';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -261,7 +261,21 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   // el menú, la barra de arriba y las pestañas se quedan quietos y el indicador se desliza a la opción nueva.
   const firma = [s.email, enc ? 'encargo:' + enc.href : 'general:' + (enlacesGen.match(/href="[^"]*"/g) || []).join(',')].join('|');
   const lvViejo = raiz.querySelector(':scope > .lv');
+  // Sección = la página sin el periodo ni el detalle (#/personal, #/finanzas, #/encargo/finanzas…)
+  const seccion = h => { const q = (h || '').replace(/^#\/?/, '').split('?')[0].split('/').filter(Boolean); return q[0] && !/^(personal|finanzas|marketing|propuestas|encargos|ajustes|folders|base-precios)$/.test(q[0]) ? q.slice(0, 2).join('/') : (q[0] || ''); };
+  const mismaSeccion = seccion(location.hash) === seccion(hashMarco);
   const otraPagina = location.hash !== hashMarco; hashMarco = location.hash;   // al entrar a otra página (o a un encargo) se empieza arriba
+  // Misma sección (un refresco, otro mes, otra pestaña de la página): solo cambia el contenido, sin animación ni salto
+  if (lvViejo && firmaMarco === firma && mismaSeccion && lvViejo.querySelector('.main .cont')) {
+    const t = document.createElement('div'); t.innerHTML = htmlMarco;
+    const mainN = t.querySelector('.lv .main'), mainV = lvViejo.querySelector('.main');
+    const y = scrollY;
+    ['.titulo-pag', '.cont'].forEach(sel => { const a = mainV.querySelector(sel), b = mainN.querySelector(sel); if (a && b && a.innerHTML !== b.innerHTML) a.innerHTML = b.innerHTML; });
+    const navV = lvViejo.querySelector('.lv-lado > .lv-nav'), navN = t.querySelector('.lv-lado > .lv-nav');
+    if (navV && navN && navV.innerHTML !== navN.innerHTML) { navV.innerHTML = navN.innerHTML; armarTabs(); moverIndicador(); }
+    if (!otraPagina || Math.abs(scrollY - y) > 2) scrollTo(0, y);
+    return;
+  }
   if (lvViejo && firmaMarco === firma && lvViejo.querySelector('.main')) {
     const t = document.createElement('div'); t.innerHTML = htmlMarco;
     const lvN = t.querySelector('.lv');

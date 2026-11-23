@@ -1,9 +1,9 @@
 // Finanzas personales de Andrés: lo mismo que tenía en MONAI (categorías y etiquetas en inglés, como él las escribe),
 // con Movimientos y Rendimiento como las finanzas de regenerativo. Tres tipos: ingreso, gasto y ahorro (el ahorro no cuenta como gasto).
-import * as D from './datos.js?v=161';
-import { cop, fecha, iso } from './formato.js?v=161';
-import { btnIco, ico } from './iconos.js?v=161';
-import { barras } from './finanzas.js?v=161';
+import * as D from './datos.js?v=162';
+import { cop, fecha, iso } from './formato.js?v=162';
+import { btnIco, ico } from './iconos.js?v=162';
+import { barras } from './finanzas.js?v=162';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -24,7 +24,7 @@ const num = v => Number(String(v ?? '').replace(/\D/g, '')) || 0;
 const miles = v => v ? Math.round(v).toLocaleString('es-CO').replace(/,/g, '.') : '';
 
 export async function vistaPersonal(mesSel) {
-  const [cats, etis, movs, pres, fijos, proys, items, aj] = await Promise.all([D.perCategorias(), D.perEtiquetas(), D.perMovimientos(), D.perPresupuesto(), D.perFijos(), D.perProyectos(), D.perItems(), D.perAjustes().catch(() => null)]);
+  const [cats, etis, movs, pres, fijos, proys, items, aj, notas] = await Promise.all([D.perCategorias(), D.perEtiquetas(), D.perMovimientos(), D.perPresupuesto(), D.perFijos(), D.perProyectos(), D.perItems(), D.perAjustes().catch(() => null), D.perNotas().catch(() => null)]);
   // Esperado de una categoría en un mes: el ajuste de ese mes o, si no hay, el plan base
   const espDe = (cid, k) => { const o = pres.find(p => p.categoria_id === cid && p.mes === k); const b = pres.find(p => p.categoria_id === cid && !p.mes); return Number((o ?? b)?.valor || 0); };
   const catDe = id => cats.find(c => c.id === id);
@@ -127,7 +127,7 @@ export async function vistaPersonal(mesSel) {
     <section class="panel panel-anio"><div class="od-cab"><h3>Ingresos y gastos</h3><span class="graf-vistas" role="group" aria-label="Periodo"><button type="button" class="chip-f${ESTADO.graf === 'anio' ? ' on' : ''}" data-graf="anio">Año ${a}</button><button type="button" class="chip-f${ESTADO.graf === 'seis' ? ' on' : ''}" data-graf="seis">6 meses</button></span></div>
       ${ESTADO.graf === 'anio' ? barras(serieAnio) + tablaAnio : barras(serie6)}</section>`;
 
-  const ctx = { movs, cats, etis, pres, fijos, proys, items, aj, a, m, mes, modoAnio, suma, catDe, espDe };
+  const ctx = { movs, cats, etis, pres, fijos, proys, items, aj, notas, a, m, mes, modoAnio, suma, catDe, espDe };
   const html = selector + (ESTADO.vista === 'rend' ? rendimiento(ctx) : ESTADO.vista === 'pres' ? vistaPres(ctx) : ESTADO.vista === 'proy' ? vistaProy(ctx) : htmlMov);
   return { html, eyebrow, mesTxt, rend: ESTADO.vista !== 'mov', montar: recargar => {
     const ir = (y, mm) => { location.hash = `#/personal/${mm ? `${y}-${mm}` : y}`; };
@@ -346,7 +346,7 @@ async function modalEtiquetas(movs, recargar) {
 
 
 // ── Presupuesto: esperado contra real por categoría (como el Gantt), pagos fijos y proyección del año y del lustro ──
-function vistaPres({ movs, cats, fijos, pres, aj, a, m, mes, modoAnio, suma, espDe }) {
+function vistaPres({ movs, cats, fijos, pres, aj, notas, a, m, mes, modoAnio, suma, espDe }) {
   const activas = cats.filter(c => c.activa !== false);
   const delM = k => movs.filter(x => mesDe(x.fecha) === k);
   const realCat = (cid, k) => delM(k).filter(x => x.categoria_id === cid).reduce((s, x) => s + Number(x.valor), 0);
@@ -411,7 +411,7 @@ function vistaPres({ movs, cats, fijos, pres, aj, a, m, mes, modoAnio, suma, esp
     ${lustro.map(x => `<tr><td>${x.y}</td><td class="num ingreso">${nc(x.ingY)}</td><td class="num gasto">${nc(x.gasY)}</td><td class="num ahorro">${nc(x.ahoY)}</td><td class="num ${x.d < 0 ? 'xxx' : ''}">${nc(x.d)}</td><td class="num"><b>${nc(x.acu)}</b></td><td class="num col-opc">${nc(x.acuT)}</td></tr>`).join('')}
     </tbody></table></div>${!baseMes('ingreso') && !baseMes('gasto') ? '<p class="sub">Llena el plan base para que el lustro tenga números.</p>' : ''}</section>`;
   const umb = (aj?.umbrales?.length ? aj.umbrales : [80, 100]).slice().sort((x, y) => x - y);
-  const periodo = `<div class="pp-periodo"><div class="pp-mesnav"><button type="button" class="btn sec mini ico" data-pmes="-1" aria-label="Anterior">‹</button><b>${ESTADO.presVista === 'anio' ? a : `${MESES[m - 1]} ${a}`}</b><button type="button" class="btn sec mini ico" data-pmes="1" aria-label="Siguiente">›</button></div>
+  const periodo = `<div class="pp-periodo"><div class="pp-mesnav"><button type="button" class="btn sec mini ico" data-pmes="-1" aria-label="Anterior" title="Anterior">${FLECHA}</button><b>${ESTADO.presVista === 'anio' ? a : `${MESES[m - 1]} ${a}`}</b><button type="button" class="btn sec mini ico pp-sig" data-pmes="1" aria-label="Siguiente" title="Siguiente">${FLECHA}</button></div>
     <span class="graf-vistas" role="group" aria-label="Vista"><button type="button" class="chip-f${ESTADO.presVista === 'mes' ? ' on' : ''}" data-pvista="mes">Mensual</button><button type="button" class="chip-f${ESTADO.presVista === 'anio' ? ' on' : ''}" data-pvista="anio">Anual</button></span>
     <button type="button" class="pp-umb" id="pp-umb" title="Cambiar cuándo te aviso">${aj?.alertas === false ? 'Alertas apagadas' : `Aviso al correo al ${umb.map(u => u + ' %').join(', ').replace(/, ([^,]*)$/, ' y $1')}`} · cambiar</button></div>`;
   if (ESTADO.presVista === 'anio') {
@@ -432,17 +432,33 @@ function vistaPres({ movs, cats, fijos, pres, aj, a, m, mes, modoAnio, suma, esp
         return `<tr><td class="pp-cn">${emoji(c)} ${esc(c.nombre)}</td>${Array.from({ length: 12 }, (_, i) => celda(c, mkMes(a, i + 1))).join('')}<td class="num pp-tot ${t === 'gasto' && eA && rA > eA ? 'xxx' : ''}">${compacto(rA)}<span class="sub">de ${compacto(eA)}</span></td></tr>`; }).join('')}`; };
     const mapa = `<section class="panel"><h3>Mes a mes</h3><p class="sub">Cada casilla es lo real del mes. <span class="pp-ley bien"></span>dentro de lo esperado &nbsp;<span class="pp-ley cerca"></span>cerca del tope &nbsp;<span class="pp-ley mal"></span>se pasó &nbsp;<span class="pp-ley fut"></span>lo esperado de los meses que vienen. Toca una casilla para ver ese mes.</p>
       <div class="tabla-cont"><table class="t-compacta pp-mapa"><thead><tr><th>Categoría</th>${MESES.map(n => `<th class="num">${n.slice(0, 3)}</th>`).join('')}<th class="num">Año</th></tr></thead><tbody>${grupoA('ingreso', 'Ingresos')}${grupoA('gasto', 'Gastos')}${grupoA('ahorro', 'Ahorro')}</tbody></table></div></section>`;
-    return periodo + resA + mapa + anual + lus;
+    return periodo + resA + mapa + anual + lus + notasHtml(notas);
   }
-  return periodo + resumen + tabla + fijosHtml;
+  return periodo + resumen + tabla + fijosHtml + notasHtml(notas);
 }
 const nc = v => (v < 0 ? '−' : '') + cop(Math.abs(v)).replace(' COP', '');
+const FLECHA = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>';
+// Notas libres del presupuesto: textos sueltos, sin pago ni categoría
+function notasHtml(notas) {
+  if (notas == null) return '';
+  const cuando = n => new Date(n.actualizado || n.creado).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `<section class="panel pp-notas"><div class="od-cab"><h3>Notas</h3><span class="sub">${notas.length || ''}</span></div>
+    <form id="nota-nueva" class="pp-nota-nueva"><textarea name="texto" rows="2" placeholder="Escribe una nota del presupuesto: una idea, un recordatorio, una decisión…" required></textarea><button class="btn mini"><span class="mas">+</span> Agregar</button></form>
+    ${notas.map(n => `<div class="pp-nota" data-nota="${n.id}"><p>${esc(n.texto).replace(/\n/g, '<br>')}</p><span class="sub">${cuando(n)}</span><span class="per-acl-acc"><button type="button" class="btn sec mini" data-nota-ed>Editar</button><button type="button" class="btn sec mini" data-nota-borrar>Borrar</button></span></div>`).join('')}</section>`;
+}
 function montarPres({ movs, cats, etis, proys, fijos, mes }, recargar) {
   const quieto = async fn => { const y = scrollY; await fn(); await recargar(); requestAnimationFrame(() => scrollTo(0, y)); };
   document.querySelectorAll('[data-pvista]').forEach(b => b.onclick = () => quieto(async () => { ESTADO.presVista = b.dataset.pvista; }));
   document.querySelectorAll('[data-pmes]').forEach(b => b.onclick = () => { const [y, mm] = mes.split('-').map(Number); const d = ESTADO.presVista === 'anio' ? new Date(y + Number(b.dataset.pmes), mm - 1, 1) : new Date(y, mm - 1 + Number(b.dataset.pmes), 1); location.hash = `#/personal/${mkMes(d.getFullYear(), d.getMonth() + 1)}`; });
   document.querySelectorAll('[data-ir-k]').forEach(td => td.onclick = () => { ESTADO.presVista = 'mes'; location.hash = `#/personal/${td.dataset.irK}`; });
   const pu = $('#pp-umb'); if (pu) pu.onclick = () => modalAlertas(recargar);
+  const nn = $('#nota-nueva'); if (nn) nn.onsubmit = ev => { ev.preventDefault(); const t = nn.texto.value.trim(); if (t) quieto(() => D.perGuardarNota({ texto: t })); };
+  document.querySelectorAll('[data-nota]').forEach(d => {
+    d.querySelector('[data-nota-borrar]').onclick = ev => { const b = ev.target; if (b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = '¿Borrar?'; return; } quieto(() => D.perBorrarNota(d.dataset.nota)); };
+    d.querySelector('[data-nota-ed]').onclick = () => { const p = d.querySelector('p'); const txt = p.innerText;
+      p.outerHTML = `<form class="pp-nota-nueva"><textarea name="texto" rows="3">${esc(txt)}</textarea><button class="btn mini">Guardar</button></form>`;
+      const f = d.querySelector('form'); f.texto.focus(); f.onsubmit = ev => { ev.preventDefault(); const t = f.texto.value.trim(); if (t) quieto(() => D.perGuardarNota({ id: d.dataset.nota, texto: t })); }; };
+  });
   document.querySelectorAll('[data-pmodo]').forEach(b => b.onclick = () => quieto(async () => { ESTADO.presModo = b.dataset.pmodo; }));
   document.querySelectorAll('[data-pres]').forEach(inp => {
     inp.oninput = () => { const n = inp.value.replace(/\D/g, ''); inp.value = n ? Number(n).toLocaleString('es-CO').replace(/,/g, '.') : ''; };

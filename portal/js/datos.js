@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=161';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=162';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -537,6 +537,9 @@ export const perBorrarProyecto = id => q(c => c.from('per_proyectos').delete().e
 export const perItems = () => q(c => c.from('per_proyecto_items').select('*').order('orden')).then(ok);
 export const perGuardarItem = i => q(c => i.id ? c.from('per_proyecto_items').update(i).eq('id', i.id) : c.from('per_proyecto_items').insert(i)).then(ok);
 export const perBorrarItem = id => q(c => c.from('per_proyecto_items').delete().eq('id', id)).then(ok);
+export const perNotas = () => q(c => c.from('per_notas').select('*').order('creado', { ascending: false })).then(ok);
+export const perGuardarNota = n => q(c => n.id ? c.from('per_notas').update({ texto: n.texto, actualizado: new Date().toISOString() }).eq('id', n.id) : c.from('per_notas').insert({ texto: n.texto })).then(ok);
+export const perBorrarNota = id => q(c => c.from('per_notas').delete().eq('id', id)).then(ok);
 export const perAjustes = () => q(c => c.from('per_ajustes').select('*').maybeSingle()).then(ok);
 export const perGuardarAjustes = a => q(c => c.from('per_ajustes').upsert(a)).then(ok);
 export const perProbarAlertas = () => q(c => c.functions.invoke('alertas-personales', { body: { prueba: true } })).then(({ data, error }) => { if (error) throw new Error(error.message); if (data?.error) throw new Error(data.error); return data; });

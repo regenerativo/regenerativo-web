@@ -10340,3 +10340,15 @@ html body .modal-cats .per-cat { grid-template-columns: 54px minmax(0, 1fr) 110p
 .pp-ley.bien { background: #e3f4f8; } .pp-ley.cerca { background: #f4f4d6; } .pp-ley.mal { background: #f4e1e1; } .pp-ley.fut { background: #fff; box-shadow: inset 0 0 0 1px #bfbfbf; }
 @media (max-width: 640px) { .pp-mesnav b { min-width: 0; font-size: 18px; } }
 .pp-periodo + .panel .od-cab h3, .per-vistas ~ .panel .od-cab h3 { white-space: normal; }
+/* Pestañas y vistas de finanzas personales: la elegida va rellena (se lee mejor que solo el borde) */
+.per-vistas .chip-f.on, .pp-periodo .chip-f.on { background: #1e221d; border-color: #1e221d; color: #fff; }
+.per-vistas .chip-f.on:hover, .pp-periodo .chip-f.on:hover { color: #fff; }
+.pp-mesnav .btn.ico { width: 34px; height: 34px; padding: 0; display: inline-grid; place-items: center; }
+.pp-sig svg { transform: scaleX(-1); }
+.pp-nota-nueva { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+.pp-nota-nueva textarea { flex: 1; min-width: 0; resize: vertical; font: inherit; padding: 10px 12px; border: 1px solid var(--linea, #e4e4e2); border-radius: 12px; }
+.pp-nota { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 0; border-top: 1px dotted #bfbfbf; }
+.pp-nota p { margin: 0; white-space: normal; overflow-wrap: anywhere; }
+.pp-nota .sub { grid-column: 1; }
+.pp-nota .per-acl-acc { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+@media (max-width: 640px) { .pp-nota { grid-template-columns: 1fr; } .pp-nota .per-acl-acc { grid-column: 1; grid-row: auto; justify-content: flex-start; } }
