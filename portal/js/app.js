@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=162';
-import * as M from './modulos.js?v=162';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=162';
-import { vistaPersonal } from './personal.js?v=162';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=162';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=162';
+import * as D from './datos.js?v=163';
+import * as M from './modulos.js?v=163';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=163';
+import { vistaPersonal } from './personal.js?v=163';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=163';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=163';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -212,7 +212,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     ${s.admin ? `<a href="#/folders" class="${activo === 'folders' ? 'activo' : ''}">${icoMenu('folders')}<span>Folders</span></a>` : ''}
     ${s.admin ? `<a href="#/base-precios" class="${activo === 'base' ? 'activo' : ''}">${icoMenu('base')}<span>Base de precios</span></a>` : ''}
     ${s.admin ? `<a href="#/ajustes" class="${activo === 'ajustes' ? 'activo' : ''}">${icoMenu('ajustes')}<span>Ajustes</span></a>` : ''}`;
-  const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/encargos">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
+  const cabEnc = enc ? `${enc.volver && !esCli ? `<a class="volver" href="#/">${ico('atras')}Portal</a>` : ''}<a class="enc-nom" href="${enc.href}">${esc(enc.nombre)}</a>` : '';
   const tituloPag = h1 || (ruta.includes(' / ') ? ruta.split(' / ').pop() : titulo);
   const ceja = eyebrow || (enc ? 'Encargo' : '');
   const htmlMarco = `
