@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=159';
-import * as M from './modulos.js?v=159';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=159';
-import { vistaPersonal } from './personal.js?v=159';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=159';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=159';
+import * as D from './datos.js?v=160';
+import * as M from './modulos.js?v=160';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=160';
+import { vistaPersonal } from './personal.js?v=160';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=160';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=160';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {

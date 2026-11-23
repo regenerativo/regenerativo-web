@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=159';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=160';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -518,6 +518,28 @@ export const perActualizarCategoria = (id, cambios) => q(c => c.from('per_catego
 export const perCrearCategoria = cat => q(c => c.from('per_categorias').insert(cat)).then(ok);
 export const perCrearEtiqueta = nombre => q(c => c.from('per_etiquetas').insert({ nombre })).then(ok);
 export const perBorrarEtiqueta = id => q(c => c.from('per_etiquetas').delete().eq('id', id)).then(ok);
+// Presupuesto (plan base y ajustes por mes), pagos fijos, proyecciones de proyectos y alertas
+export const perPresupuesto = () => q(c => c.from('per_presupuesto').select('*')).then(ok);
+export async function perPonerPresupuesto(categoria_id, mes, valor) {
+  const c = await cliente();
+  let b = c.from('per_presupuesto').select('id').eq('categoria_id', categoria_id); b = mes ? b.eq('mes', mes) : b.is('mes', null);
+  const { data: ya, error } = await b; if (error) throw new Error(error.message);
+  if (valor == null) { if (ya?.length) ok(await c.from('per_presupuesto').delete().eq('id', ya[0].id)); return; }
+  if (ya?.length) ok(await c.from('per_presupuesto').update({ valor }).eq('id', ya[0].id));
+  else ok(await c.from('per_presupuesto').insert({ categoria_id, mes: mes || null, valor }));
+}
+export const perFijos = () => q(c => c.from('per_fijos').select('*').order('dia')).then(ok);
+export const perGuardarFijo = f => q(c => f.id ? c.from('per_fijos').update(f).eq('id', f.id) : c.from('per_fijos').insert(f)).then(ok);
+export const perBorrarFijo = id => q(c => c.from('per_fijos').delete().eq('id', id)).then(ok);
+export const perProyectos = () => q(c => c.from('per_proyectos').select('*').order('creado')).then(ok);
+export const perGuardarProyecto = p => q(c => p.id ? c.from('per_proyectos').update(p).eq('id', p.id).select().single() : c.from('per_proyectos').insert(p).select().single()).then(ok);
+export const perBorrarProyecto = id => q(c => c.from('per_proyectos').delete().eq('id', id)).then(ok);
+export const perItems = () => q(c => c.from('per_proyecto_items').select('*').order('orden')).then(ok);
+export const perGuardarItem = i => q(c => i.id ? c.from('per_proyecto_items').update(i).eq('id', i.id) : c.from('per_proyecto_items').insert(i)).then(ok);
+export const perBorrarItem = id => q(c => c.from('per_proyecto_items').delete().eq('id', id)).then(ok);
+export const perAjustes = () => q(c => c.from('per_ajustes').select('*').maybeSingle()).then(ok);
+export const perGuardarAjustes = a => q(c => c.from('per_ajustes').upsert(a)).then(ok);
+export const perProbarAlertas = () => q(c => c.functions.invoke('alertas-personales', { body: { prueba: true } })).then(({ data, error }) => { if (error) throw new Error(error.message); if (data?.error) throw new Error(data.error); return data; });
 // Importación de MONAI: inserta/actualiza por ref (id de MONAI) y quita los de MONAI que ya no están en el archivo
 export async function perImportar({ nuevos, cambios, quitar }) {
   const c = await cliente();
