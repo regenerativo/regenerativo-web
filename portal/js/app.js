@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=167';
-import * as M from './modulos.js?v=167';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=167';
-import { vistaPersonal } from './personal.js?v=167';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=167';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=167';
+import * as D from './datos.js?v=168';
+import * as M from './modulos.js?v=168';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=168';
+import { vistaPersonal } from './personal.js?v=168';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=168';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=168';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -1465,7 +1465,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   }
   if (seccion === 'gantt' && esCliente) {
     const v = web.gantt > 0 ? await M.VISTAS.gantt(ctx) : null;
-    pintar(v ? v.html : '<div class="vacio">Este encargo todavía no tiene cronograma de obra.</div>');
+    pintar(v ? v.html : '<div class="vacio">Por ahora el cronograma de obra no se puede visualizar en el portal.</div>');
     if (v?.montar) v.montar();
     return;
   }
