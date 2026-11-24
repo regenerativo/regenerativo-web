@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=168';
-import * as M from './modulos.js?v=168';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=168';
-import { vistaPersonal } from './personal.js?v=168';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=168';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=168';
+import * as D from './datos.js?v=169';
+import * as M from './modulos.js?v=169';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=169';
+import { vistaPersonal } from './personal.js?v=169';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=169';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=169';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -638,16 +638,51 @@ function vistaCorreos(lista, admin, e) {
     ${sinCorreo}${lista.length ? `<ul class="cor-linea">${filas}</ul>` : '<p class="sub">Todavía no hay correos con el cliente de este encargo.</p>'}</section>`;
 }
 
-function vistaComentarios(ctx, coms, pintar) {
+// Pendientes: lista sencilla que el cliente y el equipo agregan y chulean (solo la fecha en que se finalizó)
+function panelPendientes(pend) {
+  const fin = pend.filter(p => p.hecho).length;
+  const fecha = f => new Date(f).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/Bogota' });
+  const item = p => `<li class="lpd ${p.hecho ? 'hecho' : ''}">
+      <label class="lpd-ck"><input type="checkbox" data-pend="${p.id}" ${p.hecho ? 'checked' : ''}><span class="lpd-c"><span class="lpd-t">${esc(p.texto)}</span>${p.hecho && p.hecho_en ? `<time class="sub">Finalizado ${fecha(p.hecho_en)}</time>` : ''}</span></label>
+      ${p.puedeBorrar ? `<button type="button" class="lpd-x" data-pend-borrar="${p.id}" aria-label="Eliminar pendiente">×</button>` : ''}</li>`;
+  return `<section class="panel" id="pendientes"><div class="lv-card-cab"><h3>Pendientes</h3><span class="lv-cuenta">${fin} de ${pend.length} hechos</span></div>
+    <form class="lpd-f" id="f-pend"><input name="t" type="text" maxlength="200" placeholder="Ej. Llamar a XX" autocomplete="off" required><button class="btn" type="submit">Agregar</button></form>
+    ${pend.length ? `<ul class="lpd-lista">${pend.map(item).join('')}</ul>` : '<p class="sub">Todavía no hay pendientes.</p>'}</section>`;
+}
+function montarPendientes(ctx) {
+  const f = $('#f-pend'); if (!f) return;
+  f.onsubmit = async ev => {
+    ev.preventDefault(); const t = f.t.value.trim(); if (!t) return;
+    const b = f.querySelector('button'); b.disabled = true;
+    try { await D.crearPendiente(ctx.e.id, t, ctx.esCliente ? (ctx.e.cliente?.nombre || 'Cliente') : 'regenerativo'); ctx.recargar(); }
+    catch (err) { alert(msg(err)); b.disabled = false; }
+  };
+  document.querySelectorAll('[data-pend]').forEach(c => c.onchange = async () => {
+    c.disabled = true; c.closest('li').classList.toggle('hecho', c.checked);
+    try { await D.chulearPendiente(c.dataset.pend, c.checked); ctx.recargar(); }
+    catch (err) { alert(msg(err)); c.checked = !c.checked; c.disabled = false; }
+  });
+  document.querySelectorAll('[data-pend-borrar]').forEach(b => b.onclick = async () => {
+    if (!await confirmar('¿Eliminar este pendiente?', { ok: 'Eliminar', peligro: true })) return;
+    b.disabled = true;
+    try { await D.borrarPendiente(b.dataset.pendBorrar); ctx.recargar(); } catch (err) { alert(msg(err)); b.disabled = false; }
+  });
+}
+
+function vistaComentarios(ctx, coms, pintar, pend = []) {
   const { admin } = ctx;
   const ab = coms.filter(c => c.estado === 'abierto').length;
+  const uid = ctx.s?.id;
+  pend.forEach(p => p.puedeBorrar = admin || (uid && p.autor === uid && !p.hecho));
   pintar(`
+    ${panelPendientes(pend)}
     <section class="panel lv-duda"><h3>${admin ? 'Mensaje al cliente' : '¿Tienes una duda o un comentario?'}</h3>
       <p class="sub">${admin ? 'Queda en el historial del encargo y el cliente la ve.' : 'Le llega al equipo de regenerativo y te respondemos aquí mismo.'}</p>
       ${formComentario(admin)}</section>
     <section class="panel"><div class="lv-card-cab"><h3>Conversación</h3><span class="lv-cuenta">${ab} sin resolver</span></div>
       ${coms.length ? `<ul class="lv-hilo">${coms.map(c => itemComentario(c, admin)).join('')}</ul>` : '<p class="sub">Todavía no hay comentarios en este encargo.</p>'}</section>`);
   montarComentario(ctx);
+  montarPendientes(ctx);
   document.querySelectorAll('.lv-resp-f').forEach(f => f.onsubmit = async ev => {
     ev.preventDefault();
     const b = f.querySelector('button'); b.disabled = true;
@@ -1265,12 +1300,13 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const [docs, tareas, pres, movs, prop, coms] = await Promise.all([
     D.docsEncargo(e.id).catch(() => []), D.ganttTareas(e.id).catch(() => []), D.hayPresupuesto(e.id).catch(() => 0),
     s.facturacion ? D.finMovimientosEncargo(e.id).catch(() => []) : [], D.propuestaDeEncargo(e.id), D.comentarios(e.id).catch(() => [])]);
+  const pend = await D.pendientes(e.id).catch(() => []);
   const correos = await D.correosEncargo(e.id).catch(() => []);
   const adics = await D.adicionalesEncargo(e.id).catch(() => []);
   const pagos = esCliente ? await D.pagosEncargo(e.id).catch(() => []) : [];
   const movsOk = movs.filter(x => (x.estado || 'confirmado') === 'confirmado');
   const nTipo = t => docs.filter(d => d.tipo === t && (!esCliente || d.estado !== 'borrador')).length;
-  const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length, comentarios: coms.filter(c => c.estado === 'abierto').length, correos: correos.length };
+  const web = { propuesta: nTipo('propuesta'), contrato: nTipo('contrato'), adendas: nTipo('adenda'), informes: nTipo('informe'), presupuesto: pres, gantt: tareas.length, finanzas: movsOk.length, comentarios: coms.filter(c => c.estado === 'abierto').length + pend.filter(p => !p.hecho).length, correos: correos.length };
   let od = admin ? (conteoGuardado(e.id) || {}) : {};
   const n = k => (web[k] || 0) + (od[k] || 0);
   const visible = k => {
@@ -1424,7 +1460,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     pintar('<section class="panel od" id="od"></section>');
     return panelOneDrive($('#od'), e, [['']], { titulo: 'Folders del encargo' });
   }
-  if (seccion === 'comentarios') return vistaComentarios(ctx, coms, pintar);
+  if (seccion === 'comentarios') return vistaComentarios(ctx, coms, pintar, pend);
   if (seccion === 'correos') return pintar(vistaCorreos(correos, admin, e));
   if (seccion === 'enviados' && !admin) return enviadosCliente(ctx, pintar);
   if (seccion === 'enviados' || seccion === 'recibidos') {

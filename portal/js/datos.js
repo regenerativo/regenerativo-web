@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=168';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=169';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -470,6 +470,21 @@ export async function comentar(encargoId, texto, tipo = 'comentario', autorNombr
   const aviso = avisar ? await onedrive('aviso_comentario', { comentario_id: data.id }).catch(e => ({ enviado: false, motivo: e.message })) : null;
   return { comentario: data, aviso };
 }
+// Lista de pendientes del encargo (cliente y equipo agregan y chulean)
+export async function pendientes(encargoId) {
+  if (MODO_DEMO) return [];
+  const { data, error } = await (await cliente()).from('pendientes').select('*').eq('encargo_id', encargoId).order('creado');
+  if (error) throw error; return data || [];
+}
+export async function crearPendiente(encargoId, texto, autorNombre) {
+  const { error } = await (await cliente()).from('pendientes').insert({ encargo_id: encargoId, texto: texto.trim(), autor_nombre: autorNombre }); if (error) throw error;
+}
+export async function chulearPendiente(id, hecho) {
+  const { error } = await (await cliente()).from('pendientes').update({ hecho }).eq('id', id); if (error) throw error;
+}
+export async function borrarPendiente(id) {
+  const { error } = await (await cliente()).from('pendientes').delete().eq('id', id); if (error) throw error;
+}
 // El cliente corrige o borra su propio comentario mientras no esté respondido
 export async function editarMiComentario(id, texto) {
   const { error } = await (await cliente()).rpc('editar_mi_comentario', { p_id: id, p_texto: texto }); if (error) throw error;
@@ -560,7 +575,7 @@ export async function escucharCambios(cb) {
   if (!data?.session) return;
   c.realtime.setAuth(data.session.access_token);
   _canal = c.channel('portal-cambios');
-  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables', 'marketing_ideas', 'per_movimientos', 'per_categorias']
+  ['encargos', 'propuestas', 'comentarios', 'fin_movimientos', 'encargo_adicionales', 'documentos', 'clientes', 'gantt_tareas', 'fin_categorias', 'responsables', 'marketing_ideas', 'pendientes', 'per_movimientos', 'per_categorias']
     .forEach(t => _canal.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => cb(t)));
   _canal.subscribe();
 }
