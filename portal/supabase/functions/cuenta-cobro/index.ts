@@ -91,14 +91,22 @@ const FUENTES_URL = "https://regenerativo.co/portal/assets/docfonts";
 // Fuentes de regenerativo incrustadas en el Word (Metronic Pro y Stolzl), para que el PDF que arma Microsoft salga con la letra real
 const FUENTES_DOC: [string, Record<string, string>][] = [
   ["Metronic Pro", { Regular: "mp-r", Bold: "mp-b", Italic: "mp-i" }],
-  ["METRONICPRO-SEMIBOLD", { Regular: "mp-sb" }], ["Metronic Pro Bold", { Regular: "mp-b" }], ["Metronic Pro Italic", { Regular: "mp-i" }],
-  ["MetronicPro-Light", { Regular: "mp-l" }], ["METRONICPRO-LIGHTITALIC", { Regular: "mp-li" }],
+  ["Metronic Pro SemiBold", { Regular: "mp-sb" }], ["Metronic Pro Bold", { Regular: "mp-b" }], ["Metronic Pro Italic", { Regular: "mp-i" }],
+  ["Metronic Pro Light", { Regular: "mp-l" }], ["Metronic Pro Light Italic", { Regular: "mp-li" }],
   ["Stolzl Medium", { Regular: "st-m" }], ["Stolzl Light", { Regular: "st-l" }], ["Stolzl Book", { Regular: "st-b" }],
 ];
 const LLAVES: Record<string, string> = { "mp-r": "{2BF3700E-1750-5F50-BFF9-22404A7D2AC7}", "mp-b": "{BF5989BD-C5A2-5F53-98EA-86C34760B6AC}", "mp-sb": "{30AAE685-1DE9-5EDE-B01B-068DB96A3D8C}",
   "mp-l": "{BA09C502-3D98-57B5-BB91-E35AFA5C9769}", "mp-i": "{7361F9FE-AE90-5847-8862-D84DFADE0F3F}", "mp-li": "{655AD001-C8FA-5ED9-AC92-A2A8D42F3FB5}",
   "st-m": "{EDCC2940-515B-579A-8722-FC430542FE11}", "st-l": "{6FD71215-F7DA-52FA-9492-3F4ED3D458A3}", "st-b": "{BF43B586-7C5D-5FEE-ADC1-B9250A255B91}" };
+// Nombres del Word → nombre real de la fuente (Microsoft solo usa la fuente incrustada si el nombre coincide)
+const RENOMBRE: [RegExp, string][] = [[/"METRONICPRO-SEMIBOLDITALIC"/g, '"Metronic Pro SemiBold"'], [/"METRONICPRO-SEMIBOLD"/g, '"Metronic Pro SemiBold"'],
+  [/"METRONICPRO-LIGHTITALIC"/g, '"Metronic Pro Light Italic"'], [/"MetronicPro-Light"/g, '"Metronic Pro Light"']];
 async function incrustarFuentes(z: Record<string, Uint8Array>) {
+  for (const k of Object.keys(z)) if (/^word\/(document|header\d*|footer\d*|styles|numbering|fontTable)\.xml$/.test(k)) {
+    let t = strFromU8(z[k]); const t0 = t; for (const [re, v] of RENOMBRE) t = t.replace(re, v);
+    if (k === "word/fontTable.xml") { const vistos = new Set<string>(); t = t.replace(/<w:font w:name="([^"]*)">[\s\S]*?<\/w:font>/g, (m: string, n: string) => vistos.has(n) ? "" : (vistos.add(n), m)); }
+    if (t !== t0) z[k] = strToU8(t);
+  }
   const aTexto = strFromU8, aBytes = (t: string) => strToU8(t);
   const cargar = async (k: string) => { const r = await fetch(`${FUENTES_URL}/${k}.odttf`); if (!r.ok) throw new Error("No se pudieron cargar las fuentes de regenerativo."); return new Uint8Array(await r.arrayBuffer()); };
   let ft = aTexto(z["word/fontTable.xml"]);
@@ -166,8 +174,9 @@ async function pdfDesdeWord(at: string, ruta: string, devolver = false) {
   const r = await G(at, `/me/drive/root:/${enc(ruta)}:/content`); if (!r.ok) throw new Error("No encontré el Word de la cuenta de cobro.");
   const z = unzipSync(new Uint8Array(await r.arrayBuffer()));
   const rels = z["word/_rels/fontTable.xml.rels"] ? strFromU8(z["word/_rels/fontTable.xml.rels"]) : "";
+  const viejo = Object.keys(z).some((k) => /^word\/(document|header\d*|footer\d*)\.xml$/.test(k) && RENOMBRE.some(([re]) => { re.lastIndex = 0; const si = re.test(strFromU8(z[k])); re.lastIndex = 0; return si; }));
   let word: any;
-  if (!/odttf/.test(rels) || !/embedTrueTypeFonts/.test(strFromU8(z["word/settings.xml"]))) { await incrustarFuentes(z); word = await subir(at, ruta, zipSync(z)); }
+  if (viejo || !/odttf/.test(rels) || !/embedTrueTypeFonts/.test(strFromU8(z["word/settings.xml"]))) { await incrustarFuentes(z); word = await subir(at, ruta, zipSync(z)); }
   else word = await (await G(at, `/me/drive/root:/${enc(ruta)}?$select=id,webUrl,lastModifiedDateTime`)).json();
   const datos = leerCuenta(strFromU8(z["word/document.xml"]));
   const rp = await G(at, `/me/drive/items/${word.id}/content?format=pdf`); if (!rp.ok) throw new Error("No se pudo convertir el Word a PDF.");
@@ -189,7 +198,7 @@ async function revisarCuentas() {
     const carpeta = `${e.onedrive_carpeta}/${CARPETA}`;
     const r = await G(at, `/me/drive/root:/${enc(carpeta)}:/children?$top=200&$select=name,file,lastModifiedDateTime,webUrl`); if (!r.ok) continue;
     const l = ((await r.json()).value || []).filter((x: any) => x.file);
-    for (const w of l.filter((x: any) => /^CCREG_.*\.docx$/i.test(x.name) && !x.name.startsWith("~"))) {
+    for (const w of l.filter((x: any) => /^(CCREG_|CUENTA DE COBRO).*\.docx$/i.test(x.name) && !x.name.startsWith("~"))) {
       const base = w.name.replace(/\.docx$/i, ""), pdf = l.find((x: any) => x.name === base + ".pdf");
       const tW = new Date(w.lastModifiedDateTime).getTime(), tP = pdf ? new Date(pdf.lastModifiedDateTime).getTime() : 0;
       if (tW - tP < 120e3 || Date.now() - tW < 10 * 60e3) continue;   // sin cambios, o todavía lo están editando
@@ -222,7 +231,7 @@ Deno.serve(async (req) => {
     if (b.accion === "datos") return json({ numero, pagado: !!e.pagado_total, existentes: ya, cliente: { nombre: c.nombre || "", documento: docCliente(c, p), email: c.email || "", telefono: c.telefono || "", direccion: [c.direccion, c.ciudad].filter(Boolean).join(", ") } });
     if (b.accion === "pdf") {
       const nombre = String(b.nombre || "").replace(/\.(docx|pdf)$/i, "");
-      if (!/^CCREG_[^/\\]+$/.test(nombre)) return json({ error: "Cuenta de cobro no válida." }, 400);
+      if (!/^(CCREG_|CUENTA DE COBRO)[^/\\]+$/i.test(nombre)) return json({ error: "Cuenta de cobro no válida." }, 400);
       const x = await pdfDesdeWord(at, `${carpeta}/${nombre}.docx`, conClave && !!b.devolver);
       await guardarCuenta(e.id, nombre, { valor: x.valor, ...(x.concepto ? { concepto: x.concepto } : {}), word_web: x.word.webUrl, pdf_web: x.pdf.webUrl });
       return json({ ok: true, nombre, valor: x.valor, concepto: x.concepto, pdf: x.pdf.webUrl, word: x.word.webUrl, ...(x.pdf_base64 ? { pdf_base64: x.pdf_base64 } : {}) });
