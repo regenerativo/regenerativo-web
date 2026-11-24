@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=172';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=173';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -439,6 +439,14 @@ export async function finBorrarSoporte(s) {
 // OneDrive (función onedrive-conexion): url | estado | despegar | subir
 export async function onedrive(accion, extra = {}) {
   const { data, error } = await (await cliente()).functions.invoke('onedrive-conexion', { body: { accion, ...extra } });
+  if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+/** Documentos en Word conectados (legales y propuestas): plantillas, crear desde el portal y PDF al día con la letra de regenerativo. */
+export async function docsWord(accion, extra = {}) {
+  const { data, error } = await (await cliente()).functions.invoke('documentos-word', { body: { accion, ...extra } });
   if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
   if (data?.error) throw new Error(data.error);
   return data;

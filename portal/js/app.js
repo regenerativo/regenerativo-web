@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=172';
-import * as M from './modulos.js?v=172';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=172';
-import { vistaPersonal } from './personal.js?v=172';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=172';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=172';
+import * as D from './datos.js?v=173';
+import * as M from './modulos.js?v=173';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=173';
+import { vistaPersonal } from './personal.js?v=173';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=173';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=173';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -1530,7 +1530,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   }
   if (seccion === 'legales' && admin) {
     pintar('<section class="panel od" id="od"></section>');
-    return panelOneDrive($('#od'), e, FUENTES.legales, { titulo: 'Legales · propuesta, contratos, adendas, actas, cobros y facturación' });
+    return panelOneDrive($('#od'), e, FUENTES.legales, { titulo: 'Documentos', legales: true, nuevo: true });
   }
   if (seccion === 'resena') {
     const mias = coms.filter(c => c.tipo === 'resena');
@@ -1620,7 +1620,7 @@ async function finanzasEncargo(ctx, movs, valor, pintar) {
   if ($('#cc-nueva')) $('#cc-nueva').onclick = () => modalCuentaCobro(e);
   document.querySelectorAll('[data-nuevo]').forEach(b => b.onclick = () => modalMov({ tipo: b.dataset.nuevo, fecha: new Date().toISOString().slice(0, 10), encargo_id: e.id }, cats, encs, ir));
   document.querySelectorAll('[data-mov]').forEach(tr => tr.onclick = () => modalMov(movs.find(x => x.id === tr.dataset.mov), cats, encs, ir));
-  if (admin) panelOneDrive($('#od'), e, FUENTES.finanzas, { titulo: 'Cuentas de cobro' });
+  if (admin) panelOneDrive($('#od'), e, FUENTES.finanzas, { titulo: 'Cuentas de cobro', legales: true });
 }
 
 // ---------------- Cuenta de cobro: formulario corto; el documento se arma en el servidor ----------------
@@ -1638,7 +1638,8 @@ async function modalCuentaCobro(e) {
       <label>Dirección<input name="direccion"></label>
     </div>
     <div class="aviso" id="cc-aviso"></div>
-    <div class="pie-modal"><button class="btn" type="submit" disabled>Generar Word y PDF</button><button type="button" class="btn sec" id="cc-cancelar">Cancelar</button></div></form>`;
+    <div class="pie-modal"><button class="btn" type="submit" disabled>Generar Word y PDF</button><button type="button" class="btn sec" id="cc-manual" disabled>Solo el Word, lo termino a mano</button><button type="button" class="btn sec" id="cc-cancelar">Cancelar</button></div>
+    <p class="sub cc-nota">A mano: se crea el Word con el membrete y lo que alcances a llenar aquí; lo terminas en Word y el PDF y el valor se actualizan solos en el portal (cada hora).</p></form>`;
   document.body.appendChild(fondo);
   const f = $('#fcc', fondo), av = t => { $('#cc-aviso', fondo).textContent = t; };
   $('#cc-cancelar', fondo).onclick = () => fondo.remove();
@@ -1649,21 +1650,67 @@ async function modalCuentaCobro(e) {
     if (d.pagado) { $('#cc-sub', fondo).textContent = 'Este encargo ya está pagado: no lleva más cuentas de cobro.'; return; }
     $('#cc-sub', fondo).textContent = `Será la cuenta de cobro No. ${d.numero} de ${e.nombre}.`;
     ['documento', 'email', 'telefono', 'direccion'].forEach(k => { f[k].value = d.cliente?.[k] || ''; });
-    $('.campos-cc', fondo).hidden = false; f.querySelector('[type=submit]').disabled = false; f.concepto.focus();
+    $('.campos-cc', fondo).hidden = false; f.querySelector('[type=submit]').disabled = false; $('#cc-manual', fondo).disabled = false; f.concepto.focus();
   } catch (err) { $('#cc-sub', fondo).textContent = msg(err); return; }
-  f.onsubmit = async ev => {
-    ev.preventDefault();
+  const generar = async manual => {
     const valor = Number(f.valor.value.replace(/\D/g, ''));
-    if (!f.concepto.value.trim()) return av('Escribe el concepto.');
-    if (!valor) return av('Escribe el valor a cobrar.');
-    const b = f.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Generando…'; av('');
+    if (!manual && !f.concepto.value.trim()) return av('Escribe el concepto.');
+    if (!manual && !valor) return av('Escribe el valor a cobrar.');
+    const b = manual ? $('#cc-manual', fondo) : f.querySelector('[type=submit]'); const t0 = b.textContent;
+    f.querySelectorAll('.pie-modal button').forEach(x => { x.disabled = true; }); b.textContent = 'Generando…'; av('');
     try {
-      const r = await D.cuentaCobro({ accion: 'crear', encargo_id: e.id, concepto: f.concepto.value.trim(), valor, fecha: f.fecha.value,
+      const r = await D.cuentaCobro({ accion: 'crear', manual, encargo_id: e.id, concepto: f.concepto.value.trim(), valor, fecha: f.fecha.value,
         cliente: { documento: f.documento.value.trim(), email: f.email.value.trim(), telefono: f.telefono.value.trim(), direccion: f.direccion.value.trim() } });
-      f.innerHTML = `<h2>Cuenta de cobro No. ${esc(r.numero)} lista</h2><p class="sub">Quedó en LEGALES / 04 CUENTAS DE COBRO como «${esc(r.nombre)}».</p>
+      f.innerHTML = manual
+        ? `<h2>Cuenta de cobro No. ${esc(r.numero)} en Word</h2><p class="sub">Quedó en LEGALES / 04 CUENTAS DE COBRO como «${esc(r.nombre)}». Termínala en Word: cuando la guardes, el portal arma el PDF con la letra de regenerativo y registra el valor (en máximo una hora, o ya con «Actualizar PDF»).</p>
+        <div class="pie-modal"><a class="btn" href="${esc(r.word)}" target="_blank" rel="noopener">Abrir Word</a><button type="button" class="btn sec" id="cc-ok">Cerrar</button></div>`
+        : `<h2>Cuenta de cobro No. ${esc(r.numero)} lista</h2><p class="sub">Quedó en LEGALES / 04 CUENTAS DE COBRO como «${esc(r.nombre)}». Si la ajustas en Word, el PDF se actualiza solo.</p>
         <div class="pie-modal"><a class="btn" href="${esc(r.pdf)}" target="_blank" rel="noopener">Ver PDF</a><a class="btn sec" href="${esc(r.word)}" target="_blank" rel="noopener">Abrir Word</a><button type="button" class="btn sec" id="cc-ok">Cerrar</button></div>`;
       $('#cc-ok', fondo).onclick = () => { fondo.remove(); olvidarConteos(); ir(); };
-    } catch (err) { b.disabled = false; b.textContent = 'Generar Word y PDF'; av(msg(err)); }
+    } catch (err) { f.querySelectorAll('.pie-modal button').forEach(x => { x.disabled = false; }); b.textContent = t0; av(msg(err)); }
+  };
+  f.onsubmit = ev => { ev.preventDefault(); generar(false); };
+  $('#cc-manual', fondo).onclick = () => generar(true);
+}
+
+// ---------------- Documento legal nuevo: se arma el Word desde la plantilla y se termina a mano ----------------
+const TIPOS_DOC = [['contrato', 'Contrato', /CONTRATO PRESTACION SERVICIOS _ DISE/i], ['adenda', 'Adenda / otrosí', /ADENDUM/i],
+  ['acta', 'Acta de entrega', /Membrete/i], ['facturacion', 'Facturación', /Membrete/i], ['cuenta', 'Cuenta de cobro', null]];
+async function modalNuevoDoc(e, alCrear) {
+  const fondo = document.createElement('div'); fondo.className = 'modal-fondo';
+  fondo.innerHTML = `<form class="modal" id="fnd" style="max-width:560px"><h2>Nuevo documento</h2>
+    <p class="sub">Se crea el Word en su carpeta de LEGALES desde la plantilla de regenerativo y lo terminas en Word. Cada vez que lo guardes, el portal rehace el PDF con la letra de regenerativo (en máximo una hora); el cliente ve solo el PDF.</p>
+    <label>Tipo<select name="tipo">${TIPOS_DOC.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
+    <label class="nd-pl">Plantilla<select name="plantilla" disabled><option>Cargando plantillas…</option></select></label>
+    <div class="aviso" id="nd-aviso"></div>
+    <div class="pie-modal"><button class="btn" type="submit" disabled>Crear Word</button><button type="button" class="btn sec" id="nd-cancelar">Cancelar</button></div></form>`;
+  document.body.appendChild(fondo);
+  const f = $('#fnd', fondo), av = t => { $('#nd-aviso', fondo).textContent = t; };
+  $('#nd-cancelar', fondo).onclick = () => fondo.remove();
+  let pls = [];
+  const elegir = () => {
+    const t = TIPOS_DOC.find(x => x[0] === f.tipo.value);
+    $('.nd-pl', fondo).hidden = !t[2];
+    f.querySelector('[type=submit]').textContent = t[2] ? 'Crear Word' : 'Seguir';
+    if (t[2] && pls.length) { const d = pls.find(n => t[2].test(n)); if (d) f.plantilla.value = d; }
+  };
+  f.tipo.onchange = elegir;
+  try {
+    pls = (await D.docsWord('plantillas')).plantillas || [];
+    f.plantilla.innerHTML = pls.map(n => `<option value="${esc(n)}">${esc(n.replace(/\.docx$/i, ''))}</option>`).join('') || '<option value="">No hay plantillas en REG_TEMPLATES</option>';
+    f.plantilla.disabled = false; f.querySelector('[type=submit]').disabled = false; elegir();
+  } catch (err) { av(msg(err)); return; }
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    if (f.tipo.value === 'cuenta') { fondo.remove(); return modalCuentaCobro(e); }
+    if (!f.plantilla.value) return av('Elige una plantilla.');
+    const b = f.querySelector('[type=submit]'); b.disabled = true; b.textContent = 'Creando…'; av('');
+    try {
+      const r = await D.docsWord('crear', { encargo_id: e.id, tipo: f.tipo.value, plantilla: f.plantilla.value });
+      f.innerHTML = `<h2>Word listo</h2><p class="sub">Quedó en ${esc(r.carpeta.replace('/', ' / '))} como «${esc(r.nombre)}». Termínalo en Word: el PDF se arma solo cuando lo guardes.</p>
+        <div class="pie-modal"><a class="btn" href="${esc(r.web)}" target="_blank" rel="noopener">Abrir Word</a><button type="button" class="btn sec" id="nd-ok">Cerrar</button></div>`;
+      $('#nd-ok', fondo).onclick = () => { fondo.remove(); olvidarConteos(); if (alCrear) alCrear(); };
+    } catch (err) { b.disabled = false; b.textContent = 'Crear Word'; av(msg(err)); }
   };
 }
 
@@ -1676,8 +1723,9 @@ const fechaLlegada = x => /^X{4}/i.test(x.nombre || '') ? '' : fechaNombre(x.nom
 const porLlegada = (a, b) => fechaLlegada(b).localeCompare(fechaLlegada(a)) || (b.fecha || '').localeCompare(a.fecha || '') || a.nombre.localeCompare(b.nombre);
 const MAX_DESCARGA = 25e6;
 
-async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = false } = {}) {
-  const cab = (extra = '', abrir = '') => `<div class="od-cab"><h3>${titulo}</h3><span class="sub">${extra}</span>${abrir ? enlaceIco('abrir', 'Abrir folder en OneDrive', esc(abrir)) : ''}</div>`;
+async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = false, legales = false, nuevo = false } = {}) {
+  const cab = (extra = '', abrir = '') => `<div class="od-cab"><h3>${titulo}</h3><span class="sub">${extra}</span>${nuevo ? '<button class="btn mini" id="doc-nuevo"><span class="mas">+</span> Nuevo<span class="cc-largo"> documento</span></button>' : ''}${abrir ? enlaceIco('abrir', 'Abrir folder en OneDrive', esc(abrir)) : ''}</div>`;
+  const conNuevo = () => { const b = el.querySelector('#doc-nuevo'); if (b) b.onclick = () => modalNuevoDoc(e, () => panelOneDrive(el, e, grupos, { titulo, envios, legales, nuevo })); };
   if (D.MODO_DEMO) { el.innerHTML = cab() + '<p class="sub">En el portal real aquí aparecen los archivos de esta carpeta de OneDrive.</p>'; return; }
   el.innerHTML = cab('Leyendo OneDrive…');
   const explorarOd = ruta => e ? D.onedrive('explorar', { encargo_id: e.id, ruta }) : D.onedrive('explorar_reg', { ruta });
@@ -1695,7 +1743,14 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
   const anioReg = x => Number((x.nombre || '').match(/^(\d{2})[\s_]/)?.[1] || 0);
   const porReg = (a, b) => grupoReg(a) - grupoReg(b) || anioReg(b) - anioReg(a) || a.nombre.localeCompare(b.nombre, 'es', { numeric: true });
   const ordenar = l => envios ? [...l].sort(porLlegada) : e ? l : [...l].sort(porReg);  // Enviados y Recibidos: lo más reciente arriba, por fecha de llegada
-  const fila = (x, ruta, nivel) => {
+  // Legales: cada Word dice si su PDF está al día (el PDF se rehace solo cada hora, o ya con «Actualizar PDF»)
+  const estadoPdf = (x, r, items) => {
+    if (!legales || x.carpeta || !/\.docx$/i.test(x.nombre) || !/^LEGALES\//.test(r) || /XXXX/.test(x.nombre)) return '';
+    const pdf = items.find(y => !y.carpeta && y.nombre.toLowerCase() === x.nombre.replace(/\.docx$/i, '.pdf').toLowerCase());
+    const alDia = pdf && new Date(pdf.fecha) - new Date(x.fecha) > -120000;
+    return `<span class="pdf-estado ${alDia ? 'si' : 'no'}" title="${alDia ? 'El PDF tiene lo último del Word' : 'El Word cambió después del PDF: se actualiza solo en la próxima hora'}">${alDia ? 'PDF al día' : pdf ? 'PDF por actualizar' : 'Sin PDF'}</span>${alDia ? '' : `<button class="btn sec mini" data-pdf="${esc(r)}">Actualizar PDF</button>`}`;
+  };
+  const fila = (x, ruta, nivel, items = []) => {
     const r = ruta ? `${ruta}/${x.nombre}` : x.nombre;
     const f = fechaNombre(x.nombre);
     const nom = f && (envios || x.carpeta) ? f.resto : x.nombre;
@@ -1703,20 +1758,28 @@ async function panelOneDrive(el, e, grupos, { titulo = 'OneDrive', envios = fals
     return `<div class="od-fila${x.carpeta ? ' es-carpeta' : ''}" style="--n:${nivel}" ${x.carpeta ? `data-abre="${esc(r)}" data-nivel="${nivel}"` : ''}>
       <span class="od-ico">${ico(x.carpeta ? 'carpeta' : 'archivo')}</span>
       <span class="od-nom" title="${esc(x.nombre)}">${esc(nom)}</span>
-      <span class="od-meta">${meta}</span>
+      <span class="od-meta">${meta}${estadoPdf(x, r, items)}</span>
       <span class="od-acc">${enlaceIco('abrir', 'Abrir en OneDrive', esc(x.web))}${!x.carpeta && (x.tamano || 0) < MAX_DESCARGA ? btnIco('descargar', 'Descargar', `data-bajar="${esc(r)}"`) : ''}</span>
     </div>${x.carpeta ? '<div class="od-hijos" hidden></div>' : ''}`;
   };
-  const filas = (items, ruta, nivel) => ordenar(items).map(x => fila(x, ruta, nivel)).join('');
-  if (!bloques.length) { el.innerHTML = cab() + `<p class="sub">${errOd ? (/desconocida/i.test(msg(errOd)) ? 'La conexión con OneDrive se está actualizando: en unos minutos aparecen aquí los documentos.' : 'No se pudo leer OneDrive: ' + esc(msg(errOd))) : 'Esta carpeta todavía no existe en OneDrive.'}</p>`; return; }
+  const filas = (items, ruta, nivel) => ordenar(items).map(x => fila(x, ruta, nivel, items)).join('');
+  if (!bloques.length) { el.innerHTML = cab() + `<p class="sub">${errOd ? (/desconocida/i.test(msg(errOd)) ? 'La conexión con OneDrive se está actualizando: en unos minutos aparecen aquí los documentos.' : 'No se pudo leer OneDrive: ' + esc(msg(errOd))) : 'Esta carpeta todavía no existe en OneDrive.'}</p>`; conNuevo(); return; }
   const items = b => b.soloArchivos ? b.items.filter(x => !x.carpeta) : b.items;
   const totalN = bloques.reduce((a, b) => a + items(b).length, 0);
   const uno = bloques.length === 1;
   el.innerHTML = cab(`${totalN} elemento${totalN === 1 ? '' : 's'}${uno && bloques[0].ruta ? ' · ' + esc(bloques[0].ruta.split('/').pop()) : ''}`, uno ? bloques[0].web : '') +
     bloques.map(b => (uno ? '' : `<div class="od-grupo">${esc(b.ruta.split('/').pop())}${enlaceIco('abrir', 'Abrir folder en OneDrive', esc(b.web))}</div>`) +
       (items(b).length ? `<div class="od-lista">${filas(items(b), b.ruta, 0)}</div>` : '<p class="sub od-vacia">Carpeta vacía.</p>')).join('');
+  conNuevo();
   el.onclick = async ev => {
     if (ev.target.closest('a')) return;
+    const bp = ev.target.closest('[data-pdf]');
+    if (bp) {
+      bp.disabled = true; bp.textContent = 'Armando PDF…';
+      try { await D.docsWord('pdf', { encargo_id: e.id, ruta: bp.dataset.pdf }); panelOneDrive(el, e, grupos, { titulo, envios, legales, nuevo }); }
+      catch (err) { alert(msg(err)); bp.disabled = false; bp.textContent = 'Actualizar PDF'; }
+      return;
+    }
     const bj = ev.target.closest('[data-bajar]');
     if (bj) {
       const t = bj.innerHTML; bj.disabled = true; bj.textContent = '…';
@@ -2034,8 +2097,10 @@ async function vistaPropuestas(s) {
     document.querySelectorAll('[data-docs]').forEach(async el => {
       const pintarDocs = a => {
         const w = a.some(x => /\.docx?$/i.test(x.nombre)), f = a.some(x => /\.pdf$/i.test(x.nombre));
-        el.className = 'doc-estado ' + (w && f ? 'si' : 'no');
-        el.textContent = w && f ? 'Documentos cargados' : w ? 'Falta el PDF' : f ? 'Falta el Word' : 'Sin documentos';
+        // Word cambiado después de su PDF: el portal lo rehace solo en la próxima hora
+        const atras = a.some(x => /\.docx$/i.test(x.nombre) && a.some(y => y.nombre.toLowerCase() === x.nombre.replace(/\.docx$/i, '.pdf').toLowerCase() && new Date(y.fecha) - new Date(x.fecha) < -120000));
+        el.className = 'doc-estado ' + (w && f && !atras ? 'si' : 'no');
+        el.textContent = atras ? 'PDF por actualizar (se hace solo)' : w && f ? 'Documentos cargados' : w ? 'Falta el PDF (se hace solo)' : f ? 'Falta el Word' : 'Sin documentos';
         el.title = a.map(x => x.nombre).join(' · ') || 'No hay Word ni PDF en la carpeta de la propuesta';
       };
       const k = 'reg-docs-' + el.dataset.docs;
