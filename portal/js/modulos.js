@@ -1,8 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=166';
-import { descargarPDF } from './pdf.js?v=166';
-import { btnIco } from './iconos.js?v=166';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=166';
+import * as D from './datos.js?v=167';
+import { descargarPDF } from './pdf.js?v=167';
+import { btnIco } from './iconos.js?v=167';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=167';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -354,9 +354,11 @@ async function gantt(ctx) {
   // En teléfono el Gantt es solo para ver; se edita en iPad o computador (o en el Excel)
   const telefono = matchMedia('(max-width: 700px)').matches;
   const todo = !!ctx.editarTodo && !telefono, editable = (ctx.admin || ctx.rol === 'equipo') && !telefono;
-  const nueva = todo ? `<button class="btn sec mini" id="g-nueva"${g.filas.length >= 15 ? ' disabled title="El Excel tiene 15 filas de actividades"' : ''}>+ Actividad</button>` : '';
+  // En teléfono, administración puede al menos iniciar el cronograma y sumar actividades con un formulario corto
+  const nuevaTel = !!ctx.editarTodo && telefono;
+  const nueva = todo || nuevaTel ? `<button class="btn ${g.filas.length ? 'sec ' : ''}mini" id="g-nueva"${g.filas.length >= 15 ? ' disabled title="El Excel tiene 15 filas de actividades"' : ''}>${g.filas.length ? '+ Actividad' : 'Iniciar cronograma de obra'}</button>` : '';
   const estadoGuardar = '<span class="sub" id="g-guarda" aria-live="polite"></span>';
-  if (!g.filas.length) return { html: todo ? `<div class="vacio">Todavía no hay actividades en el cronograma.<div style="margin-top:12px">${nueva}</div>${estadoGuardar}</div>` : vacioDoc(ctx, 'cronograma'), montar: () => montarGantt(ctx, g) };
+  if (!g.filas.length) return { html: todo || nuevaTel ? `<div class="vacio">Todavía no hay actividades en el cronograma de obra.<div style="margin-top:12px">${nueva}</div>${estadoGuardar}</div>` : vacioDoc(ctx, 'cronograma'), montar: () => montarGantt(ctx, g, telefono) };
   const { filas, corte } = g;
   const fechas = filas.flatMap(f => [aFecha(f.inicio_esperado), f.finEsp, aFecha(f.inicio_real), aFecha(f.fin_real)]).filter(Boolean);
   const min = new Date(Math.min(...fechas, corte)); min.setDate(min.getDate() - 1);
@@ -403,7 +405,7 @@ async function gantt(ctx) {
   const cuerpoXls = () => `<h1>Cronograma ${esc(ctx.e.nombre)}</h1>${tabla.replace(/<select[\s\S]*?<\/select>/g, '').replace(/<button[^>]*>×<\/button>/g, '').replace(/<input[^>]*value="([^"]*)"[^>]*>%?/g, '$1')}`;
   const ayuda = telefono && (ctx.admin || ctx.rol === 'equipo') ? '<span class="solo-ver">Solo visualización</span> Para editar, abre el portal en iPad o computador.' : todo ? 'Edita aquí cualquier dato; se guarda también en el Excel del encargo.' : editable ? 'Escribe aquí las fechas reales y el avance; el estado, el peso y los totales se calculan solos.' : 'Cronograma del encargo.';
   return { html: kp + `<div class="barra-doc"><div class="sub">${ayuda} ${estadoGuardar}</div><div class="barra-acc">${nueva}${ctx.esCliente || ctx.alGuardar ? '' : btnIco('excel', 'Descargar Excel', 'id="xls-g"')}</div></div>` + grafico + tabla,
-    montar: () => { const b = $('#xls-g'); if (b) b.onclick = () => descargar(nombreArchivo(ctx.e, 'gantt', { fecha: iso(new Date()) }, 'xls'), cuerpoXls(), 'xls'); montarGantt(ctx, g); } };
+    montar: () => { const b = $('#xls-g'); if (b) b.onclick = () => descargar(nombreArchivo(ctx.e, 'gantt', { fecha: iso(new Date()) }, 'xls'), cuerpoXls(), 'xls'); montarGantt(ctx, g, telefono); } };
 }
 // Guardar un cambio del Gantt: portal primero, luego el Excel (si hay), y se vuelve a pintar
 let ganttOcupado = false;
@@ -419,7 +421,7 @@ async function guardarGantt0(ctx, accion) {
   if (ctx.alGuardar) { try { await ctx.alGuardar(); } catch (err) { alert('Se guardó en el portal, pero no se pudo pasar al Excel: ' + (err.message || err)); } }
   ctx.recargar();
 }
-function montarGantt(ctx, g) {
+function montarGantt(ctx, g, telefono = false) {
   document.querySelectorAll('.tabla-gantt [data-t]').forEach(inp => inp.onchange = () => {
     const k = inp.dataset.k; let v = inp.value;
     if (k === 'avance') v = Math.min(1, Math.max(0, Number(v) / 100));
@@ -442,7 +444,19 @@ function montarGantt(ctx, g) {
   if (n) n.onclick = () => {
     const ult = g.filas.at(-1);
     const ini = ult?.finEsp ? iso(new Date(ult.finEsp.getTime() + 86400000)) : (ctx.e.inicio || iso(new Date()));
-    guardarGantt(ctx, () => D.crearTarea({ encargo_id: ctx.e.id, orden: (ult?.orden || 0) + 1, nombre: 'Nueva actividad', inicio_esperado: ini, dias_esperados: 1, avance: 0 }));
+    const crear = (nombre, inicio, dias) => guardarGantt(ctx, () => D.crearTarea({ encargo_id: ctx.e.id, orden: (ult?.orden || 0) + 1, nombre, inicio_esperado: inicio, dias_esperados: dias, avance: 0 }));
+    if (!telefono) return crear('Nueva actividad', ini, 1);
+    // Teléfono: formulario corto con nombre, inicio y días de trabajo
+    const f0 = document.createElement('div'); f0.className = 'modal-fondo';
+    f0.innerHTML = `<form class="modal" id="g-form"><h2>${g.filas.length ? 'Nueva actividad' : 'Iniciar cronograma de obra'}</h2>
+      <p class="sub">${g.filas.length ? 'Se agrega al final del cronograma.' : 'Escribe la primera actividad; el Excel del cronograma se crea solo en la carpeta PROGRAMACIÓN del encargo.'}</p>
+      <div class="grilla-form"><div class="ancho"><label>Actividad</label><input name="nombre" required placeholder="Preliminares y demoliciones"></div>
+      <div><label>Inicio</label><input name="inicio" type="date" required value="${ini}"></div>
+      <div><label>Días de trabajo</label><input name="dias" type="number" min="1" required value="1" inputmode="numeric"></div></div>
+      <div class="pie-modal"><button type="button" class="btn sec" id="g-form-c">Cancelar</button><button class="btn">Guardar</button></div></form>`;
+    document.body.appendChild(f0);
+    f0.querySelector('#g-form-c').onclick = () => f0.remove();
+    f0.querySelector('#g-form').onsubmit = ev => { ev.preventDefault(); const f = ev.target; f0.remove(); crear(f.nombre.value.trim(), f.inicio.value, Math.max(1, Math.round(Number(f.dias.value) || 1))); };
   };
 }
 
