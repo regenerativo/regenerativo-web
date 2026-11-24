@@ -10389,3 +10389,7 @@ body.navegando .lv .main::after { content: ""; position: fixed; left: 50%; top: 
   .lv-isla-pop a { padding: 11px 14px; border-radius: 12px; font-size: 15px; color: var(--lv-tinta); text-decoration: none; white-space: nowrap; }
   .lv-isla-pop a:hover { background: rgba(30, 34, 29, 0.06); color: var(--lv-petroleo); }
 }
+@media (min-width: 1024px) {
+  .lv-isla-mas { padding: 0; width: 42px; height: 42px; justify-content: center; }
+  .lv-isla-mas[aria-expanded="true"] svg { transform: none; }
+}

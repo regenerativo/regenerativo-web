@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=170';
-import * as M from './modulos.js?v=170';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=170';
-import { vistaPersonal } from './personal.js?v=170';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=170';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=170';
+import * as D from './datos.js?v=171';
+import * as M from './modulos.js?v=171';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=171';
+import { vistaPersonal } from './personal.js?v=171';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=171';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=171';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -328,7 +328,7 @@ function ajustarIsla() {
   nav.querySelector('.lv-isla-mas')?.remove(); nav.querySelector('.lv-isla-pop')?.remove();
   const items = [...isla.querySelectorAll('a:not(.lv-isla-volver)')]; items.forEach(a => a.hidden = false);
   if (!isla.clientWidth || isla.scrollWidth <= isla.clientWidth + 1) return;
-  nav.insertAdjacentHTML('beforeend', `<button type="button" class="lv-isla-mas" aria-haspopup="true" aria-expanded="false">Más<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></button>`);
+  nav.insertAdjacentHTML('beforeend', `<button type="button" class="lv-isla-mas" aria-haspopup="true" aria-expanded="false" aria-label="Más opciones" title="Más opciones"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15"/></svg></button>`);
   const fuera = [];
   for (let i = items.length - 1; i >= 0 && isla.scrollWidth > isla.clientWidth + 1; i--) { if (items[i].classList.contains('activo')) continue; items[i].hidden = true; fuera.unshift(items[i]); }
   const mas = nav.querySelector('.lv-isla-mas');
