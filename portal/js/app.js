@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=174';
-import * as M from './modulos.js?v=174';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=174';
-import { vistaPersonal } from './personal.js?v=174';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=174';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=174';
+import * as D from './datos.js?v=175';
+import * as M from './modulos.js?v=175';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=175';
+import { vistaPersonal } from './personal.js?v=175';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=175';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=175';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -808,7 +808,7 @@ async function enviadosCliente(ctx, pintar) {
       if (f.size > 25e6) { malos.push(`${f.name} supera 25 MB (compártelo por correo)`); continue; }
       av.textContent = `Subiendo ${fs.length > 1 ? `${i + 1} de ${fs.length}: ` : ''}${f.name}…`;
       try { const b64 = await new Promise((ok2, no) => { const r = new FileReader(); r.onload = () => ok2(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(f); });
-        await conLimite(D.onedrive('cli_subir', { encargo_id: ctx.e.id, nombre: f.name, base64: b64 }), 120000); ok++; }
+        await conLimite(D.subirCliente({ encargo_id: ctx.e.id, nombre: f.name, base64: b64 }), 120000); ok++; }
       catch (err) { malos.push(`${f.name}: ${msg(err)}`); }
     }
     btn.disabled = false; ev.target.value = '';

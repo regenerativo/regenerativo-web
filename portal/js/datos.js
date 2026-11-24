@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=174';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=175';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -439,6 +439,14 @@ export async function finBorrarSoporte(s) {
 // OneDrive (función onedrive-conexion): url | estado | despegar | subir
 export async function onedrive(accion, extra = {}) {
   const { data, error } = await (await cliente()).functions.invoke('onedrive-conexion', { body: { accion, ...extra } });
+  if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+/** El cliente comparte un documento: queda en DOC _ REC / "AAAA MM DD _ DOCUMENTOS DEL CLIENTE" y avisa a proyectos@. */
+export async function subirCliente(body) {
+  const { data, error } = await (await cliente()).functions.invoke('subir-cliente', { body });
   if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
   if (data?.error) throw new Error(data.error);
   return data;
