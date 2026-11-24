@@ -29,6 +29,28 @@ const ALCANCE_CONEXION = ALCANCE + " Mail.Send";
 const CORREO_PROYECTOS = "proyectos@regenerativo.co";
 const CARPETAS_CLIENTE = ["DOC _ ENV", "DOC _ ENVIADOS"];
 const CARPETAS_RECIBIDOS = ["DOC _ REC", "DOC _ RECIBIDOS"];
+// Legales que ve el cliente: mismas secciones que el equipo, pero solo los PDF
+const LEGALES_CLIENTE: [string, string[]][] = [
+  ["Propuesta", ["LEGALES/00 PROPUESTA", "LEGALES/PROP _ ECONOMICAS"]],
+  ["Contratos", ["LEGALES/01 CONTRATOS", "LEGALES/OPS CONTRATOS"]],
+  ["Adendas", ["LEGALES/02 ADENDAS"]],
+  ["Actas de entrega", ["LEGALES/03 ACTAS DE ENTREGA", "LEGALES/04 ACTAS DE ENTREGA"]],
+  ["Cuentas de cobro", ["LEGALES/04 CUENTAS DE COBRO", "LEGALES/05 CUENTAS DE COBRO", "LEGALES/CUENTAS DE COBRO"]],
+  ["Facturación", ["LEGALES/05 FACTURACION"]],
+];
+const RAICES_LEGALES = LEGALES_CLIENTE.flatMap(([, c]) => c);
+async function legalesCliente(at: string, encargoId: string) {
+  const una = async (cands: string[]) => {
+    for (const c of cands) {
+      const r = await archivosEncargo(at, encargoId, [[c]]);
+      if (!r.web) continue;   // esa carpeta no existe: se prueba la siguiente
+      return { titulo: c.split("/").pop(), archivos: r.archivos.filter((a: any) => /\.pdf$/i.test(a.nombre) && !/XXXX/.test(a.ruta)).map(({ web: _w, ...a }: any) => a) };
+    }
+    return null;
+  };
+  // con el nombre de la carpeta tal cual está en OneDrive, en el orden de LEGALES
+  return { secciones: (await Promise.all(LEGALES_CLIENTE.map(([, c]) => una(c)))).filter(Boolean) };
+}
 const CARPETAS_VISOR: Record<string, string[]> = { presupuesto: ["PRESUPUESTO"], gantt: ["PROGRAMACIÓN", "PROGRAMACION"] };
 const PORTAL = "https://regenerativo.co/portal/";
 const RAIZ = "REG";
@@ -619,7 +641,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, web: d.webUrl, tamano: d.size });
     }
     // Acciones que puede usar cualquier persona invitada al encargo (clientes incluidos)
-    if (["aviso_comentario", "cli_enviados", "cli_archivo", "cli_recibidos", "cli_subir", "visor"].includes(b.accion)) {
+    if (["aviso_comentario", "cli_enviados", "cli_archivo", "cli_recibidos", "cli_subir", "cli_legales", "visor"].includes(b.accion)) {
       const { data: yo } = await usuario.auth.getUser();
       if (!yo?.user) return json({ error: "Sesión no válida." }, 401);
       if (b.accion === "aviso_comentario") {
@@ -632,6 +654,7 @@ Deno.serve(async (req) => {
       const at = await accesoGraph();
       if (b.accion === "cli_enviados") return json(await archivosEncargo(at, b.encargo_id, [CARPETAS_CLIENTE]));
       if (b.accion === "cli_recibidos") return json(await archivosEncargo(at, b.encargo_id, [CARPETAS_RECIBIDOS]));
+      if (b.accion === "cli_legales") return json(await legalesCliente(at, b.encargo_id));
       if (b.accion === "visor") return json(await visorCarpeta(at, b.encargo_id, b.modulo));
       if (b.accion === "cli_subir") {
         const r = await subirRecibido(at, b.encargo_id, String(b.nombre || ""), String(b.base64 || ""));
@@ -639,8 +662,10 @@ Deno.serve(async (req) => {
         return json(r);
       }
       const ruta = rutaSegura(b.ruta || "");
-      if (![...CARPETAS_CLIENTE, ...CARPETAS_RECIBIDOS].some((c) => ruta.startsWith(c + "/"))) return json({ error: "Sin acceso." }, 403);
-      const archivo = await archivoEncargo(at, b.encargo_id, "", ruta, !!b.pdf);
+      const esLegal = RAICES_LEGALES.some((c) => ruta.startsWith(c + "/"));
+      if (esLegal && !/\.pdf$/i.test(ruta)) return json({ error: "Sin acceso." }, 403);   // de legales, el cliente solo baja PDF
+      if (!esLegal && ![...CARPETAS_CLIENTE, ...CARPETAS_RECIBIDOS].some((c) => ruta.startsWith(c + "/"))) return json({ error: "Sin acceso." }, 403);
+      const archivo = await archivoEncargo(at, b.encargo_id, "", ruta, !esLegal && !!b.pdf);
       if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente descargó un documento", ruta.split("/").pop() || ruta);
       return json(archivo);
     }

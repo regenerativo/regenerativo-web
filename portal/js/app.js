@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=169';
-import * as M from './modulos.js?v=169';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=169';
-import { vistaPersonal } from './personal.js?v=169';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=169';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=169';
+import * as D from './datos.js?v=170';
+import * as M from './modulos.js?v=170';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=170';
+import { vistaPersonal } from './personal.js?v=170';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=170';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=170';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -277,7 +277,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     const y = scrollY;
     ['.titulo-pag', '.cont'].forEach(sel => { const a = mainV.querySelector(sel), b = mainN.querySelector(sel); if (a && b && a.innerHTML !== b.innerHTML) a.innerHTML = b.innerHTML; });
     const navV = lvViejo.querySelector('.lv-lado > .lv-nav'), navN = t.querySelector('.lv-lado > .lv-nav');
-    if (navV && navN && navV.innerHTML !== navN.innerHTML) { navV.innerHTML = navN.innerHTML; armarTabs(); moverIndicador(); }
+    if (navV && navN && navV.innerHTML !== navN.innerHTML) { navV.innerHTML = navN.innerHTML; armarTabs(); pintarIsla(); moverIndicador(); }
     if (!otraPagina || Math.abs(scrollY - y) > 2) scrollTo(0, y);
     return;
   }
@@ -289,9 +289,7 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
     const navV = lvViejo.querySelector('.lv-lado > .lv-nav'), navN = lvN.querySelector('.lv-lado > .lv-nav');
     if (navV && navN && navV.innerHTML !== navN.innerHTML) navV.innerHTML = navN.innerHTML;
     const subV = lvViejo.querySelector('.lv-top-sub'), subN = lvN.querySelector('.lv-top-sub'); if (subV && subN) subV.textContent = subN.textContent;
-    const islaV = lvViejo.querySelector('#lv-isla'), islaN = lvN.querySelector('#lv-isla');
-    if (islaV && islaN) [...islaV.querySelectorAll('a')].forEach(x => { const h = x.getAttribute('href'); const y = [...navN.querySelectorAll('a')].find(z => z.getAttribute('href') === h); if (y) x.classList.toggle('activo', y.classList.contains('activo')); });
-    armarTabs();
+    armarTabs(); pintarIsla();
     lvViejo.querySelector('#lado')?.classList.remove('abierto'); lvViejo.querySelector('#lv-velo')?.classList.remove('si');
     moverIndicador();
     if (otraPagina) scrollTo(0, 0);
@@ -313,18 +311,45 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
 // Menú arriba (isla en píldora, como Apple Music en iPad/Mac) o al lado; se recuerda en este navegador
 const menuArriba = () => { try { return localStorage.getItem('reg-menu') === 'arriba'; } catch (_) { return false; } };
 document.documentElement.classList.toggle('menu-arriba', menuArriba());
-function armarIsla() {
-  const isla = $('#lv-isla');
-  const enl = [...document.querySelectorAll('.lv-nav a:not(.volver):not(.enc-nom)')];
-  const volver = document.querySelector('.lv-nav a.volver');
+// La isla se vuelve a pintar cada vez que cambia el menú (p. ej. cuando llegan los conteos de OneDrive y aparecen más módulos)
+function pintarIsla() {
+  const isla = $('#lv-isla'); if (!isla) return;
+  const nav = document.querySelector('.lv-lado > .lv-nav') || document.querySelector('.lv-nav');
+  const enl = [...(nav?.querySelectorAll('a:not(.volver):not(.enc-nom)') || [])];
+  const volver = nav?.querySelector('a.volver');
+  isla.querySelectorAll('a').forEach(a => a.remove());
   isla.insertAdjacentHTML('beforeend', (volver ? `<a href="${volver.getAttribute('href')}" class="lv-isla-volver" title="Volver al portal">${ico('atras')}</a>` : '') +
     enl.map(a => `<a href="${a.getAttribute('href')}" class="${a.classList.contains('activo') ? 'activo' : ''}">${(a.querySelector('span:not(.cuenta)')?.textContent || a.textContent).trim()}</a>`).join(''));
+  ajustarIsla();
+}
+// Lo que no cabe en la isla pasa a «Más ▾» (menú desplegable); la opción activa siempre queda a la vista
+function ajustarIsla() {
+  const isla = $('#lv-isla'), nav = isla?.closest('.lv-isla'); if (!isla || !nav) return;
+  nav.querySelector('.lv-isla-mas')?.remove(); nav.querySelector('.lv-isla-pop')?.remove();
+  const items = [...isla.querySelectorAll('a:not(.lv-isla-volver)')]; items.forEach(a => a.hidden = false);
+  if (!isla.clientWidth || isla.scrollWidth <= isla.clientWidth + 1) return;
+  nav.insertAdjacentHTML('beforeend', `<button type="button" class="lv-isla-mas" aria-haspopup="true" aria-expanded="false">Más<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></button>`);
+  const fuera = [];
+  for (let i = items.length - 1; i >= 0 && isla.scrollWidth > isla.clientWidth + 1; i--) { if (items[i].classList.contains('activo')) continue; items[i].hidden = true; fuera.unshift(items[i]); }
+  const mas = nav.querySelector('.lv-isla-mas');
+  nav.insertAdjacentHTML('beforeend', `<div class="lv-isla-pop" hidden>${fuera.map(a => `<a href="${a.getAttribute('href')}">${esc(a.textContent)}</a>`).join('')}</div>`);
+  const pop = nav.querySelector('.lv-isla-pop');
+  const cerrar = () => { pop.hidden = true; mas.setAttribute('aria-expanded', 'false'); };
+  mas.onclick = ev => { ev.stopPropagation(); pop.hidden = !pop.hidden; mas.setAttribute('aria-expanded', String(!pop.hidden)); };
+  pop.querySelectorAll('a').forEach(a => a.addEventListener('click', cerrar));
+  if (!ajustarIsla.oye) { ajustarIsla.oye = true;
+    document.addEventListener('click', ev => { const p = document.querySelector('.lv-isla-pop'); if (p && !p.hidden && !p.contains(ev.target)) { p.hidden = true; document.querySelector('.lv-isla-mas')?.setAttribute('aria-expanded', 'false'); } });
+    let t; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(ajustarIsla, 150); }, { passive: true }); }
+}
+function armarIsla() {
+  const isla = $('#lv-isla');
+  pintarIsla();
   document.querySelectorAll('.lv-cambia').forEach(b => b.onclick = () => {
     const arriba = b.dataset.menu === 'arriba';
     try { localStorage.setItem('reg-menu', arriba ? 'arriba' : 'lado'); } catch (_) {}
     document.documentElement.classList.add('menu-cambiando');
     document.documentElement.classList.toggle('menu-arriba', arriba);
-    indAntes = null; moverIndicador();
+    indAntes = null; moverIndicador(); ajustarIsla();
     setTimeout(() => document.documentElement.classList.remove('menu-cambiando'), 700);
   });
   const pop = $('#lv-pop');
@@ -781,6 +806,26 @@ async function enviadosCliente(ctx, pintar) {
     av.textContent = [ok ? `Listo: ${ok === 1 ? 'recibimos tu documento' : `recibimos ${ok} documentos`}. Ya aparece${ok === 1 ? '' : 'n'} en Recibidos.` : '', malos.length ? `No se pudo subir ${malos.join(' · ')}.` : ''].filter(Boolean).join(' ');
     cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
   };
+}
+
+// Legales para el cliente: las mismas carpetas de LEGALES del equipo (nombre tal cual en OneDrive), solo los PDF
+async function legalesCliente(ctx, pintar, fresco = false) {
+  pintar(`<section class="panel cli-docs" id="cli-leg"><div class="cli-docs-cab"><h3>Legales</h3><p class="sub">Propuesta, contratos, adendas, actas de entrega, cuentas de cobro y facturación del proyecto, en PDF.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`);
+  let secs;
+  try { secs = (await conLimite(D.onedrive('cli_legales', { encargo_id: ctx.e.id }), 40000)).secciones || []; }
+  catch (err) { const c = $('#cli-leg .cli-docs-l'); if (!c) return; c.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', 'leg'); c.querySelector('[data-reintentar]').onclick = () => legalesCliente(ctx, pintar, true); return; }
+  const caja = $('#cli-leg .cli-docs-l'); if (!caja) return;
+  const ico = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
+  secs.forEach(x => x.archivos.sort(porLlegada));
+  caja.innerHTML = secs.length ? secs.map((x, j) => `<details class="cli-carpeta" ${x.archivos.length ? 'open' : ''}><summary>${ico}<b>${esc(x.titulo)}</b><span class="sub">${x.archivos.length}</span></summary>
+      ${x.archivos.length ? listaPlanaCli(x.archivos, 'lg' + j) : '<p class="sub cli-vacio">Todavía no hay documentos aquí.</p>'}</details>`).join('')
+    : '<p class="sub">Todavía no hay documentos legales para mostrar.</p>';
+  secs.forEach((x, j) => caja.querySelectorAll(`[data-lg${j}]`).forEach(b => b.onclick = async () => {
+    const a = x.archivos[+b.dataset['lg' + j]]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+    try { const d = await conLimite(D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta }), 60000); bajarBase64(d.base64, d.nombre); }
+    catch (err) { alert('No se pudo descargar: ' + msg(err)); }
+    b.disabled = false; b.textContent = t;
+  }));
 }
 
 // Propuesta para el cliente: el PDF que se le envió (carpeta Enviados); si no hay, el documento del portal
@@ -1316,17 +1361,18 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     if (k === 'resena') return esCliente;
     if (k === 'enviados' && esCliente) return true;
     if (k === 'recibidos' && esCliente) return false;
+    if (k === 'legales' && esCliente) return true;
     if (k === 'ajustes' || k === 'carpetas' || k === 'legales' || k === 'obra' || k === 'tecnica') return admin;
     if (k === 'finanzas') return s.facturacion;
     if (['contrato', 'adendas'].includes(k)) return false;
-    if (k === 'propuesta') return esCliente && web[k] > 0;
+    if (k === 'propuesta') return false;   // el cliente ve la propuesta en Legales
     if (k === 'gantt' && esCliente) return true;   // el cliente siempre ve Programación (si no hay cronograma, se le dice)
     if (k === 'presupuesto' || k === 'gantt') return admin || web[k] > 0 || (od[k] || 0) > 0;
     return admin || web[k] > 0;
   };
   const pintaMenu = () => MODULOS.filter(([k]) => visible(k)).map(([k, nom]) => {
     if (esCliente && k === 'enviados') nom = 'Documentos';
-    const c = SIN_CONTEO.includes(k) || (esCliente && k === 'enviados') ? null : n(k);
+    const c = SIN_CONTEO.includes(k) || (esCliente && (k === 'enviados' || k === 'legales')) ? null : n(k);
     if (admin && c === 0 && k !== seccion && k !== 'comentarios') return '';
     return `<a href="${k === 'resumen' ? base : base + '/' + k}" class="${k === seccion ? 'activo' : ''} ${c === 0 ? 'mod-vacio' : ''}">${icoMenu(k)}<span>${nom}</span>${c ? `<span class="cuenta">${c}</span>` : ''}</a>`;
   }).join('');
@@ -1343,7 +1389,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
       D.onedrive('conteos_encargo', { encargo_id: e.id, modulos: FUENTES }).then(c => {
         guardarConteo(e.id, c);
         if (JSON.stringify(c) === JSON.stringify(od)) return;
-        od = c; const m = $('#menu-enc'); if (m) m.innerHTML = pintaMenu(); const t = $('#tiles'); if (t) t.innerHTML = tiles();
+        od = c; const m = $('#menu-enc'); if (m) { m.innerHTML = pintaMenu(); armarTabs(); pintarIsla(); moverIndicador(); } const t = $('#tiles'); if (t) t.innerHTML = tiles();
       }).catch(() => {});
     }
   };
@@ -1495,6 +1541,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     };
     return;
   }
+  if (seccion === 'legales' && esCliente) return legalesCliente(ctx, pintar);
   if (seccion === 'propuesta' && esCliente) {
     const v = web.propuesta > 0 && M.VISTAS.propuesta ? await M.VISTAS.propuesta(ctx) : null;
     return propuestaCliente(ctx, pintar, v);
