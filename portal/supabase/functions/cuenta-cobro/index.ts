@@ -90,25 +90,28 @@ function armarCuenta(archivos: Record<string, string>, d: any) {
 const FUENTES_URL = "https://regenerativo.co/portal/assets/docfonts";
 // Fuentes de regenerativo incrustadas en el Word (Metronic Pro y Stolzl), para que el PDF que arma Microsoft salga con la letra real
 const FUENTES_DOC: [string, Record<string, string>][] = [
-  ["Metronic Pro", { Regular: "mp-r", Bold: "mp-b", Italic: "mp-i" }],
-  ["Metronic Pro SemiBold", { Regular: "mp-sb" }], ["Metronic Pro Bold", { Regular: "mp-b" }], ["Metronic Pro Italic", { Regular: "mp-i" }],
-  ["Metronic Pro Light", { Regular: "mp-l" }], ["Metronic Pro Light Italic", { Regular: "mp-li" }],
+  ["MetronicREG", { Regular: "rg-r", Bold: "rg-bb", Italic: "rg-ii" }],
+  ["MetronicREG SemiBold", { Regular: "rg-sb" }], ["MetronicREG Bold", { Regular: "rg-b" }], ["MetronicREG Italic", { Regular: "rg-i" }],
+  ["MetronicREG Light", { Regular: "rg-l" }], ["MetronicREG Light Italic", { Regular: "rg-li" }],
   ["Stolzl Medium", { Regular: "st-m" }], ["Stolzl Light", { Regular: "st-l" }], ["Stolzl Book", { Regular: "st-b" }],
 ];
-const LLAVES: Record<string, string> = { "mp-r": "{2BF3700E-1750-5F50-BFF9-22404A7D2AC7}", "mp-b": "{BF5989BD-C5A2-5F53-98EA-86C34760B6AC}", "mp-sb": "{30AAE685-1DE9-5EDE-B01B-068DB96A3D8C}",
-  "mp-l": "{BA09C502-3D98-57B5-BB91-E35AFA5C9769}", "mp-i": "{7361F9FE-AE90-5847-8862-D84DFADE0F3F}", "mp-li": "{655AD001-C8FA-5ED9-AC92-A2A8D42F3FB5}",
+const LLAVES: Record<string, string> = { "rg-r": "{996EE876-59BB-475E-8893-E1A14C2BA38D}", "rg-bb": "{E27761BC-CFA2-4638-82A1-735E3BA18C59}", "rg-ii": "{2E8C5BF7-133E-4719-BA25-76DD52366BD6}",
+  "rg-b": "{1688DD98-DF92-43A1-A1EF-04930ECF249E}", "rg-i": "{E8973237-A4CB-4900-9B6D-D452F799EA47}", "rg-sb": "{FD859686-2B77-4D9F-B69F-2121387CFF30}",
+  "rg-l": "{C859EB41-0AB7-4714-8375-86C96EC8B605}", "rg-li": "{2131C083-B51E-4498-8BD1-930424682B51}",
   "st-m": "{EDCC2940-515B-579A-8722-FC430542FE11}", "st-l": "{6FD71215-F7DA-52FA-9492-3F4ED3D458A3}", "st-b": "{BF43B586-7C5D-5FEE-ADC1-B9250A255B91}" };
-// Nombres del Word → nombre real de la fuente (Microsoft solo usa la fuente incrustada si el nombre coincide)
-const RENOMBRE: [RegExp, string][] = [[/"METRONICPRO-SEMIBOLDITALIC"/g, '"Metronic Pro SemiBold"'], [/"METRONICPRO-SEMIBOLD"/g, '"Metronic Pro SemiBold"'],
-  [/"METRONICPRO-LIGHTITALIC"/g, '"Metronic Pro Light Italic"'], [/"MetronicPro-Light"/g, '"Metronic Pro Light"']];
+// Microsoft no acepta la Metronic incrustada con su nombre original: en el Word va como «MetronicREG» (misma letra, otro nombre)
+const NOMBRE_MP = (n: string) => { const x = n.toUpperCase().replace(/[^A-Z]/g, "");
+  return x.includes("SEMIBOLD") ? "MetronicREG SemiBold" : x.includes("LIGHTITALIC") ? "MetronicREG Light Italic" : x.includes("LIGHT") ? "MetronicREG Light"
+    : x.includes("BOLD") ? "MetronicREG Bold" : x.includes("ITALIC") ? "MetronicREG Italic" : "MetronicREG"; };
+const RENOMBRE: [RegExp, (m: string, n: string) => string][] = [[/"(Metronic ?Pro[^"]*|METRONICPRO[^"]*)"/g, (_m, n) => `"${NOMBRE_MP(n)}"`]];
 async function incrustarFuentes(z: Record<string, Uint8Array>) {
   for (const k of Object.keys(z)) if (/^word\/(document|header\d*|footer\d*|styles|numbering|fontTable)\.xml$/.test(k)) {
-    let t = strFromU8(z[k]); const t0 = t; for (const [re, v] of RENOMBRE) t = t.replace(re, v);
+    let t = strFromU8(z[k]); const t0 = t; for (const [re, v] of RENOMBRE) t = t.replace(re, v as any);
     if (k === "word/fontTable.xml") { const vistos = new Set<string>(); t = t.replace(/<w:font w:name="([^"]*)">[\s\S]*?<\/w:font>/g, (m: string, n: string) => vistos.has(n) ? "" : (vistos.add(n), m)); }
     if (t !== t0) z[k] = strToU8(t);
   }
   const aTexto = strFromU8, aBytes = (t: string) => strToU8(t);
-  const cargar = async (k: string) => { const r = await fetch(`${FUENTES_URL}/${k}.odttf?v=2`); if (!r.ok) throw new Error("No se pudieron cargar las fuentes de regenerativo."); return new Uint8Array(await r.arrayBuffer()); };
+  const cargar = async (k: string) => { const r = await fetch(`${FUENTES_URL}/${k}.odttf?v=3`); if (!r.ok) throw new Error("No se pudieron cargar las fuentes de regenerativo."); return new Uint8Array(await r.arrayBuffer()); };
   let ft = aTexto(z["word/fontTable.xml"]);
   if (!/xmlns:r=/.test(ft)) ft = ft.replace("<w:fonts ", '<w:fonts xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ');
   const usadas = new Set<string>(), rels: string[] = [];
@@ -119,6 +122,7 @@ async function incrustarFuentes(z: Record<string, Uint8Array>) {
     if (re.test(ft)) ft = ft.replace(re, (_m: string, d: string) => `<w:font w:name="${nombre}">${d.replace(/<w:embed(Regular|Bold|Italic|BoldItalic) [^>]*\/>/g, "")}${emb}</w:font>`);
     else ft = ft.replace("</w:fonts>", `<w:font w:name="${nombre}"><w:charset w:val="00"/><w:family w:val="auto"/><w:pitch w:val="variable"/>${emb}</w:font></w:fonts>`);
   }
+  for (const k of Object.keys(z)) if (/^word\/fonts\/.+\.odttf$/.test(k)) delete z[k];   // fuentes viejas
   for (const k of usadas) {
     z[`word/fonts/${k}.odttf`] = await cargar(k);
     rels.push(`<Relationship Id="rIdF${k.replace("-", "")}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/font" Target="fonts/${k}.odttf"/>`);
