@@ -7113,14 +7113,10 @@ html body .lv .lv-resp-f textarea:focus {
   gap: 6px;
   flex: none;
 }
+/* Descargar con íconos: caben en la misma fila del documento también en el celular */
 @media (max-width: 560px) {
-  .lv-docs li {
-    flex-wrap: wrap;
-  }
-  .lv-doc-acc {
-    width: 100%;
-    justify-content: flex-end;
-  }
+  .lv-docs li { flex-wrap: nowrap; }
+  .lv-doc-acc { gap: 4px; }
 }
 .lv-duda .lv-card-cab {
   margin-bottom: 0;

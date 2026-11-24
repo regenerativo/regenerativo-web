@@ -1,8 +1,8 @@
 // Módulos del expediente: Brief, Propuesta, Contrato, Adendas, Presupuesto, Gantt, Informes y Base de precios.
-import * as D from './datos.js?v=173';
-import { descargarPDF } from './pdf.js?v=173';
-import { btnIco } from './iconos.js?v=173';
-import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=173';
+import * as D from './datos.js?v=174';
+import { descargarPDF } from './pdf.js?v=174';
+import { btnIco } from './iconos.js?v=174';
+import { cop, fecha, fechaCodigo, pct, aFecha, iso, diasDeTrabajo, finDeTrabajo, fechaCorte, ESTADOS_TAREA, DIAS_TRABAJO } from './formato.js?v=174';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -67,8 +67,8 @@ function barraDoc(ctx, d, tipo) {
   if (ctx.admin && d.estado === 'borrador') b.push(btnIco('enviar', 'Marcar enviado', 'data-doc="enviar"'));
   if (ctx.admin && tipo === 'contrato' && d.estado !== 'firmado') b.push(btnIco('firmar', 'Marcar firmado', 'data-doc="firmar"'));
   if (d.estado === 'enviado' && ctx.admin && tipo !== 'informe') b.push(btnIco('check', 'Aprobar', 'data-doc="aprobar"', 'ok'));
-  if (!(ctx.esCliente && ['presupuesto', 'gantt'].includes(tipo))) b.push(`<button class="btn-envio" data-doc="pdf">Descargar PDF <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button>`);
-  if (!ctx.esCliente) b.push(`<button class="btn-envio" data-doc="word">Descargar Word <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button>`);
+  if (!(ctx.esCliente && ['presupuesto', 'gantt'].includes(tipo))) b.push(btnIco('descargar', 'Descargar PDF', 'data-doc="pdf"'));
+  if (!ctx.esCliente) b.push(btnIco('archivo', 'Descargar Word', 'data-doc="word"'));
   return `<div class="barra-doc">
     <div><span class="etiqueta ${d.estado}">${ESTADOS_DOC[d.estado]}</span>
       <span class="sub"> &nbsp;${esc(d.titulo || '')} · versión ${d.version} · ${fecha(d.fecha)}</span>
@@ -105,7 +105,7 @@ function tarjetaDescarga(ctx, d, tipo, i) {
   return `<div class="tarjeta-doc">
     <div class="td-txt"><b>${titulo}</b><span>A continuación encuentras el documento de ${NOMBRE_TARJETA[tipo]}.</span>
       <span class="sub">Versión ${d.version} · ${fecha(d.fecha)}${d.estado === 'aprobado' || d.estado === 'firmado' ? ' · ' + ESTADOS_DOC[d.estado] : ''}</span></div>
-    <button class="btn-envio" data-dl="${i}">Descargar PDF <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9.5 5.5l6 6.5-6 6.5"></path></svg></button></div>`;
+    ${btnIco('descargar', 'Descargar PDF', `data-dl="${i}"`)}</div>`;
 }
 function vistaClienteDocs(ctx, items) {
   return {

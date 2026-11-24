@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=173';
-import * as M from './modulos.js?v=173';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=173';
-import { vistaPersonal } from './personal.js?v=173';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=173';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=173';
+import * as D from './datos.js?v=174';
+import * as M from './modulos.js?v=174';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=174';
+import { vistaPersonal } from './personal.js?v=174';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=174';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=174';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -768,16 +768,16 @@ const listaDocsCli = (l, pref) => {
 };
 const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i) => `<li><span class="lv-doc-ico">${(a.nombre.split('.').pop() || '').toUpperCase().slice(0, 4)}</span>
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
-      <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? `<button class="btn sec mini" data-${pref}="${i}" data-pdf="1">PDF</button>` : ''}<button class="btn sec mini" data-${pref}="${i}">Descargar</button></span></li>`).join('')}</ul>` : '';
+      <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? btnIco('archivo', 'Descargar en PDF', `data-${pref}="${i}" data-pdf="1"`) : ''}${btnIco('descargar', 'Descargar', `data-${pref}="${i}"`)}</span></li>`).join('')}</ul>` : '';
 async function enviadosCliente(ctx, pintar) {
   pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>
     <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos que tú o el personal requerido han compartido con nuestro equipo regenerativo.</p></div>
-      <button type="button" class="btn mini cli-subir" id="cli-subir"><span class="mas">+</span> Compartir un documento</button><input type="file" id="cli-arch" multiple hidden aria-hidden="true" tabindex="-1"><p class="sub cli-subir-ayuda">PDF, imágenes, Word, Excel o planos, hasta 25 MB cada uno.</p><div class="aviso" id="cli-aviso" role="status" aria-live="polite"></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`);
+      <button type="button" class="btn mini ico cli-subir" id="cli-subir" title="Compartir un documento" aria-label="Compartir un documento">${ico('subir')}</button><input type="file" id="cli-arch" multiple hidden aria-hidden="true" tabindex="-1"><p class="sub cli-subir-ayuda">PDF, imágenes, Word, Excel o planos, hasta 25 MB cada uno.</p><div class="aviso" id="cli-aviso" role="status" aria-live="polite"></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`);
   const bajar = (l, pref, caja) => caja.querySelectorAll(`[data-${pref}]`).forEach(b => b.onclick = async () => {
-    const a = l[+b.dataset[pref]]; const t = b.textContent; b.disabled = true; b.textContent = '…';
+    const a = l[+b.dataset[pref]]; const t = b.innerHTML; b.disabled = true; b.textContent = '…';
     try { const d = await conLimite(D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta, pdf: !!b.dataset.pdf }), 60000); bajarBase64(d.base64, d.nombre); }
     catch (err) { alert('No se pudo descargar: ' + msg(err)); }
-    b.disabled = false; b.textContent = t;
+    b.disabled = false; b.innerHTML = t;
   });
   const cargar = async (accion, id, pref, vacio, fresco = false) => {
     const caja = $(`#${id} .cli-docs-l`); if (!caja) return;
