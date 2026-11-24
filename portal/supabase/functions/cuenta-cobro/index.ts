@@ -108,7 +108,7 @@ async function incrustarFuentes(z: Record<string, Uint8Array>) {
     if (t !== t0) z[k] = strToU8(t);
   }
   const aTexto = strFromU8, aBytes = (t: string) => strToU8(t);
-  const cargar = async (k: string) => { const r = await fetch(`${FUENTES_URL}/${k}.odttf`); if (!r.ok) throw new Error("No se pudieron cargar las fuentes de regenerativo."); return new Uint8Array(await r.arrayBuffer()); };
+  const cargar = async (k: string) => { const r = await fetch(`${FUENTES_URL}/${k}.odttf?v=2`); if (!r.ok) throw new Error("No se pudieron cargar las fuentes de regenerativo."); return new Uint8Array(await r.arrayBuffer()); };
   let ft = aTexto(z["word/fontTable.xml"]);
   if (!/xmlns:r=/.test(ft)) ft = ft.replace("<w:fonts ", '<w:fonts xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ');
   const usadas = new Set<string>(), rels: string[] = [];
@@ -173,11 +173,8 @@ function leerCuenta(xml: string) {
 async function pdfDesdeWord(at: string, ruta: string, devolver = false) {
   const r = await G(at, `/me/drive/root:/${enc(ruta)}:/content`); if (!r.ok) throw new Error("No encontré el Word de la cuenta de cobro.");
   const z = unzipSync(new Uint8Array(await r.arrayBuffer()));
-  const rels = z["word/_rels/fontTable.xml.rels"] ? strFromU8(z["word/_rels/fontTable.xml.rels"]) : "";
-  const viejo = Object.keys(z).some((k) => /^word\/(document|header\d*|footer\d*)\.xml$/.test(k) && RENOMBRE.some(([re]) => { re.lastIndex = 0; const si = re.test(strFromU8(z[k])); re.lastIndex = 0; return si; }));
-  let word: any;
-  if (viejo || !/odttf/.test(rels) || !/embedTrueTypeFonts/.test(strFromU8(z["word/settings.xml"]))) { await incrustarFuentes(z); word = await subir(at, ruta, zipSync(z)); }
-  else word = await (await G(at, `/me/drive/root:/${enc(ruta)}?$select=id,webUrl,lastModifiedDateTime`)).json();
+  // Siempre con las fuentes vigentes (las que Microsoft sí acepta)
+  await incrustarFuentes(z); const word = await subir(at, ruta, zipSync(z));
   const datos = leerCuenta(strFromU8(z["word/document.xml"]));
   const rp = await G(at, `/me/drive/items/${word.id}/content?format=pdf`); if (!rp.ok) throw new Error("No se pudo convertir el Word a PDF.");
   const bytes = new Uint8Array(await rp.arrayBuffer());
