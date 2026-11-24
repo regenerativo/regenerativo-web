@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=171';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=172';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -442,6 +442,15 @@ export async function onedrive(accion, extra = {}) {
   if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch (_) {} throw new Error(m); }
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+/** Enlace "cualquiera con el enlace" de un documento de OneDrive (para abrirlo sin iniciar sesión en Microsoft). */
+const _enlaces = new Map();
+export async function enlaceOneDrive(url) {
+  if (_enlaces.has(url)) return _enlaces.get(url);
+  const { data, error } = await (await cliente()).functions.invoke('enlace-onedrive', { body: { url } });
+  if (error || data?.error || !data?.url) return url;
+  _enlaces.set(url, data.url); return data.url;
 }
 
 // ---------------- Comentarios y dudas del cliente ----------------

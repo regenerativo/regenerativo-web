@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=171';
-import * as M from './modulos.js?v=171';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=171';
-import { vistaPersonal } from './personal.js?v=171';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=171';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=171';
+import * as D from './datos.js?v=172';
+import * as M from './modulos.js?v=172';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=172';
+import { vistaPersonal } from './personal.js?v=172';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=172';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=172';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -307,6 +307,15 @@ function marco(s, { titulo, ruta = '', acciones = '', html, menu = null, activo 
   $('#salir2').onclick = async () => { await D.dejarDeEscuchar(); await D.salir(); location.hash = '#/acceso'; };
   moverIndicador();
 }
+
+// Enlaces de OneDrive: se abren con un enlace compartido para no pedir inicio de sesión en Microsoft (solo administración)
+document.addEventListener('click', ev => {
+  const a = ev.target.closest?.('a[href*=".sharepoint.com/"]');
+  if (!a || ev.defaultPrevented || ev.metaKey || ev.ctrlKey || /\/:[a-z]:\/[a-z]\//i.test(a.href)) return;   // ya es un enlace compartido
+  ev.preventDefault();
+  const w = window.open('about:blank', '_blank'); try { if (w) w.opener = null; } catch (_) {}
+  D.enlaceOneDrive(a.href).then(u => { if (w && !w.closed) w.location.href = u; else location.href = u; }).catch(() => { if (w && !w.closed) w.location.href = a.href; else location.href = a.href; });
+}, true);
 
 // Menú arriba (isla en píldora, como Apple Music en iPad/Mac) o al lado; se recuerda en este navegador
 const menuArriba = () => { try { return localStorage.getItem('reg-menu') === 'arriba'; } catch (_) { return false; } };
