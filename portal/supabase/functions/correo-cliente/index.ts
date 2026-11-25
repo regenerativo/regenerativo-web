@@ -126,6 +126,18 @@ Deno.serve(async (req) => {
       if (!k?.refresh_token || b.clave !== k.refresh_token) return json({ error: "Sin acceso." }, 403);
       return json(await revisarEnvios());
     }
+    // Prueba: un aviso de ejemplo solo a apardo@, saliendo como proyectos@ (dice de qué cuenta salió)
+    if (b.accion === "prueba") {
+      const { data: k } = await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle();
+      if (!k?.refresh_token || b.clave !== k.refresh_token) return json({ error: "Sin acceso." }, 403);
+      const at = await token("offline_access Mail.Send");
+      const html = plantilla("Portal de encargos · nuevos documentos", "26  I  EJEMPLO (PRUEBA)",
+        `<p style="font-size:15px;line-height:1.5">Hola, te compartimos un documento nuevo del proyecto:</p>
+         <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px"><li style="margin:4px 0">EJEMPLO DE DOCUMENTO.pdf</li></ul>
+         <p style="color:#999;font-size:12px">Este es un correo de prueba del portal: así le llegan los avisos al cliente.</p>`);
+      const ok = await enviarCliente(at, [CORREO_APARDO], "Prueba · Nuevo documento · 26  I  EJEMPLO", html);
+      return json({ enviado: ok, desde: comoProyectos ? CORREO_PROYECTOS : CORREO_APARDO });
+    }
     if (b.accion === "aviso_respuesta") {
       const usuario = createClient(URL_SB, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
       const { data: esAdmin } = await usuario.rpc("es_admin");
