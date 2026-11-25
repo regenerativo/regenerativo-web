@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=175';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=176';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -529,7 +529,9 @@ export async function responderComentario(id, cambios) {
   const { error } = await c.from('comentarios').update({ ...cambios, ...extra }).eq('id', id);
   if (error) throw error;
   // Si hay respuesta, le llega por correo al cliente (si tiene correo para avisos)
-  if (cambios.respuesta && !MODO_DEMO) return onedrive('aviso_respuesta', { comentario_id: id }).catch(e => ({ enviado: false, motivo: e.message }));
+  // El correo al cliente sale con copia a proyectos@ (función correo-cliente)
+  if (cambios.respuesta && !MODO_DEMO) return (await cliente()).functions.invoke('correo-cliente', { body: { accion: 'aviso_respuesta', comentario_id: id } })
+    .then(({ data, error }) => error ? { enviado: false, motivo: error.message } : data).catch(e => ({ enviado: false, motivo: e.message }));
   return null;
 }
 // Abonos del encargo (fecha y valor) para el cliente y el equipo

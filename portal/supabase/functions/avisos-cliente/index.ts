@@ -8,6 +8,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
 const CLIENTE = "5fb20396-2b10-470b-b028-86f4b6e9d9ca";
 const PORTAL = "https://regenerativo.co/portal/";
+const CORREO_PROYECTOS = "proyectos@regenerativo.co";   // copia de todo correo que le llega al cliente
 const ENVIADOS = ["DOC _ ENV", "DOC _ ENVIADOS"];
 // Legales que ve el cliente en su portal (solo PDF)
 const LEGALES = [["LEGALES/00 PROPUESTA", "LEGALES/PROP _ ECONOMICAS"], ["LEGALES/01 CONTRATOS", "LEGALES/OPS CONTRATOS"], ["LEGALES/02 ADENDAS"],
@@ -88,7 +89,7 @@ async function revisar() {
         partes.push(`<p style="font-size:15px;line-height:1.5">Se actualizó el <b>cronograma de obra</b> (${(t || []).length} actividades · avance promedio ${av} %).</p>`); }
       const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
         method: "POST", headers: { Authorization: `Bearer ${atCorreo}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: { subject: `Actualización · ${e.nombre}`, body: { contentType: "HTML", content: plantilla(e.nombre, partes.join("")) }, toRecipients: para.map((a) => ({ emailAddress: { address: a } })) }, saveToSentItems: true }),
+        body: JSON.stringify({ message: { subject: `Actualización · ${e.nombre}`, body: { contentType: "HTML", content: plantilla(e.nombre, partes.join("")) }, toRecipients: para.map((a) => ({ emailAddress: { address: a } })), ccRecipients: para.includes(CORREO_PROYECTOS) ? [] : [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: true }),
       });
       enviado = r.ok;
       if (!r.ok) continue;   // se reintenta en la próxima revisión (no se guarda el estado)

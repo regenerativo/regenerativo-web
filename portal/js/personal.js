@@ -1,9 +1,9 @@
 // Finanzas personales de Andrés: lo mismo que tenía en MONAI (categorías y etiquetas en inglés, como él las escribe),
 // con Movimientos y Rendimiento como las finanzas de regenerativo. Tres tipos: ingreso, gasto y ahorro (el ahorro no cuenta como gasto).
-import * as D from './datos.js?v=175';
-import { cop, fecha, iso } from './formato.js?v=175';
-import { btnIco, ico } from './iconos.js?v=175';
-import { barras } from './finanzas.js?v=175';
+import * as D from './datos.js?v=176';
+import { cop, fecha, iso } from './formato.js?v=176';
+import { btnIco, ico } from './iconos.js?v=176';
+import { barras } from './finanzas.js?v=176';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
