@@ -31,6 +31,18 @@ async function asegurarCarpeta(at: string, ruta: string) {
   await G(at, `/me/drive/root:/${enc(p.join("/"))}:/children`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nombre, folder: {}, "@microsoft.graph.conflictBehavior": "fail" }) });
 }
 
+// Membrete de los correos: encabezado y pie van como imagen (Stolzl se ve igual en cualquier correo); el texto en Metronic Pro con Arial de respaldo.
+const MEMB = "https://regenerativo.co/portal/assets/correo";
+const membrete = (contenido: string) => `<!doctype html><html><head><meta charset="utf-8"><style>@font-face{font-family:"Metronic Pro";src:url(https://regenerativo.co/portal/assets/fonts/metronic-regular.woff) format("woff")}</style></head>
+<body style="margin:0;padding:24px 0;background:#F4F4F2"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#fff;border-collapse:collapse">
+<tr><td style="padding:26px 36px 0"><img src="${MEMB}/membrete-sup.png" width="528" alt="ARQUITECTURA I DISEÑO DE ESPACIOS · Portal de encargos" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:30px 36px 8px;font-family:'Metronic Pro',Arial,sans-serif;color:#1D1D1B;font-size:15px;line-height:1.55">${contenido}</td></tr>
+<tr><td style="padding:34px 36px 26px"><img src="${MEMB}/membrete-inf.png" width="528" alt="Por _ regenerativo · info@regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+</table></body></html>`;
+const CEJA = (t: string) => `<p style="margin:0 0 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#BFBFBF">${t}</p>`;
+const BOTON = (url: string) => `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Ver en el portal</a></p>`;
+const NOTA = `<p style="margin:0;color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.</p>`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
@@ -58,12 +70,10 @@ Deno.serve(async (req) => {
     if (!esAdmin) {
       try {
         const am = await token("offline_access Mail.Send");
-        const html = `<div style="font-family:Arial,sans-serif;color:#1E221D;max-width:560px">
-          <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#999">Portal de encargos · el cliente compartió un documento</p>
-          <h2 style="font-weight:400;margin:0 0 6px">${escH(e.nombre)}</h2>
+        const html = membrete(`${CEJA("Portal de encargos · el cliente compartió un documento")}
+          <h2 style="margin:0 0 6px;font-weight:400;font-size:22px;line-height:1.3">${escH(e.nombre)}</h2>
           <p style="color:#999;margin:0 0 18px">${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })} · ${escH(carpeta)}</p>
-          <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${escH(d.name)}</p>
-          <p style="color:#999;font-size:12px">Por _ <b style="font-weight:700;color:#1E221D">regenerativo</b></p></div>`;
+          <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${escH(d.name)}</p>`);
         await G(am, "/me/sendMail", { method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: { subject: `El cliente compartió un documento · ${e.nombre}`, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: false }) });
       } catch (_) { /* el archivo ya quedó guardado */ }

@@ -34,13 +34,19 @@ async function correosCliente(encargoId: string): Promise<string[]> {
   const { data: e } = await admin.from("encargos").select("cliente:clientes(email)").eq("id", encargoId).maybeSingle();
   return String((e as any)?.cliente?.email || "").split(/[,;\s]+/).map((x) => x.trim().toLowerCase()).filter((x) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
 }
+// Membrete de los correos: encabezado y pie van como imagen (Stolzl se ve igual en cualquier correo); el texto en Metronic Pro con Arial de respaldo.
+const MEMB = "https://regenerativo.co/portal/assets/correo";
+const membrete = (contenido: string) => `<!doctype html><html><head><meta charset="utf-8"><style>@font-face{font-family:"Metronic Pro";src:url(https://regenerativo.co/portal/assets/fonts/metronic-regular.woff) format("woff")}</style></head>
+<body style="margin:0;padding:24px 0;background:#F4F4F2"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#fff;border-collapse:collapse">
+<tr><td style="padding:26px 36px 0"><img src="${MEMB}/membrete-sup.png" width="528" alt="ARQUITECTURA I DISEÑO DE ESPACIOS · Portal de encargos" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:30px 36px 8px;font-family:'Metronic Pro',Arial,sans-serif;color:#1D1D1B;font-size:15px;line-height:1.55">${contenido}</td></tr>
+<tr><td style="padding:34px 36px 26px"><img src="${MEMB}/membrete-inf.png" width="528" alt="Por _ regenerativo · info@regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+</table></body></html>`;
+const CEJA = (t: string) => `<p style="margin:0 0 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#BFBFBF">${t}</p>`;
+const BOTON = (url: string) => `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Ver en el portal</a></p>`;
+const NOTA = `<p style="margin:0;color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.</p>`;
 function plantilla(ceja: string, titulo: string, cuerpo: string) {
-  return `<div style="font-family:Arial,sans-serif;color:#1E221D;max-width:560px">
-    <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#999">${escH(ceja)}</p>
-    <h2 style="font-weight:400;margin:0 0 18px">${escH(titulo)}</h2>
-    ${cuerpo}
-    <p style="margin:22px 0"><a href="${PORTAL}" style="display:inline-block;background:#1E221D;color:#fff;text-decoration:none;border-radius:999px;padding:10px 20px">Ver en el portal</a></p>
-    <p style="color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.<br>Por _ <b style="font-weight:700;color:#1E221D">regenerativo</b></p></div>`;
+  return membrete(`${CEJA(escH(ceja))}<h2 style="margin:0 0 18px;font-weight:400;font-size:22px;line-height:1.3">${escH(titulo)}</h2>${cuerpo}${BOTON(PORTAL)}${NOTA}`);
 }
 // Sale como proyectos@regenerativo.co con copia a apardo@. Si Microsoft no deja "Enviar como" proyectos@, sale de apardo@ con copia a proyectos@.
 const CORREO_APARDO = "apardo@regenerativo.co";
