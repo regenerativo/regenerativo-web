@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
           <h2 style="font-weight:400;margin:0 0 6px">${escH(e.nombre)}</h2>
           <p style="color:#999;margin:0 0 18px">${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })} · ${escH(carpeta)}</p>
           <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${escH(d.name)}</p>
-          <p style="color:#999;font-size:12px">Por — regenerativo</p></div>`;
+          <p style="color:#999;font-size:12px">Por _ <b style="font-weight:700;color:#1E221D">regenerativo</b></p></div>`;
         await G(am, "/me/sendMail", { method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: { subject: `El cliente compartió un documento · ${e.nombre}`, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: false }) });
       } catch (_) { /* el archivo ya quedó guardado */ }

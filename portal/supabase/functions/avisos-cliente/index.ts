@@ -48,7 +48,7 @@ const plantilla = (titulo: string, cuerpo: string) => `<div style="font-family:A
   <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#999">Portal de encargos · actualización</p>
   <h2 style="font-weight:400;margin:0 0 18px">${esc(titulo)}</h2>${cuerpo}
   <p style="margin:22px 0"><a href="${PORTAL}" style="display:inline-block;background:#1E221D;color:#fff;text-decoration:none;border-radius:999px;padding:10px 20px">Ver en el portal</a></p>
-  <p style="color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.<br>Por — regenerativo</p></div>`;
+  <p style="color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.<br>Por _ <b style="font-weight:700;color:#1E221D">regenerativo</b></p></div>`;
 
 // Sale como proyectos@regenerativo.co con copia a apardo@. Si Microsoft no deja "Enviar como" proyectos@, sale de apardo@ con copia a proyectos@.
 const CORREO_APARDO = "apardo@regenerativo.co";
