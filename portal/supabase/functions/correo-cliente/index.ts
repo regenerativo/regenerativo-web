@@ -1,7 +1,7 @@
-// Correos al cliente que antes salían de onedrive-conexion, ahora con copia a proyectos@regenerativo.co:
+// Correos al cliente que antes salían de onedrive-conexion, ahora desde proyectos@regenerativo.co:
 //   {accion:'revisar_envios', clave}  → (cada hora, pg_cron) documentos nuevos de DOC _ ENV de cada encargo
 //   {accion:'aviso_respuesta', comentario_id} → (administración) respuesta de regenerativo a una duda o comentario
-// Salen desde la cuenta conectada a OneDrive (apardo@regenerativo.co).
+// Salen como proyectos@regenerativo.co (con copia a apardo@) desde la cuenta conectada a OneDrive.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -42,15 +42,26 @@ function plantilla(ceja: string, titulo: string, cuerpo: string) {
     <p style="margin:22px 0"><a href="${PORTAL}" style="display:inline-block;background:#1E221D;color:#fff;text-decoration:none;border-radius:999px;padding:10px 20px">Ver en el portal</a></p>
     <p style="color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.<br>Por — regenerativo</p></div>`;
 }
-// Todo correo al cliente lleva copia a proyectos@
-async function enviar(at: string, para: string[], asunto: string, html: string) {
-  const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+// Sale como proyectos@regenerativo.co con copia a apardo@. Si Microsoft no deja "Enviar como" proyectos@, sale de apardo@ con copia a proyectos@.
+const CORREO_APARDO = "apardo@regenerativo.co";
+let comoProyectos: boolean | null = null;
+async function enviarCliente(at: string, para: string[], asunto: string, html: string) {
+  const dir = (l: string[]) => l.map((a) => ({ emailAddress: { address: a } }));
+  const intento = (desde: boolean) => fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
     method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html }, toRecipients: para.map((a) => ({ emailAddress: { address: a } })),
-      ccRecipients: para.includes(CORREO_PROYECTOS) ? [] : [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: true }),
+    body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html }, toRecipients: dir(para),
+      ...(desde ? { from: { emailAddress: { address: CORREO_PROYECTOS, name: "Proyectos · regenerativo" } }, ccRecipients: dir(para.includes(CORREO_APARDO) ? [] : [CORREO_APARDO]) }
+        : { ccRecipients: dir(para.includes(CORREO_PROYECTOS) ? [] : [CORREO_PROYECTOS]) }) }, saveToSentItems: true }),
   });
-  return r.ok;
+  if (comoProyectos !== false) {
+    const r = await intento(true);
+    if (r.ok) { comoProyectos = true; return true; }
+    if (r.status !== 403 && r.status !== 400) return false;
+    comoProyectos = false;
+  }
+  return (await intento(false)).ok;
 }
+const enviar = enviarCliente;
 
 // Cada hora: documentos nuevos en DOC _ ENV → correo al cliente. La primera vez solo se toma la línea base.
 async function revisarEnvios() {
@@ -87,7 +98,7 @@ async function revisarEnvios() {
     if (!antes || nuevos.length || rutas.length !== antes.length) await admin.from("encargos").update({ docs_avisados: rutas }).eq("id", e.id);
     res.push({ encargo: e.nombre, base: !antes, nuevos: nuevos.length, enviado });
   }
-  return { revisados: res.length, detalle: res };
+  return { revisados: res.length, desde: comoProyectos === false ? CORREO_APARDO : comoProyectos ? CORREO_PROYECTOS : null, detalle: res };
 }
 // Cuando regenerativo responde una duda o comentario del cliente
 async function avisoRespuesta(id: string) {
@@ -103,7 +114,7 @@ async function avisoRespuesta(id: string) {
      <p style="color:#999;margin:0 0 6px">Respuesta</p><p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px;margin:0">${escH(c.respuesta).replace(/\n/g, "<br>")}</p>`);
   const ok = await enviar(at, para, `regenerativo respondió · ${nombre}`, html);
   if (ok) await admin.from("comentarios").update({ respuesta_avisada: new Date().toISOString() }).eq("id", id);
-  return { enviado: ok };
+  return { enviado: ok, desde: comoProyectos === false ? CORREO_APARDO : CORREO_PROYECTOS };
 }
 
 Deno.serve(async (req) => {

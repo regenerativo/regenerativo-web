@@ -8,7 +8,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
 const CLIENTE = "5fb20396-2b10-470b-b028-86f4b6e9d9ca";
 const PORTAL = "https://regenerativo.co/portal/";
-const CORREO_PROYECTOS = "proyectos@regenerativo.co";   // copia de todo correo que le llega al cliente
+const CORREO_PROYECTOS = "proyectos@regenerativo.co";   // remitente de todo correo que le llega al cliente
 const ENVIADOS = ["DOC _ ENV", "DOC _ ENVIADOS"];
 // Legales que ve el cliente en su portal (solo PDF)
 const LEGALES = [["LEGALES/00 PROPUESTA", "LEGALES/PROP _ ECONOMICAS"], ["LEGALES/01 CONTRATOS", "LEGALES/OPS CONTRATOS"], ["LEGALES/02 ADENDAS"],
@@ -50,6 +50,26 @@ const plantilla = (titulo: string, cuerpo: string) => `<div style="font-family:A
   <p style="margin:22px 0"><a href="${PORTAL}" style="display:inline-block;background:#1E221D;color:#fff;text-decoration:none;border-radius:999px;padding:10px 20px">Ver en el portal</a></p>
   <p style="color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.<br>Por — regenerativo</p></div>`;
 
+// Sale como proyectos@regenerativo.co con copia a apardo@. Si Microsoft no deja "Enviar como" proyectos@, sale de apardo@ con copia a proyectos@.
+const CORREO_APARDO = "apardo@regenerativo.co";
+let comoProyectos: boolean | null = null;
+async function enviarCliente(at: string, para: string[], asunto: string, html: string) {
+  const dir = (l: string[]) => l.map((a) => ({ emailAddress: { address: a } }));
+  const intento = (desde: boolean) => fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
+    method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ message: { subject: asunto, body: { contentType: "HTML", content: html }, toRecipients: dir(para),
+      ...(desde ? { from: { emailAddress: { address: CORREO_PROYECTOS, name: "Proyectos · regenerativo" } }, ccRecipients: dir(para.includes(CORREO_APARDO) ? [] : [CORREO_APARDO]) }
+        : { ccRecipients: dir(para.includes(CORREO_PROYECTOS) ? [] : [CORREO_PROYECTOS]) }) }, saveToSentItems: true }),
+  });
+  if (comoProyectos !== false) {
+    const r = await intento(true);
+    if (r.ok) { comoProyectos = true; return true; }
+    if (r.status !== 403 && r.status !== 400) return false;
+    comoProyectos = false;
+  }
+  return (await intento(false)).ok;
+}
+
 async function revisar() {
   const at = await token("offline_access Files.ReadWrite User.Read");
   let atCorreo: string | null = null;
@@ -87,18 +107,14 @@ async function revisar() {
         <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px">${actualizados.map((d) => `<li>${esc(d.nombre)}</li>`).join("")}</ul>`);
       if (avisarG) { const av = (t || []).length ? Math.round((t || []).reduce((s: number, x: any) => s + Number(x.avance || 0), 0) / (t || []).length * 100) : 0;
         partes.push(`<p style="font-size:15px;line-height:1.5">Se actualizó el <b>cronograma de obra</b> (${(t || []).length} actividades · avance promedio ${av} %).</p>`); }
-      const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
-        method: "POST", headers: { Authorization: `Bearer ${atCorreo}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: { subject: `Actualización · ${e.nombre}`, body: { contentType: "HTML", content: plantilla(e.nombre, partes.join("")) }, toRecipients: para.map((a) => ({ emailAddress: { address: a } })), ccRecipients: para.includes(CORREO_PROYECTOS) ? [] : [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: true }),
-      });
-      enviado = r.ok;
-      if (!r.ok) continue;   // se reintenta en la próxima revisión (no se guarda el estado)
+      enviado = await enviarCliente(atCorreo, para, `Actualización · ${e.nombre}`, plantilla(e.nombre, partes.join("")));
+      if (!enviado) continue;   // se reintenta en la próxima revisión (no se guarda el estado)
     }
     // Sin correo del cliente: se toma lo actual como base, para no avisar cosas viejas cuando se agregue el correo
     await admin.from("encargos").update({ avisos_cliente: nuevo }).eq("id", e.id);
     res.push({ encargo: e.nombre, base: primera, actualizados: actualizados.length, nuevos_legales: nuevosAll.length, cronograma: avisarG, enviado, sin_correo: !para.length });
   }
-  return { revisados: res.length, detalle: res };
+  return { revisados: res.length, desde: comoProyectos === false ? CORREO_APARDO : comoProyectos ? CORREO_PROYECTOS : null, detalle: res };
 }
 
 Deno.serve(async (req) => {
