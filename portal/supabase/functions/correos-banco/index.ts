@@ -1,5 +1,5 @@
 // Revisión automática del correo (cada hora, pg_cron): lee las alertas de Bancolombia que llegan a
-// facturacion@ / apardo@ y las deja en Finanzas → Por confirmar (origen «correo»). No repite: la referencia
+// facturacion@ / apardo@ (y las de Nequi) y las deja en Finanzas → Por confirmar (origen «correo»). No repite: la referencia
 // es el identificador del correo (ref_correo único). Solo se usa con la clave interna (integraciones 'cron').
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -33,6 +33,50 @@ function fecha(t: string, recibido: string) {
   return `${y}-${m[2]}-${m[1]}`;
 }
 const limpio = (s: string) => s.replace(/\s+/g, " ").trim();
+
+// Nequi (también de regenerativo): pagos, envíos Bre-B, recargas y plata recibida
+const MESES: Record<string, string> = { enero: "01", febrero: "02", marzo: "03", abril: "04", mayo: "05", junio: "06", julio: "07", agosto: "08", septiembre: "09", setiembre: "09", octubre: "10", noviembre: "11", diciembre: "12" };
+const MES3: Record<string, string> = { ene: "01", feb: "02", mar: "03", abr: "04", may: "05", jun: "06", jul: "07", ago: "08", sep: "09", oct: "10", nov: "11", dic: "12" };
+function fechaNequi(t: string, recibido: string) {
+  let m = t.match(/(\d{1,2}) de ([a-záéíóú]+) de (\d{4})/i);
+  if (m && MESES[m[2].toLowerCase()]) return `${m[3]}-${MESES[m[2].toLowerCase()]}-${m[1].padStart(2, "0")}`;
+  m = t.match(/(\d{1,2})\/([A-Za-z]{3})\/(\d{4})/);
+  if (m && MES3[m[2].toLowerCase()]) return `${m[3]}-${MES3[m[2].toLowerCase()]}-${m[1].padStart(2, "0")}`;
+  return new Date(new Date(recibido).getTime() - 5 * 3600e3).toISOString().slice(0, 10);
+}
+function horaNequi(t: string, recibido: string) {
+  const m = t.match(/(\d{1,2}):(\d{2})\s*([ap])\.?\s*m/i);
+  if (!m) return new Date(new Date(recibido).getTime() - 5 * 3600e3).toISOString().slice(11, 16);
+  let h = Number(m[1]) % 12; if (/p/i.test(m[3])) h += 12;
+  return `${String(h).padStart(2, "0")}:${m[2]}`;
+}
+function leerNequi(texto: string, asunto: string, recibido: string) {
+  const t = limpio(texto);
+  if (/c[oó]digo|cambio tu correo|datos personales/i.test(asunto)) return null;
+  const base = (v: number, frase: string) => ({ fecha: fechaNequi(frase, recibido), hora: horaNequi(frase, recibido), valor: v, medio: "Nequi", correo_texto: "Nequi: " + frase });
+  let m;
+  if ((m = t.match(/Hiciste un pago en (.+?) por \$?\s?([\d.,]+)(.{0,120})/i))) {
+    const v = valor(m[2]); if (!v) return null;
+    return { ...base(v, `Hiciste un pago en ${limpio(m[1])} por $${m[2]}${m[3].split(/Puedes ingresar|CUS/i)[0]}`), tipo: "gasto", descripcion: "Pago a " + limpio(m[1]), nota_correo: null };
+  }
+  if ((m = t.match(/Enviaste de manera exitosa \$?\s?([\d.,]+) a (?:la llave \S+ de )?(.+?) el (\d{1,2} de [a-z]+ de \d{4}.{0,20}?m\.?)/i))) {
+    const v = valor(m[1]); if (!v) return null; const destino = limpio(m[2]); const propio = PROPIOS.test(destino);
+    return { ...base(v, m[0]), tipo: propio ? "socio" : "gasto", descripcion: "Envío Nequi a " + destino,
+      nota_correo: propio ? "Va a tu cuenta personal: retiro del socio" : "¿A qué corresponde este envío?" };
+  }
+  if ((m = t.match(/Recibiste \$?\s?([\d.,]+) de (.+?) el (\d{1,2} de [a-z]+ de \d{4}.{0,20}?m\.?)/i))) {
+    const v = valor(m[1]); if (!v) return null; const origen = limpio(m[2]); const propio = PROPIOS.test(origen);
+    return { ...base(v, m[0]), tipo: propio ? "socio" : "ingreso", descripcion: "Pago recibido de " + origen,
+      nota_correo: propio ? "Viene de ti: ¿aporte del socio o pago de un cliente?" : "¿De qué proyecto es este pago?" };
+  }
+  if ((m = t.match(/Hiciste una recarga a (.+?) de \$?\s?([\d.,]+?)\.?(?:\s|$)/i))) {
+    const v = valor(m[2]); if (!v) return null; const f = t.match(/Fecha del pago: \S+/i)?.[0] || "";
+    return { ...base(v, `Recarga a ${limpio(m[1])} por $${m[2]}. ${f}`), tipo: "gasto", descripcion: "Recarga " + limpio(m[1]), nota_correo: null };
+  }
+  const g = t.match(/\$\s?([\d.,]+)/);
+  if (!g || !valor(g[1])) return null;
+  return { ...base(valor(g[1]), asunto), tipo: "gasto", descripcion: "Movimiento Nequi · " + asunto, nota_correo: "Revisa este movimiento" };
+}
 
 function leer(texto: string, recibido: string) {
   const t = limpio(texto);
@@ -73,7 +117,7 @@ Deno.serve(async (req) => {
     const at = await token();
     const desde = b.desde || new Date(Date.now() - 3 * 864e5).toISOString();
     const filtro = `receivedDateTime ge ${desde}`;
-    let url = `https://graph.microsoft.com/v1.0/me/messages?$select=id,internetMessageId,receivedDateTime,from,body&$filter=${encodeURIComponent(filtro)}&$top=50`;
+    let url = `https://graph.microsoft.com/v1.0/me/messages?$select=id,internetMessageId,receivedDateTime,from,subject,body&$filter=${encodeURIComponent(filtro)}&$top=50`;
     let nuevos = 0, leidos = 0, ignorados = 0;
     // Lo que Andrés ya cargó manda: no se traen avisos de días que él ya organizó (último movimiento cargado por él)
     const { data: ult } = await admin.from("fin_movimientos").select("fecha").neq("origen", "correo").eq("estado", "confirmado").order("fecha", { ascending: false }).limit(1);
@@ -83,12 +127,14 @@ Deno.serve(async (req) => {
       const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || `Graph ${r.status}`);
       for (const m of d.value || []) {
         const de = (m.from?.emailAddress?.address || "").toLowerCase();
-        if (!/notificacionesbancolombia\.com$/.test(de)) continue;
+        const nequi = /@nequi\.com\.co$/.test(de);
+        if (!nequi && !/notificacionesbancolombia\.com$/.test(de)) continue;
         leidos++;
-        const mov = leer(m.body?.content || "", m.receivedDateTime);
+        const mov = nequi ? leerNequi(m.body?.content || "", m.subject || "", m.receivedDateTime) : leer(m.body?.content || "", m.receivedDateTime);
         if (!mov) { ignorados++; continue; }
         const ref = String(m.internetMessageId || m.id).replace(/[<>]/g, "").split("@")[0];
-        if (mov.fecha <= organizadoHasta) { ignorados++; continue; }
+        // Nequi no lo carga Andrés a mano: no se corta por fecha organizada, solo se evita el duplicado por valor
+        if (!nequi && mov.fecha <= organizadoHasta) { ignorados++; continue; }
         const { data: ya } = await admin.from("fin_movimientos").select("id").like("ref_correo", `${ref}%`).limit(1);
         if (ya?.length) continue;
         // ya cargado por él (mismo valor, ±3 días)

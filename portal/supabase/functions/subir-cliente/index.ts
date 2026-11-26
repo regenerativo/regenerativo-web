@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
         const html = membrete(`${CEJA("El cliente compartió un documento")}
           <h2 style="margin:0 0 6px;font-weight:400;font-size:22px;line-height:1.3">${escH(e.nombre)}</h2>
           <p style="color:#7A7A7A;margin:0 0 18px">${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })} · ${escH(carpeta)}</p>
-          <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${escH(d.name)}</p>`);
+          <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${escH(d.name)}</p>${d.webUrl ? `<p style="margin:22px 0 0"><a href="${d.webUrl}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Abrir en OneDrive</a></p>` : ""}`);
         await G(am, "/me/sendMail", { method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: { subject: `El cliente compartió un documento · ${e.nombre}`, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: CORREO_PROYECTOS } }] }, saveToSentItems: false }) });
       } catch (_) { /* el archivo ya quedó guardado */ }

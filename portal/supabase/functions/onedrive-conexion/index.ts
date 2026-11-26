@@ -431,13 +431,13 @@ async function correoProyectos(asunto: string, html: string) {
   } catch (_) { return false; }
 }
 const escH = (s: string) => (s || "").replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" } as any)[x]);
-async function avisoCliente(encargoId: string, accion: string, archivo: string) {
+async function avisoCliente(encargoId: string, accion: string, archivo: string, web = "") {
   const { data: e } = await admin.from("encargos").select("nombre").eq("id", encargoId).maybeSingle();
   const cuando = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" });
   const html = membrete(`${CEJA(escH(accion))}
     <h2 style="margin:0 0 6px;font-weight:400;font-size:22px;line-height:1.3">${escH(e?.nombre || "")}</h2>
     <p style="color:#7A7A7A;margin:0 0 18px">${cuando}</p>
-    <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${escH(archivo)}</p>`);
+    <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${escH(archivo)}</p>${web ? `<p style="margin:22px 0 0"><a href="${escH(web)}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Abrir en OneDrive</a></p>` : ""}`);
   return correoProyectos(`${accion} · ${e?.nombre || ""}`, html);
 }
 // ---- Avisos al cliente por correo (desde la cuenta de regenerativo) ----
@@ -595,7 +595,8 @@ async function subirRecibido(at: string, encargoId: string, nombre: string, base
     method: "PUT", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/octet-stream" }, body: bin,
   });
   if (!r.ok) throw new Error("No se pudo subir el archivo.");
-  return { ok: true, nombre: (await r.json()).name };
+  const d = await r.json();
+  return { ok: true, nombre: d.name, web: d.webUrl as string };
 }
 
 Deno.serve(async (req) => {
@@ -660,15 +661,18 @@ Deno.serve(async (req) => {
       if (b.accion === "visor") return json(await visorCarpeta(at, b.encargo_id, b.modulo));
       if (b.accion === "cli_subir") {
         const r = await subirRecibido(at, b.encargo_id, String(b.nombre || ""), String(b.base64 || ""));
-        if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente compartió un documento", r.nombre);
-        return json(r);
+        if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente compartió un documento", r.nombre, r.web);
+        return json({ ok: r.ok, nombre: r.nombre });
       }
       const ruta = rutaSegura(b.ruta || "");
       const esLegal = RAICES_LEGALES.some((c) => ruta.startsWith(c + "/"));
       if (esLegal && !/\.pdf$/i.test(ruta)) return json({ error: "Sin acceso." }, 403);   // de legales, el cliente solo baja PDF
       if (!esLegal && ![...CARPETAS_CLIENTE, ...CARPETAS_RECIBIDOS].some((c) => ruta.startsWith(c + "/"))) return json({ error: "Sin acceso." }, 403);
       const archivo = await archivoEncargo(at, b.encargo_id, "", ruta, !esLegal && !!b.pdf);
-      if (!esAdmin) await avisoCliente(b.encargo_id, "El cliente descargó un documento", ruta.split("/").pop() || ruta);
+      if (!esAdmin) {
+        let web = ""; try { web = (await graph(at, `/me/drive/root:/${enc(`${await baseEncargo(b.encargo_id)}/${ruta}`)}?$select=webUrl`))?.webUrl || ""; } catch (_) { /* sin enlace */ }
+        await avisoCliente(b.encargo_id, "El cliente descargó un documento", ruta.split("/").pop() || ruta, web);
+      }
       return json(archivo);
     }
     if (b.accion === "gantt_excel") {

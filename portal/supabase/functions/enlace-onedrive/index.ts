@@ -25,6 +25,33 @@ async function acceso() {
   if (t.refresh_token) await admin.from("integraciones").update({ refresh_token: t.refresh_token, actualizado: new Date().toISOString() }).eq("id", "onedrive");
   return t.access_token as string;
 }
+// Membrete de los correos: encabezado y pie van como imagen (Stolzl se ve igual en cualquier correo); el texto en Metronic Pro con Arial de respaldo.
+const MEMB = "https://regenerativo.co/portal/assets/correo";
+const membrete = (contenido: string) => `<!doctype html><html><head><meta charset="utf-8"><style>@font-face{font-family:"Metronic Pro";src:url(https://regenerativo.co/portal/assets/fonts/metronic-regular.woff) format("woff")}</style></head>
+<body style="margin:0;padding:0;background:#ffffff"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-collapse:collapse;margin:0">
+<tr><td style="padding:32px 32px 0"><img src="${MEMB}/membrete-sup.png" width="440" alt="PORTAL DE ENCARGOS · regenerativo" style="display:block;width:440px;max-width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:30px 32px 8px;font-family:'Metronic Pro',Arial,sans-serif;color:#1D1D1B;font-size:15px;line-height:1.55">${contenido}</td></tr>
+<tr><td style="padding:34px 32px 32px"><img src="${MEMB}/membrete-inf.png" width="440" alt="Área de Proyectos · Por _ regenerativo · www.regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:440px;max-width:100%;height:auto;border:0"></td></tr>
+</table></body></html>`;
+const CEJA = (t: string) => `<p style="margin:0 0 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#7A7A7A">${t}</p>`;
+const escH = (s: string) => (s || "").replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" } as any)[x]);
+// Aviso a proyectos@ cuando el cliente descarga un archivo de Presupuesto o Programación, con el enlace al archivo en OneDrive
+async function avisoDescarga(encargoId: string, archivo: string, carpeta: string, web: string) {
+  try {
+    const { data: ig } = await admin.from("integraciones").select("refresh_token").eq("id", "onedrive").maybeSingle();
+    const { data: e } = await admin.from("encargos").select("nombre").eq("id", encargoId).maybeSingle();
+    const r = await fetch(`https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ client_id: CLIENTE, client_secret: Deno.env.get("MS_CLIENT_SECRET") ?? "", scope: "offline_access Mail.Send", grant_type: "refresh_token", refresh_token: ig?.refresh_token || "" }) });
+    const tk = await r.json(); if (!r.ok) return;
+    const html = membrete(`${CEJA("El cliente descargó un documento")}
+      <h2 style="margin:0 0 6px;font-weight:400;font-size:22px;line-height:1.3">${escH(e?.nombre || "")}</h2>
+      <p style="color:#7A7A7A;margin:0 0 18px">${new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" })} · ${escH(carpeta)}</p>
+      <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${escH(archivo)}</p>
+      ${web ? `<p style="margin:22px 0 0"><a href="${escH(web)}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Abrir en OneDrive</a></p>` : ""}`);
+    await fetch("https://graph.microsoft.com/v1.0/me/sendMail", { method: "POST", headers: { Authorization: `Bearer ${tk.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: { subject: `El cliente descargó un documento · ${e?.nombre || ""}`, body: { contentType: "HTML", content: html }, toRecipients: [{ emailAddress: { address: "proyectos@regenerativo.co" } }] }, saveToSentItems: false }) });
+  } catch (_) { /* el aviso no detiene la descarga */ }
+}
 const codificar = (u: string) => "u!" + btoa(unescape(encodeURIComponent(u))).replace(/=+$/, "").replace(/\//g, "_").replace(/\+/g, "-");
 
 Deno.serve(async (req) => {
@@ -49,6 +76,7 @@ Deno.serve(async (req) => {
         if (!/^(PRESUPUESTO|PROGRAMACI[OÓ]N)\//.test(ruta) || partes.some((x) => !x || x === ".." || oculto(x))) return json({ error: "Sin acceso." }, 403);
         const it = await G(ruta);
         if (!it?.file || !it["@microsoft.graph.downloadUrl"]) return json({ error: "No se encontró el archivo." }, 404);
+        if (!esAdmin && !(k?.refresh_token && b.clave === k.refresh_token)) await avisoDescarga(b.encargo_id, it.name, partes.slice(0, -1).join(" / "), it.webUrl || "");
         return json({ url: it["@microsoft.graph.downloadUrl"], nombre: it.name });
       }
       const raices = b.modulo === "presupuesto" ? ["PRESUPUESTO"] : ["PROGRAMACIÓN", "PROGRAMACION"];
