@@ -38,9 +38,9 @@ async function correosCliente(encargoId: string): Promise<string[]> {
 const MEMB = "https://regenerativo.co/portal/assets/correo";
 const membrete = (contenido: string) => `<!doctype html><html><head><meta charset="utf-8"><style>@font-face{font-family:"Metronic Pro";src:url(https://regenerativo.co/portal/assets/fonts/metronic-regular.woff) format("woff")}</style></head>
 <body style="margin:0;padding:24px 0;background:#F4F4F2"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#fff;border-collapse:collapse">
-<tr><td style="padding:26px 36px 0"><img src="${MEMB}/membrete-sup.png" width="528" alt="ARQUITECTURA I DISEÑO DE ESPACIOS · Portal de encargos" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:26px 36px 0"><img src="${MEMB}/membrete-sup.png" width="528" alt="PORTAL DE ENCARGOS · regenerativo" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
 <tr><td style="padding:30px 36px 8px;font-family:'Metronic Pro',Arial,sans-serif;color:#1D1D1B;font-size:15px;line-height:1.55">${contenido}</td></tr>
-<tr><td style="padding:34px 36px 26px"><img src="${MEMB}/membrete-inf.png" width="528" alt="Por _ regenerativo · info@regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:34px 36px 26px"><img src="${MEMB}/membrete-inf.png" width="528" alt="Área de Proyectos · Por _ regenerativo · www.regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
 </table></body></html>`;
 const CEJA = (t: string) => `<p style="margin:0 0 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#BFBFBF">${t}</p>`;
 const BOTON = (url: string) => `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Ver en el portal</a></p>`;
