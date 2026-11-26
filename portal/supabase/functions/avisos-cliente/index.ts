@@ -123,15 +123,17 @@ async function revisar() {
     if (hay && para.length) {
       atCorreo = atCorreo || await token("offline_access Mail.Send");
       const partes: string[] = [];
-      if (nuevosAll.length) partes.push(`<p style="font-size:15px;line-height:1.5">${nuevosAll.length === 1 ? "Hay un documento nuevo" : `Hay ${nuevosAll.length} documentos nuevos`} en Legales:</p>
-        <ul style="list-style:none;margin:0;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${nuevosAll.map((d) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${esc(d.nombre)}</li>`).join("")}</ul>`);
-      for (const [pre, nom] of [["PRESUPUESTO", "Presupuesto"], ["PROGRAMACI", "Programación"]]) {
-        const l = nuevosObra.filter((d) => d.ruta.startsWith(pre)); if (!l.length) continue;
-        partes.push(`<p style="font-size:15px;line-height:1.5">${l.length === 1 ? "Hay un archivo nuevo" : `Hay ${l.length} archivos nuevos`} en <b>${nom}</b>:</p>
-        <ul style="list-style:none;margin:0;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${l.map((d) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${d.ruta.split("/").length > 2 ? `<span style="color:#7A7A7A">${esc(d.ruta.split("/").slice(1, -1).join(" / "))}</span>&nbsp;&nbsp;` : ""}${esc(d.nombre)}</li>`).join("")}</ul>`);
+      // Por cada carpeta del portal (Presupuesto, Legales…) arriba su nombre y abajo las subcarpetas con algo nuevo o actualizado
+      const RAIZ: Record<string, string> = { LEGALES: "Legales", PRESUPUESTO: "Presupuesto", "PROGRAMACIÓN": "Programación", PROGRAMACION: "Programación", "DOC _ ENV": "Documentos", "DOC _ ENVIADOS": "Documentos" };
+      const grupos = new Map<string, Set<string>>();
+      for (const d of [...nuevosAll, ...nuevosObra, ...actualizados]) {
+        const s = d.ruta.split("/"); const r = RAIZ[s[0]] || s[0];
+        if (!grupos.has(r)) grupos.set(r, new Set());
+        grupos.get(r)!.add(s.length > 2 ? s.slice(1, -1).join(" / ") : d.nombre);
       }
-      if (actualizados.length) partes.push(`<p style="font-size:15px;line-height:1.5">Se ${actualizados.length === 1 ? "actualizó un documento" : `actualizaron ${actualizados.length} documentos`} del proyecto:</p>
-        <ul style="list-style:none;margin:0;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${actualizados.map((d) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${esc(d.nombre)}</li>`).join("")}</ul>`);
+      if (grupos.size) partes.push(`<p style="font-size:15px;line-height:1.5;margin:0 0 14px">Revisa los archivos nuevos en:</p>`);
+      for (const [r, l] of grupos) partes.push(`<p style="font-size:15px;line-height:1.5;margin:0 0 8px;font-weight:700;letter-spacing:.04em">${esc(r.toUpperCase())}</p>
+        <ul style="list-style:none;margin:0 0 22px;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${[...l].map((c) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${esc(c)}</li>`).join("")}</ul>`);
       if (avisarG) { const av = (t || []).length ? Math.round((t || []).reduce((s: number, x: any) => s + Number(x.avance || 0), 0) / (t || []).length * 100) : 0;
         partes.push(`<p style="font-size:15px;line-height:1.5">Se actualizó el <b>cronograma de obra</b> (${(t || []).length} actividades · avance promedio ${av} %).</p>`); }
       enviado = await enviarCliente(atCorreo, para, `Actualización · ${e.nombre}`, plantilla(e.nombre, partes.join("")));

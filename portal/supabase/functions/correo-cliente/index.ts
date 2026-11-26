@@ -93,10 +93,12 @@ async function revisarEnvios() {
       const para = await correosCliente(e.id);
       if (para.length) {
         atCorreo = atCorreo || await token("offline_access Mail.Send");
-        const items = nuevos.map((a) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${escH(a.nombre)}</li>`).join("");
+        // Solo las carpetas donde hay algo nuevo (los nombres de los archivos no van en el correo)
+        const carpetas = [...new Set(nuevos.map((a) => { const s = a.ruta.split("/"); return s.length > 2 ? s.slice(1, -1).join(" / ") : a.nombre; }))];
         const html = plantilla("Nuevos documentos", e.nombre,
-          `<p style="font-size:15px;line-height:1.5">Hola, te compartimos ${nuevos.length === 1 ? "un documento nuevo" : nuevos.length + " documentos nuevos"} del proyecto:</p>
-           <ul style="list-style:none;margin:0;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${items}</ul>`);
+          `<p style="font-size:15px;line-height:1.5;margin:0 0 14px">Revisa los archivos nuevos en:</p>
+           <p style="font-size:15px;line-height:1.5;margin:0 0 8px;font-weight:700;letter-spacing:.04em">DOCUMENTOS</p>
+           <ul style="list-style:none;margin:0;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${carpetas.map((c) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${escH(c)}</li>`).join("")}</ul>`);
         enviado = await enviar(atCorreo, para, `${nuevos.length === 1 ? "Nuevo documento" : "Nuevos documentos"} · ${e.nombre}`, html);
         if (!enviado) continue;   // se reintenta en la próxima revisión
       }
