@@ -383,14 +383,14 @@ async function subir(at: string, encargoId: string, carpeta: string, nombre: str
 // Membrete de los correos: encabezado y pie van como imagen (Stolzl se ve igual en cualquier correo); el texto en Metronic Pro con Arial de respaldo.
 const MEMB = "https://regenerativo.co/portal/assets/correo";
 const membrete = (contenido: string) => `<!doctype html><html><head><meta charset="utf-8"><style>@font-face{font-family:"Metronic Pro";src:url(https://regenerativo.co/portal/assets/fonts/metronic-regular.woff) format("woff")}</style></head>
-<body style="margin:0;padding:24px 0;background:#F4F4F2"><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#fff;border-collapse:collapse">
-<tr><td style="padding:26px 36px 0"><img src="${MEMB}/membrete-sup.png" width="528" alt="PORTAL DE ENCARGOS · regenerativo" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
-<tr><td style="padding:30px 36px 8px;font-family:'Metronic Pro',Arial,sans-serif;color:#1D1D1B;font-size:15px;line-height:1.55">${contenido}</td></tr>
-<tr><td style="padding:34px 36px 26px"><img src="${MEMB}/membrete-inf.png" width="528" alt="Área de Proyectos · Por _ regenerativo · www.regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:528px;max-width:100%;height:auto;border:0"></td></tr>
+<body style="margin:0;padding:0;background:#ffffff"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-collapse:collapse;margin:0">
+<tr><td style="padding:32px 32px 0"><img src="${MEMB}/membrete-sup.png" width="440" alt="PORTAL DE ENCARGOS · regenerativo" style="display:block;width:440px;max-width:100%;height:auto;border:0"></td></tr>
+<tr><td style="padding:30px 32px 8px;font-family:'Metronic Pro',Arial,sans-serif;color:#1D1D1B;font-size:15px;line-height:1.55">${contenido}</td></tr>
+<tr><td style="padding:34px 32px 32px"><img src="${MEMB}/membrete-inf.png" width="440" alt="Área de Proyectos · Por _ regenerativo · www.regenerativo.co · @_regenerativo_ · +57 320 215 0932" style="display:block;width:440px;max-width:100%;height:auto;border:0"></td></tr>
 </table></body></html>`;
-const CEJA = (t: string) => `<p style="margin:0 0 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#BFBFBF">${t}</p>`;
+const CEJA = (t: string) => `<p style="margin:0 0 6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#7A7A7A">${t}</p>`;
 const BOTON = (url: string) => `<p style="margin:24px 0"><a href="${url}" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Ver en el portal</a></p>`;
-const NOTA = `<p style="margin:0;color:#999;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.</p>`;
+const NOTA = `<p style="margin:0;color:#7A7A7A;font-size:12px">Entra en la pestaña Clientes con el nombre del encargo y tu contraseña.</p>`;
 async function avisoComentario(id: string) {
   const { data: c } = await admin.from("comentarios").select("id,texto,tipo,autor_nombre,avisado,creado,encargo:encargos(nombre,codigo)").eq("id", id).single();
   if (!c) throw new Error("Comentario no encontrado.");
@@ -404,10 +404,10 @@ async function avisoComentario(id: string) {
   } catch (_) { return { enviado: false, motivo: "Falta el permiso para enviar correos: reconecta OneDrive en Ajustes." }; }
   const e: any = c.encargo || {};
   const esc = (s: string) => (s || "").replace(/[&<>]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" } as any)[x]);
-  const html = membrete(`${CEJA(`${c.tipo === "duda" ? "Duda" : "Comentario"} de cliente · portal de encargos`)}
+  const html = membrete(`${CEJA(`${c.tipo === "duda" ? "Duda" : "Comentario"} de cliente`)}
     <h2 style="margin:0 0 6px;font-weight:400;font-size:22px;line-height:1.3">${esc(e.nombre)}</h2>
-    <p style="color:#999;margin:0 0 18px">${esc(c.autor_nombre || "Cliente")} · ${new Date(c.creado).toLocaleString("es-CO", { timeZone: "America/Bogota" })}</p>
-    <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${esc(c.texto).replace(/\n/g, "<br>")}</p>
+    <p style="color:#7A7A7A;margin:0 0 18px">${esc(c.autor_nombre || "Cliente")} · ${new Date(c.creado).toLocaleString("es-CO", { timeZone: "America/Bogota" })}</p>
+    <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${esc(c.texto).replace(/\n/g, "<br>")}</p>
     <p style="margin:24px 0"><a href="${PORTAL}#/encargos" style="display:inline-block;background:#1D1D1B;color:#fff;text-decoration:none;border-radius:999px;padding:11px 22px;font-size:14px">Responder en el portal</a></p>`);
   const r = await fetch("https://graph.microsoft.com/v1.0/me/sendMail", {
     method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" },
@@ -434,10 +434,10 @@ const escH = (s: string) => (s || "").replace(/[&<>]/g, (x) => ({ "&": "&amp;", 
 async function avisoCliente(encargoId: string, accion: string, archivo: string) {
   const { data: e } = await admin.from("encargos").select("nombre").eq("id", encargoId).maybeSingle();
   const cuando = new Date().toLocaleString("es-CO", { timeZone: "America/Bogota" });
-  const html = membrete(`${CEJA(`Portal de encargos · ${escH(accion)}`)}
+  const html = membrete(`${CEJA(escH(accion))}
     <h2 style="margin:0 0 6px;font-weight:400;font-size:22px;line-height:1.3">${escH(e?.nombre || "")}</h2>
-    <p style="color:#999;margin:0 0 18px">${cuando}</p>
-    <p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px">${escH(archivo)}</p>`);
+    <p style="color:#7A7A7A;margin:0 0 18px">${cuando}</p>
+    <p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0">${escH(archivo)}</p>`);
   return correoProyectos(`${accion} · ${e?.nombre || ""}`, html);
 }
 // ---- Avisos al cliente por correo (desde la cuenta de regenerativo) ----
@@ -479,10 +479,10 @@ async function revisarEnvios() {
       const para = await correosCliente(e.id);
       if (para.length) {
         atCorreo = atCorreo || await tokenCorreo();
-        const items = nuevos.map((a: any) => `<li style="margin:4px 0">${escH(a.nombre)}</li>`).join("");
-        const html = plantillaCliente("Portal de encargos · nuevos documentos", e.nombre,
+        const items = nuevos.map((a: any) => `<li style="padding:9px 0;border-bottom:1px dotted #CFCFCF">${escH(a.nombre)}</li>`).join("");
+        const html = plantillaCliente("Nuevos documentos", e.nombre,
           `<p style="font-size:15px;line-height:1.5">Hola, te compartimos ${nuevos.length === 1 ? "un documento nuevo" : nuevos.length + " documentos nuevos"} del proyecto:</p>
-           <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px">${items}</ul>`);
+           <ul style="list-style:none;margin:0;padding:0;font-size:15px;line-height:1.5;max-width:520px;border-top:1px dotted #CFCFCF">${items}</ul>`);
         enviado = await enviarCorreo(atCorreo, para, `${nuevos.length === 1 ? "Nuevo documento" : "Nuevos documentos"} · ${e.nombre}`, html);
         if (!enviado) continue;   // se reintenta en la próxima revisión
       }
@@ -501,9 +501,9 @@ async function avisoRespuesta(id: string) {
   if (!para.length) return { enviado: false, motivo: "El cliente no tiene correo para avisos (Ajustes del encargo)." };
   const at = await tokenCorreo();
   const nombre = (c as any).encargo?.nombre || "";
-  const html = plantillaCliente("Portal de encargos · respuesta de regenerativo", nombre,
-    `<p style="color:#999;margin:0 0 6px">Tu mensaje</p><p style="font-size:15px;line-height:1.5;margin:0 0 16px">${escH(c.texto).replace(/\n/g, "<br>")}</p>
-     <p style="color:#999;margin:0 0 6px">Respuesta</p><p style="font-size:16px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:16px;margin:0">${escH(c.respuesta).replace(/\n/g, "<br>")}</p>`);
+  const html = plantillaCliente("Respuesta de regenerativo", nombre,
+    `<p style="color:#7A7A7A;margin:0 0 6px">Tu mensaje</p><p style="font-size:15px;line-height:1.5;margin:0 0 16px">${escH(c.texto).replace(/\n/g, "<br>")}</p>
+     <p style="color:#7A7A7A;margin:0 0 6px">Respuesta</p><p style="font-size:16px;line-height:1.5;border-top:1px dotted #CFCFCF;border-bottom:1px dotted #CFCFCF;padding:12px 0;margin:0">${escH(c.respuesta).replace(/\n/g, "<br>")}</p>`);
   const ok = await enviarCorreo(at, para, `regenerativo respondió · ${nombre}`, html);
   if (ok) await admin.from("comentarios").update({ respuesta_avisada: new Date().toISOString() }).eq("id", id);
   return { enviado: ok };
