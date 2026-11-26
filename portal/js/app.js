@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=177';
-import * as M from './modulos.js?v=177';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=177';
-import { vistaPersonal } from './personal.js?v=177';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=177';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=177';
+import * as D from './datos.js?v=178';
+import * as M from './modulos.js?v=178';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=178';
+import { vistaPersonal } from './personal.js?v=178';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=178';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=178';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -714,8 +714,10 @@ function vistaComentarios(ctx, coms, pintar, pend = []) {
       <p class="sub">${admin ? 'Queda en el historial del encargo y el cliente la ve.' : 'Le llega al equipo de regenerativo y te respondemos aquí mismo.'}</p>
       ${formComentario(admin)}</section>
     <section class="panel"><div class="lv-card-cab"><h3>Conversación</h3><span class="lv-cuenta">${ab} sin resolver</span></div>
-      ${coms.length ? `<ul class="lv-hilo">${coms.map(c => itemComentario(c, admin)).join('')}</ul>` : '<p class="sub">Todavía no hay comentarios en este encargo.</p>'}</section>`);
+      ${coms.length ? `<ul class="lv-hilo">${coms.map(c => itemComentario(c, admin)).join('')}</ul>` : '<p class="sub">Todavía no hay comentarios en este encargo.</p>'}</section>
+    ${ctx.esCliente ? htmlResena(coms) : ''}`);
   montarComentario(ctx);
+  if (ctx.esCliente) montarResena(ctx, ctx.recargar);
   montarPendientes(ctx);
   document.querySelectorAll('.lv-resp-f').forEach(f => f.onsubmit = async ev => {
     ev.preventDefault();
@@ -770,9 +772,13 @@ const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
       <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? btnIco('archivo', 'Descargar en PDF', `data-${pref}="${i}" data-pdf="1"`) : ''}${btnIco('descargar', 'Descargar', `data-${pref}="${i}"`)}</span></li>`).join('')}</ul>` : '';
 async function enviadosCliente(ctx, pintar) {
-  pintar(`<section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>
+  const acceso = (mod, titulo, txt) => `<section class="panel cli-docs cli-acceso" id="cli-${mod}"><div class="cli-docs-cab"><div><h3>${titulo}</h3><p class="sub">${txt}</p></div>${icoCarpetaMod(ctx, mod)}</div></section>`;
+  pintar(`${htmlLegalesCli()}
+    <section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>
     <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos que tú o el personal requerido han compartido con nuestro equipo regenerativo.</p></div>
-      <button type="button" class="btn mini ico cli-subir" id="cli-subir" title="Compartir un documento" aria-label="Compartir un documento">${ico('subir')}</button><input type="file" id="cli-arch" multiple hidden aria-hidden="true" tabindex="-1"><p class="sub cli-subir-ayuda">PDF, imágenes, Word, Excel o planos, hasta 25 MB cada uno.</p><div class="aviso" id="cli-aviso" role="status" aria-live="polite"></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`);
+      <button type="button" class="btn mini ico cli-subir" id="cli-subir" title="Compartir un documento" aria-label="Compartir un documento">${ico('subir')}</button><input type="file" id="cli-arch" multiple hidden aria-hidden="true" tabindex="-1"><p class="sub cli-subir-ayuda">PDF, imágenes, Word, Excel o planos, hasta 25 MB cada uno.</p><div class="aviso" id="cli-aviso" role="status" aria-live="polite"></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>
+    ${acceso('presupuesto', 'Presupuesto', 'Cotizaciones, proveedores y documentos del presupuesto de obra.')}
+    ${acceso('gantt', 'Programación', 'Cronograma de obra y documentos de la programación.')}`);
   const bajar = (l, pref, caja) => caja.querySelectorAll(`[data-${pref}]`).forEach(b => b.onclick = async () => {
     const a = l[+b.dataset[pref]]; const t = b.innerHTML; b.disabled = true; b.textContent = '…';
     try { const d = await conLimite(D.onedrive('cli_archivo', { encargo_id: ctx.e.id, ruta: a.ruta, pdf: !!b.dataset.pdf }), 60000); bajarBase64(d.base64, d.nombre); }
@@ -789,7 +795,7 @@ async function enviadosCliente(ctx, pintar) {
     catch (err) { if (!document.body.contains(caja)) return; caja.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', id); caja.querySelector('[data-reintentar]').onclick = () => cargar(accion, id, pref, vacio, true); }
   };
   // Enviados y Recibidos se despliegan o se recogen tocando su título (Recibidos empieza recogido para no tener que bajar tanto)
-  document.querySelectorAll('.cli-docs').forEach(sec => {
+  document.querySelectorAll('.cli-docs:not(.cli-acceso)').forEach(sec => {
     const cab = sec.querySelector('.cli-docs-cab'); const h = cab.querySelector('h3');
     h.insertAdjacentHTML('beforeend', '<span class="cli-n"></span><svg class="cli-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>');
     cab.setAttribute('role', 'button'); cab.tabIndex = 0;
@@ -798,6 +804,7 @@ async function enviadosCliente(ctx, pintar) {
     cab.onclick = () => plegar(!sec.classList.contains('plegado'));
     cab.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); cab.onclick(); } };
   });
+  cargarLegalesCli(ctx);
   cargar('cli_enviados', 'cli-env', 'ie', 'Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.');
   cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
   $('#cli-subir').onclick = () => $('#cli-arch').click();
@@ -817,12 +824,33 @@ async function enviadosCliente(ctx, pintar) {
   };
 }
 
+// Reseña del proyecto (el cliente la ve al final de Comentarios)
+const htmlResena = (coms) => { const mias = coms.filter(c => c.tipo === 'resena'); return `<section class="panel resena"><h3>¿Cómo fue trabajar con regenerativo?</h3>
+      <p class="sub">Cuéntanos qué te gustó, qué podemos mejorar y cómo te sentiste en el proceso. Nos ayuda a crecer y a cuidar mejor cada encargo.</p>
+      <form id="f-resena"><div class="estrellas" role="radiogroup" aria-label="Calificación">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="estrella" data-n="${n}" aria-label="${n} de 5">${icoMenu('resena')}</button>`).join('')}</div>
+        <textarea id="t-resena" rows="5" placeholder="Tu reseña del proyecto, comentarios y mejoras para regenerativo…" required></textarea>
+        <button class="btn" type="submit">Enviar reseña</button><div class="aviso" id="a-resena"></div></form></section>
+      ${mias.length ? `<section class="panel"><h3>Tus reseñas</h3>${mias.map(c => `<div class="resena-item"><span class="estrellas mini">${'★'.repeat(c.calificacion || 0)}<i>${'★'.repeat(5 - (c.calificacion || 0))}</i></span><p>${esc(c.texto)}</p><span class="sub">${fecha(c.creado.slice(0, 10))}</span></div>`).join('')}</section>` : ''}`; };
+function montarResena(ctx, ir) {
+  const e = ctx.e; if (!$('#f-resena')) return;
+    let cal = 0;
+    document.querySelectorAll('.estrella').forEach(b => b.onclick = () => { cal = +b.dataset.n; document.querySelectorAll('.estrella').forEach(x => x.classList.toggle('on', +x.dataset.n <= cal)); });
+    $('#f-resena').onsubmit = async ev => {
+      ev.preventDefault(); const t = $('#t-resena').value.trim(); if (!t) return;
+      const b = ev.target.querySelector('button[type=submit]'); b.disabled = true;
+      try { await D.comentar(e.id, t, 'resena', e.cliente?.nombre || '', true, cal || null); $('#a-resena').textContent = '¡Gracias! Tu reseña nos llegó.'; setTimeout(ir, 1200); }
+      catch (err) { $('#a-resena').textContent = msg(err); b.disabled = false; }
+    };
+}
+
 // Legales para el cliente: las mismas carpetas de LEGALES del equipo (nombre tal cual en OneDrive), solo los PDF
-async function legalesCliente(ctx, pintar, fresco = false) {
-  pintar(`<section class="panel cli-docs" id="cli-leg"><div class="cli-docs-cab"><h3>Legales</h3><p class="sub">Propuesta, contratos, adendas, actas de entrega, cuentas de cobro y facturación del proyecto, en PDF.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`);
+// (dentro de Documentos, como primera sección)
+const htmlLegalesCli = () => `<section class="panel cli-docs" id="cli-leg"><div class="cli-docs-cab"><h3>Legales</h3><p class="sub">Propuesta, contratos, adendas, actas de entrega, cuentas de cobro y facturación del proyecto, en PDF.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`;
+async function cargarLegalesCli(ctx, fresco = false) {
+  const c0 = $('#cli-leg .cli-docs-l'); if (c0) c0.innerHTML = cargandoCli('Cargando documentos…');
   let secs;
   try { secs = (await conLimite(D.onedrive('cli_legales', { encargo_id: ctx.e.id }), 40000)).secciones || []; }
-  catch (err) { const c = $('#cli-leg .cli-docs-l'); if (!c) return; c.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', 'leg'); c.querySelector('[data-reintentar]').onclick = () => legalesCliente(ctx, pintar, true); return; }
+  catch (err) { const c = $('#cli-leg .cli-docs-l'); if (!c) return; c.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', 'leg'); c.querySelector('[data-reintentar]').onclick = () => cargarLegalesCli(ctx, true); return; }
   const caja = $('#cli-leg .cli-docs-l'); if (!caja) return;
   const ico = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
   secs.forEach(x => x.archivos.sort(porLlegada));
@@ -1382,10 +1410,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     if (k === 'presupuesto' && esCliente) return true;   // el cliente siempre ve Presupuesto (visor + icono de carpeta), en todos los encargos
     if (!e.tiene_obra && (k === 'presupuesto' || k === 'obra')) return false;
     if (e.tiene_diseno === false && k === 'tecnica') return false;
-    if (k === 'resena') return esCliente;
+    if (k === 'resena') return false;   // el cliente la ve al final de Comentarios
     if (k === 'enviados' && esCliente) return true;
     if (k === 'recibidos' && esCliente) return false;
-    if (k === 'legales' && esCliente) return true;
+    if (k === 'legales' && esCliente) return false;   // el cliente ve Legales dentro de Documentos
     if (k === 'ajustes' || k === 'carpetas' || k === 'legales' || k === 'obra' || k === 'tecnica') return admin;
     if (k === 'finanzas') return s.facturacion;
     if (['contrato', 'adendas'].includes(k)) return false;
@@ -1404,7 +1432,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     const l = MODULOS.filter(([k]) => visible(k) && !SIN_CONTEO.includes(k) && k !== 'comentarios' && n(k) > 0);
     return l.length ? l.map(([k, nom]) => `<a class="tile" href="${base}/${k}"><b>${n(k)}</b><span>${nom}</span></a>`).join('') : '<p class="sub">Todavía no hay documentos en los módulos.</p>';
   };
-  const nombreSec = esCliente && seccion === 'enviados' ? 'Documentos' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
+  const nombreSec = esCliente && (seccion === 'enviados' || seccion === 'legales') ? 'Documentos' : (MODULOS.find(m => m[0] === seccion) || [, 'Resumen'])[1];
   const encMarco = { nombre: e.nombre, href: base, volver: !esCliente };
   const pintar = (html, acciones = engranaje) => {
     marco(s, { titulo: esc(e.nombre), h1: seccion === 'resumen' ? esc(e.nombre) : nombreSec, menu: `<div id="menu-enc">${pintaMenu()}</div>`, enc: encMarco, html, acciones, eyebrow: seccion === 'resumen' ? ([e.cliente?.nombre, ...servs(e)].filter(Boolean).join(' · ') || 'Encargo') : e.nombre, bajada: seccion === 'resumen' ? [e.cliente?.nombre, e.servicio?.nombre].filter(Boolean).map(esc).join(' · ') : esc(e.nombre) });
@@ -1472,7 +1500,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
         ${panelPagos}
         <section class="panel"><h3>Tus documentos</h3>
           <div class="tarjetas-cli">${mods.map(([k, nom]) => `<a class="tarjeta-cli" href="${base}/${k}"><span class="tc-ico">${ico('archivo')}</span><span class="tc-txt"><b>${DESC[k] || nom}</b><span class="sub">${n(k)} documento${n(k) === 1 ? '' : 's'} · ver y descargar</span></span><span class="tc-flecha">›</span></a>`).join('')}
-            <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos</b><span class="sub">Enviados y recibidos del proyecto</span></span><span class="tc-flecha">›</span></a></div>
+            <a class="tarjeta-cli" href="${base}/enviados"><span class="tc-ico">${ico('descargar')}</span><span class="tc-txt"><b>Documentos</b><span class="sub">Legales, enviados, recibidos, presupuesto y programación</span></span><span class="tc-flecha">›</span></a></div>
         </section>
         <section class="panel lv-duda">
           <div class="lv-card-cab"><h3>¿Tienes una duda?</h3><a class="lv-link" href="${base}/comentarios">Ver conversación ${ico('ver')}</a></div>
@@ -1548,24 +1576,11 @@ async function vistaExpediente(s, codigo, seccion, sub) {
     return panelOneDrive($('#od'), e, FUENTES.legales, { titulo: 'Documentos', legales: true, nuevo: true });
   }
   if (seccion === 'resena') {
-    const mias = coms.filter(c => c.tipo === 'resena');
-    pintar(`<section class="panel resena"><h3>¿Cómo fue trabajar con regenerativo?</h3>
-      <p class="sub">Cuéntanos qué te gustó, qué podemos mejorar y cómo te sentiste en el proceso. Nos ayuda a crecer y a cuidar mejor cada encargo.</p>
-      <form id="f-resena"><div class="estrellas" role="radiogroup" aria-label="Calificación">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="estrella" data-n="${n}" aria-label="${n} de 5">${icoMenu('resena')}</button>`).join('')}</div>
-        <textarea id="t-resena" rows="5" placeholder="Tu reseña del proyecto, comentarios y mejoras para regenerativo…" required></textarea>
-        <button class="btn" type="submit">Enviar reseña</button><div class="aviso" id="a-resena"></div></form></section>
-      ${mias.length ? `<section class="panel"><h3>Tus reseñas</h3>${mias.map(c => `<div class="resena-item"><span class="estrellas mini">${'★'.repeat(c.calificacion || 0)}<i>${'★'.repeat(5 - (c.calificacion || 0))}</i></span><p>${esc(c.texto)}</p><span class="sub">${fecha(c.creado.slice(0, 10))}</span></div>`).join('')}</section>` : ''}`);
-    let cal = 0;
-    document.querySelectorAll('.estrella').forEach(b => b.onclick = () => { cal = +b.dataset.n; document.querySelectorAll('.estrella').forEach(x => x.classList.toggle('on', +x.dataset.n <= cal)); });
-    $('#f-resena').onsubmit = async ev => {
-      ev.preventDefault(); const t = $('#t-resena').value.trim(); if (!t) return;
-      const b = ev.target.querySelector('button[type=submit]'); b.disabled = true;
-      try { await D.comentar(e.id, t, 'resena', e.cliente?.nombre || '', true, cal || null); $('#a-resena').textContent = '¡Gracias! Tu reseña nos llegó.'; setTimeout(ir, 1200); }
-      catch (err) { $('#a-resena').textContent = msg(err); b.disabled = false; }
-    };
+    pintar(htmlResena(coms));
+    montarResena(ctx, ir);
     return;
   }
-  if (seccion === 'legales' && esCliente) return legalesCliente(ctx, pintar);
+  if (seccion === 'legales' && esCliente) return enviadosCliente(ctx, pintar);   // enlaces viejos a Legales → Documentos
   if (seccion === 'propuesta' && esCliente) {
     const v = web.propuesta > 0 && M.VISTAS.propuesta ? await M.VISTAS.propuesta(ctx) : null;
     return propuestaCliente(ctx, pintar, v);
