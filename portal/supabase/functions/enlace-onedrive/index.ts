@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
     const b = await req.json().catch(() => ({}));
     if (b.encargo_id && ["presupuesto", "gantt"].includes(b.modulo)) {
       const { data: rol } = await usuario.rpc("rol_en_encargo", { p_encargo: b.encargo_id });
-      if (!rol && !esAdmin) return json({ error: "Sin acceso." }, 403);
+      const { data: k } = b.clave ? await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle() : { data: null };
+      if (!rol && !esAdmin && !(k?.refresh_token && b.clave === k.refresh_token)) return json({ error: "Sin acceso." }, 403);
       const { data: e } = await admin.from("encargos").select("onedrive_carpeta").eq("id", b.encargo_id).single();
       if (!e?.onedrive_carpeta) return json({ error: "El encargo no tiene carpeta en OneDrive." }, 404);
       const at = await acceso();
