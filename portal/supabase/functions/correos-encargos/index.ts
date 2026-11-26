@@ -9,6 +9,8 @@ const CLIENTE = "5fb20396-2b10-470b-b028-86f4b6e9d9ca";
 const DESDE = "2026-01-01T00:00:00Z";
 const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const json = (c: unknown, s = 200) => new Response(JSON.stringify(c), { status: s, headers: { "Content-Type": "application/json" } });
+// Avisos automáticos del portal (gestión documental): no son correos del proyecto, no se guardan en Correos
+const esAviso = (s: string) => /^(Prueba · )?(Nuevo documento|Nuevos documentos|Actualización|regenerativo respondió|El cliente compartió un documento|El cliente descargó un documento) · /i.test((s || "").trim());
 const norm = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
 
 async function token() {
@@ -55,6 +57,7 @@ Deno.serve(async (req) => {
       const filas: any[] = [];
       for (const [ref, m] of vistos) {
         const fecha = m.sentDateTime || m.receivedDateTime; if (!fecha || fecha < DESDE) continue;
+        if (esAviso(m.subject)) continue;
         revisados++;
         const de = (m.from?.emailAddress?.address || "").toLowerCase();
         const para = [...(m.toRecipients || []), ...(m.ccRecipients || [])].map((x: any) => x.emailAddress?.address).filter(Boolean).join(", ");
@@ -94,6 +97,7 @@ Deno.serve(async (req) => {
       const filas: any[] = [];
       for (const [ref, m] of vistos) {
         const fecha = m.sentDateTime || m.receivedDateTime; if (!fecha || fecha < DESDE) continue;
+        if (esAviso(m.subject)) continue;
         const de = (m.from?.emailAddress?.address || "").toLowerCase();
         const dest = [...(m.toRecipients || []), ...(m.ccRecipients || [])].map((x: any) => (x.emailAddress?.address || "").toLowerCase()).filter(Boolean);
         if (interno(de) && dest.every(interno)) continue;   // solo correos con alguien de afuera

@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=178';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=179';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -473,6 +473,18 @@ export async function enlaceOneDrive(url) {
 export async function carpetaModulo(encargoId, modulo) {
   const { data, error } = await (await cliente()).functions.invoke('enlace-onedrive', { body: { encargo_id: encargoId, modulo } });
   if (error || data?.error || !data?.url) throw new Error(data?.error || 'No se pudo abrir la carpeta.');
+  return data.url;
+}
+
+/** Archivos de PRESUPUESTO o PROGRAMACIÓN por subcarpeta, y descarga directa de uno (Documentos del cliente). */
+export async function carpetaArchivos(encargoId, modulo) {
+  const { data, error } = await (await cliente()).functions.invoke('enlace-onedrive', { body: { accion: 'listar', encargo_id: encargoId, modulo } });
+  if (error || data?.error) throw new Error(data?.error || 'No se pudieron leer los documentos.');
+  return data.secciones || [];
+}
+export async function carpetaDescarga(encargoId, ruta) {
+  const { data, error } = await (await cliente()).functions.invoke('enlace-onedrive', { body: { accion: 'archivo', encargo_id: encargoId, ruta } });
+  if (error || data?.error || !data?.url) throw new Error(data?.error || 'No se pudo descargar.');
   return data.url;
 }
 

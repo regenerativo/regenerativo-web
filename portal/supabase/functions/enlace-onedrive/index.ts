@@ -2,6 +2,8 @@
 // POST {url} (webUrl de OneDrive) → {url} del enlace compartido (edición). Solo administración.
 // POST {encargo_id, modulo:'presupuesto'|'gantt'} → enlace de solo lectura a la carpeta PRESUPUESTO o PROGRAMACIÓN del encargo,
 //   para el icono de carpeta del visor (cualquier persona invitada al encargo, clientes incluidos).
+// POST {accion:'listar', encargo_id, modulo} → archivos de PRESUPUESTO o PROGRAMACIÓN por subcarpeta (sin carpetas ZL_), para Documentos del cliente.
+// POST {accion:'archivo', encargo_id, ruta} → enlace de descarga directa de un archivo de esas carpetas.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -31,6 +33,45 @@ Deno.serve(async (req) => {
     const usuario = createClient(URL_SB, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
     const { data: esAdmin } = await usuario.rpc("es_admin");
     const b = await req.json().catch(() => ({}));
+    if (b.encargo_id && (b.accion === "listar" || b.accion === "archivo")) {
+      const { data: rol } = await usuario.rpc("rol_en_encargo", { p_encargo: b.encargo_id });
+      const { data: k } = b.clave ? await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle() : { data: null };
+      if (!rol && !esAdmin && !(k?.refresh_token && b.clave === k.refresh_token)) return json({ error: "Sin acceso." }, 403);
+      const { data: e } = await admin.from("encargos").select("onedrive_carpeta").eq("id", b.encargo_id).single();
+      if (!e?.onedrive_carpeta) return json({ secciones: [] });
+      const at = await acceso();
+      const enc = (p: string) => p.split("/").map(encodeURIComponent).join("/");
+      const G = async (ruta: string, q = "") => { const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${e.onedrive_carpeta}/${ruta}`)}${q}`, { headers: { Authorization: `Bearer ${at}` } }); return r.ok ? await r.json() : null; };
+      const oculto = (n: string) => /^ZL_/i.test(n) || n.startsWith("~") || n.startsWith(".");
+      if (b.accion === "archivo") {
+        const ruta = String(b.ruta || "");
+        const partes = ruta.split("/");
+        if (!/^(PRESUPUESTO|PROGRAMACI[OÓ]N)\//.test(ruta) || partes.some((x) => !x || x === ".." || oculto(x))) return json({ error: "Sin acceso." }, 403);
+        const it = await G(ruta);
+        if (!it?.file || !it["@microsoft.graph.downloadUrl"]) return json({ error: "No se encontró el archivo." }, 404);
+        return json({ url: it["@microsoft.graph.downloadUrl"], nombre: it.name });
+      }
+      const raices = b.modulo === "presupuesto" ? ["PRESUPUESTO"] : ["PROGRAMACIÓN", "PROGRAMACION"];
+      for (const raiz of raices) {
+        const l = await G(raiz, ":/children?$top=200&$select=name,file,folder,lastModifiedDateTime");
+        if (!l) continue;
+        const sueltos: any[] = [], secciones: any[] = [];
+        const andar = async (rel: string, prof: number, out: any[]) => {
+          const h = await G(`${raiz}/${rel}`, ":/children?$top=200&$select=name,file,folder,lastModifiedDateTime");
+          for (const x of h?.value || []) { if (oculto(x.name)) continue; const r = `${rel}/${x.name}`;
+            if (x.file) out.push({ nombre: x.name, ruta: `${raiz}/${r}`, fecha: x.lastModifiedDateTime, sub: rel.split("/").slice(1).join(" / ") });
+            else if (x.folder && prof > 0) await andar(r, prof - 1, out); }
+        };
+        for (const x of l.value || []) {
+          if (oculto(x.name)) continue;
+          if (x.file) sueltos.push({ nombre: x.name, ruta: `${raiz}/${x.name}`, fecha: x.lastModifiedDateTime });
+          else if (x.folder) { const out: any[] = []; await andar(x.name, 2, out); secciones.push({ titulo: x.name, archivos: out }); }
+        }
+        if (sueltos.length) secciones.unshift({ titulo: raiz, archivos: sueltos });
+        return json({ secciones });
+      }
+      return json({ secciones: [] });
+    }
     if (b.encargo_id && ["presupuesto", "gantt"].includes(b.modulo)) {
       const { data: rol } = await usuario.rpc("rol_en_encargo", { p_encargo: b.encargo_id });
       const { data: k } = b.clave ? await admin.from("integraciones").select("refresh_token").eq("id", "cron").maybeSingle() : { data: null };

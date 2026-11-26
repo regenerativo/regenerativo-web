@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=178';
-import * as M from './modulos.js?v=178';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=178';
-import { vistaPersonal } from './personal.js?v=178';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=178';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=178';
+import * as D from './datos.js?v=179';
+import * as M from './modulos.js?v=179';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=179';
+import { vistaPersonal } from './personal.js?v=179';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=179';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=179';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -772,7 +772,7 @@ const listaPlanaCli = (l, pref) => l.length ? `<ul class="lv-docs">${l.map((a, i
       <span class="lv-doc-t"><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''}</span></span>
       <span class="lv-doc-acc">${/\.(docx?|xlsx?|pptx?)$/i.test(a.nombre) ? btnIco('archivo', 'Descargar en PDF', `data-${pref}="${i}" data-pdf="1"`) : ''}${btnIco('descargar', 'Descargar', `data-${pref}="${i}"`)}</span></li>`).join('')}</ul>` : '';
 async function enviadosCliente(ctx, pintar) {
-  const acceso = (mod, titulo, txt) => `<section class="panel cli-docs cli-acceso" id="cli-${mod}"><div class="cli-docs-cab"><div><h3>${titulo}</h3><p class="sub">${txt}</p></div>${icoCarpetaMod(ctx, mod)}</div></section>`;
+  const acceso = (mod, titulo, txt) => `<section class="panel cli-docs" id="cli-${mod}"><div class="cli-docs-cab"><h3>${titulo}</h3><p class="sub">${txt}</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>`;
   pintar(`${htmlLegalesCli()}
     <section class="panel cli-docs" id="cli-env"><div class="cli-docs-cab"><h3>Enviados</h3><p class="sub">Documentos que regenerativo te ha enviado a ti o al personal requerido para el desarrollo del proyecto.</p></div><div class="cli-docs-l">${cargandoCli('Cargando documentos…')}</div></section>
     <section class="panel cli-docs" id="cli-rec"><div class="cli-docs-cab"><h3>Recibidos</h3><p class="sub">Documentos que tú o el personal requerido han compartido con nuestro equipo regenerativo.</p></div>
@@ -805,6 +805,9 @@ async function enviadosCliente(ctx, pintar) {
     cab.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); cab.onclick(); } };
   });
   cargarLegalesCli(ctx);
+  cargarCarpetaCli(ctx, 'presupuesto'); cargarCarpetaCli(ctx, 'gantt');
+  const irA = (() => { try { const v = sessionStorage.getItem('reg-ir-a'); sessionStorage.removeItem('reg-ir-a'); return v; } catch (_) { return null; } })();
+  if (irA && $('#' + irA)) { const sec = $('#' + irA); sec.classList.remove('plegado'); setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150); }
   cargar('cli_enviados', 'cli-env', 'ie', 'Aquí aparecerán los planos, informes y archivos a medida que te los enviemos.');
   cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
   $('#cli-subir').onclick = () => $('#cli-arch').click();
@@ -822,6 +825,31 @@ async function enviadosCliente(ctx, pintar) {
     av.textContent = [ok ? `Listo: ${ok === 1 ? 'recibimos tu documento' : `recibimos ${ok} documentos`}. Ya aparece${ok === 1 ? '' : 'n'} en Recibidos.` : '', malos.length ? `No se pudo subir ${malos.join(' · ')}.` : ''].filter(Boolean).join(' ');
     cargar('cli_recibidos', 'cli-rec', 'ir', 'Todavía no has compartido documentos con nosotros.');
   };
+}
+
+// Presupuesto y Programación dentro de Documentos: cada subcarpeta con sus archivos (sin carpetas ZL_), como Legales
+async function cargarCarpetaCli(ctx, mod) {
+  const caja = $(`#cli-${mod} .cli-docs-l`); if (!caja) return;
+  caja.innerHTML = cargandoCli('Cargando documentos…');
+  let secs;
+  try { secs = await conLimite(D.carpetaArchivos(ctx.e.id, mod), 40000); }
+  catch (err) { if (!document.body.contains(caja)) return; caja.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', mod); caja.querySelector('[data-reintentar]').onclick = () => cargarCarpetaCli(ctx, mod); return; }
+  if (!document.body.contains(caja)) return;
+  const icoC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
+  secs.forEach(x => x.archivos.sort(porLlegada));
+  const pref = mod === 'gantt' ? 'pg' : 'pp';
+  caja.innerHTML = secs.length ? secs.map((x, j) => `<details class="cli-carpeta" ${x.archivos.length ? 'open' : ''}><summary>${icoC}<b>${esc(x.titulo)}</b><span class="sub">${x.archivos.length}</span></summary>
+      ${x.archivos.length ? listaPlanaCli(x.archivos, pref + j) : '<p class="sub cli-vacio">Todavía no hay documentos aquí.</p>'}</details>`).join('')
+    : `<p class="sub">Todavía no hay documentos de ${mod === 'gantt' ? 'programación' : 'presupuesto'}.</p>`;
+  caja.querySelectorAll('[data-pdf]').forEach(b => b.remove());   // aquí se baja el archivo tal cual
+  const n = $(`#cli-${mod} .cli-n`); if (n) n.textContent = secs.reduce((a, x) => a + x.archivos.length, 0) || '';
+  secs.forEach((x, j) => caja.querySelectorAll(`[data-${pref}${j}]`).forEach(b => b.onclick = async () => {
+    const a = x.archivos[+b.dataset[pref + j]]; const t = b.innerHTML; b.disabled = true; b.textContent = '…';
+    const w = window.open('', '_blank');
+    try { const u = await conLimite(D.carpetaDescarga(ctx.e.id, a.ruta), 30000); if (w && !w.closed) w.location.href = u; else location.href = u; }
+    catch (err) { if (w && !w.closed) w.close(); alert('No se pudo descargar: ' + msg(err)); }
+    b.disabled = false; b.innerHTML = t;
+  }));
 }
 
 // Reseña del proyecto (el cliente la ve al final de Comentarios)
@@ -1007,10 +1035,11 @@ async function programacionExcel(ctx, pintar) {
 }
 
 // Icono de carpeta del visor: abre en OneDrive (solo lectura) la carpeta PRESUPUESTO o PROGRAMACIÓN del encargo
-const icoCarpetaMod = (ctx, modulo) => btnIco('carpeta', modulo === 'gantt' ? 'Abrir la carpeta de programación' : 'Abrir la carpeta de presupuesto', `data-carpeta-mod="${modulo}" data-enc="${ctx.e.id}"`);
+const icoCarpetaMod = (ctx, modulo) => btnIco('carpeta', modulo === 'gantt' ? 'Ver los documentos de programación' : 'Ver los documentos de presupuesto', `data-carpeta-mod="${modulo}" data-enc="${ctx.e.id}"${ctx.esCliente ? ` data-docs="${ctx.base.replace(/^#/, '')}/enviados"` : ''}`);
 document.addEventListener('click', ev => {
   const b = ev.target.closest?.('[data-carpeta-mod]'); if (!b) return;
   ev.preventDefault();
+  if (b.dataset.docs) { try { sessionStorage.setItem('reg-ir-a', 'cli-' + b.dataset.carpetaMod); } catch (_) {} location.hash = b.dataset.docs; return; }
   const w = window.open('', '_blank');
   b.disabled = true;
   D.carpetaModulo(b.dataset.enc, b.dataset.carpetaMod)

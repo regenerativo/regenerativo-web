@@ -10429,3 +10429,5 @@ html body .lv .visor-cab > .sub { margin: 0; }
 html body .lv .cli-acceso .cli-docs-cab { cursor: default; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 html body .lv .cli-acceso .cli-docs-cab > div { min-width: 0; }
 html body .lv .cli-acceso .cli-docs-cab [data-carpeta-mod] { flex: none; }
+/* Al llegar desde el icono del visor, la sección no queda tapada por la barra de arriba */
+html body .lv .cli-docs { scroll-margin-top: 120px; }
