@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=179';
-import * as M from './modulos.js?v=179';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=179';
-import { vistaPersonal } from './personal.js?v=179';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=179';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=179';
+import * as D from './datos.js?v=180';
+import * as M from './modulos.js?v=180';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=180';
+import { vistaPersonal } from './personal.js?v=180';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=180';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=180';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -794,13 +794,13 @@ async function enviadosCliente(ctx, pintar) {
       const n = $(`#${id} .cli-n`); if (n) n.textContent = l.length ? String(l.length) : ''; }
     catch (err) { if (!document.body.contains(caja)) return; caja.innerHTML = errorCli('No se pudieron cargar los documentos en este momento.', id); caja.querySelector('[data-reintentar]').onclick = () => cargar(accion, id, pref, vacio, true); }
   };
-  // Enviados y Recibidos se despliegan o se recogen tocando su título (Recibidos empieza recogido para no tener que bajar tanto)
+  // Cada sección de Documentos se despliega o se recoge tocando su título; todas empiezan cerradas
   document.querySelectorAll('.cli-docs:not(.cli-acceso)').forEach(sec => {
     const cab = sec.querySelector('.cli-docs-cab'); const h = cab.querySelector('h3');
     h.insertAdjacentHTML('beforeend', '<span class="cli-n"></span><svg class="cli-chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>');
     cab.setAttribute('role', 'button'); cab.tabIndex = 0;
     const plegar = v => { sec.classList.toggle('plegado', v); cab.setAttribute('aria-expanded', String(!v)); };
-    plegar(sec.id === 'cli-rec');
+    plegar(true);   // todo empieza cerrado: el cliente abre lo que necesita
     cab.onclick = () => plegar(!sec.classList.contains('plegado'));
     cab.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); cab.onclick(); } };
   });
@@ -838,7 +838,7 @@ async function cargarCarpetaCli(ctx, mod) {
   const icoC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
   secs.forEach(x => x.archivos.sort(porLlegada));
   const pref = mod === 'gantt' ? 'pg' : 'pp';
-  caja.innerHTML = secs.length ? secs.map((x, j) => `<details class="cli-carpeta" ${x.archivos.length ? 'open' : ''}><summary>${icoC}<b>${esc(x.titulo)}</b><span class="sub">${x.archivos.length}</span></summary>
+  caja.innerHTML = secs.length ? secs.map((x, j) => `<details class="cli-carpeta"><summary>${icoC}<b>${esc(x.titulo)}</b><span class="sub">${x.archivos.length}</span></summary>
       ${x.archivos.length ? listaPlanaCli(x.archivos, pref + j) : '<p class="sub cli-vacio">Todavía no hay documentos aquí.</p>'}</details>`).join('')
     : `<p class="sub">Todavía no hay documentos de ${mod === 'gantt' ? 'programación' : 'presupuesto'}.</p>`;
   caja.querySelectorAll('[data-pdf]').forEach(b => b.remove());   // aquí se baja el archivo tal cual
@@ -882,7 +882,7 @@ async function cargarLegalesCli(ctx, fresco = false) {
   const caja = $('#cli-leg .cli-docs-l'); if (!caja) return;
   const ico = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
   secs.forEach(x => x.archivos.sort(porLlegada));
-  caja.innerHTML = secs.length ? secs.map((x, j) => `<details class="cli-carpeta" ${x.archivos.length ? 'open' : ''}><summary>${ico}<b>${esc(x.titulo)}</b><span class="sub">${x.archivos.length}</span></summary>
+  caja.innerHTML = secs.length ? secs.map((x, j) => `<details class="cli-carpeta"><summary>${ico}<b>${esc(x.titulo)}</b><span class="sub">${x.archivos.length}</span></summary>
       ${x.archivos.length ? listaPlanaCli(x.archivos, 'lg' + j) : '<p class="sub cli-vacio">Todavía no hay documentos aquí.</p>'}</details>`).join('')
     : '<p class="sub">Todavía no hay documentos legales para mostrar.</p>';
   secs.forEach((x, j) => caja.querySelectorAll(`[data-lg${j}]`).forEach(b => b.onclick = async () => {
