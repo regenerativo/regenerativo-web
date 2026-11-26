@@ -2,7 +2,8 @@
 // · documentos de DOC _ ENV y PDF de LEGALES que se ACTUALIZARON (los nuevos de DOC _ ENV los avisa revisar_envios)
 // · PDF nuevos de LEGALES
 // · archivos nuevos o actualizados en PRESUPUESTO y PROGRAMACIÓN (el cliente los abre desde el icono de carpeta de su portal)
-// · cambios del cronograma de obra (Gantt), máximo un aviso al día
+// · cambios del cronograma de obra (Gantt)
+// Máximo un correo al día por encargo: lo que cambie después se junta en el correo del día siguiente.
 // No avisa nada de carpetas internas (COOR…, carpetas ZL_), ni Word de legales, ni datos del resumen.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -112,7 +113,14 @@ async function revisar() {
     const avisarG = cambioG && Date.now() - ultimoG > 20 * 3600e3;   // máximo un aviso del cronograma al día
     const nuevo: any = { legales_base: true, obra_base: true, docs: docsAhora, gantt: cambioG && !avisarG ? est.gantt : firma, gantt_aviso: avisarG ? new Date().toISOString() : (est.gantt_aviso || null) };
     let enviado = false;
-    if ((actualizados.length || nuevosAll.length || nuevosObra.length || avisarG) && para.length) {
+    // Máximo un correo de actualización al día por encargo: si ya salió uno en las últimas 20 h, lo nuevo espera
+    // (no se guarda el estado, así la próxima revisión lo vuelve a encontrar y lo manda junto)
+    const hay = actualizados.length || nuevosAll.length || nuevosObra.length || avisarG;
+    if (hay && para.length && est.ultimo_aviso && Date.now() - new Date(est.ultimo_aviso).getTime() < 20 * 3600e3) {
+      res.push({ encargo: e.nombre, en_espera: true, siguiente: new Date(new Date(est.ultimo_aviso).getTime() + 20 * 3600e3).toISOString() });
+      continue;
+    }
+    if (hay && para.length) {
       atCorreo = atCorreo || await token("offline_access Mail.Send");
       const partes: string[] = [];
       if (nuevosAll.length) partes.push(`<p style="font-size:15px;line-height:1.5">${nuevosAll.length === 1 ? "Hay un documento nuevo" : `Hay ${nuevosAll.length} documentos nuevos`} en Legales:</p>
@@ -128,7 +136,8 @@ async function revisar() {
         partes.push(`<p style="font-size:15px;line-height:1.5">Se actualizó el <b>cronograma de obra</b> (${(t || []).length} actividades · avance promedio ${av} %).</p>`); }
       enviado = await enviarCliente(atCorreo, para, `Actualización · ${e.nombre}`, plantilla(e.nombre, partes.join("")));
       if (!enviado) continue;   // se reintenta en la próxima revisión (no se guarda el estado)
-    }
+      nuevo.ultimo_aviso = new Date().toISOString();
+    } else if (est.ultimo_aviso) nuevo.ultimo_aviso = est.ultimo_aviso;
     // Sin correo del cliente: se toma lo actual como base, para no avisar cosas viejas cuando se agregue el correo
     await admin.from("encargos").update({ avisos_cliente: nuevo }).eq("id", e.id);
     res.push({ encargo: e.nombre, base: primera, actualizados: actualizados.length, nuevos_legales: nuevosAll.length, nuevos_obra: nuevosObra.length, cronograma: avisarG, enviado, sin_correo: !para.length });
