@@ -1,5 +1,5 @@
 // Capa de datos: Supabase cuando está configurado; si no, modo demostración (localStorage).
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=176';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=177';
 
 // Demostración: sin base de datos, o abriendo regenerativo.co/portal/?demo (datos ficticios guardados solo en el navegador)
 export const MODO_DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || new URLSearchParams(location.search).has('demo');
@@ -467,6 +467,13 @@ export async function enlaceOneDrive(url) {
   const { data, error } = await (await cliente()).functions.invoke('enlace-onedrive', { body: { url } });
   if (error || data?.error || !data?.url) return url;
   _enlaces.set(url, data.url); return data.url;
+}
+
+/** Enlace de solo lectura a la carpeta PRESUPUESTO o PROGRAMACIÓN del encargo (icono de carpeta del visor). */
+export async function carpetaModulo(encargoId, modulo) {
+  const { data, error } = await (await cliente()).functions.invoke('enlace-onedrive', { body: { encargo_id: encargoId, modulo } });
+  if (error || data?.error || !data?.url) throw new Error(data?.error || 'No se pudo abrir la carpeta.');
+  return data.url;
 }
 
 // ---------------- Comentarios y dudas del cliente ----------------

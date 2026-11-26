@@ -1,5 +1,7 @@
 // Enlace "cualquiera con el enlace" de un documento o carpeta de OneDrive, para abrirlo desde el portal sin iniciar sesión en Microsoft.
 // POST {url} (webUrl de OneDrive) → {url} del enlace compartido (edición). Solo administración.
+// POST {encargo_id, modulo:'presupuesto'|'gantt'} → enlace de solo lectura a la carpeta PRESUPUESTO o PROGRAMACIÓN del encargo,
+//   para el icono de carpeta del visor (cualquier persona invitada al encargo, clientes incluidos).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -28,8 +30,24 @@ Deno.serve(async (req) => {
   try {
     const usuario = createClient(URL_SB, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } });
     const { data: esAdmin } = await usuario.rpc("es_admin");
-    if (!esAdmin) return json({ error: "Solo administración." }, 403);
     const b = await req.json().catch(() => ({}));
+    if (b.encargo_id && ["presupuesto", "gantt"].includes(b.modulo)) {
+      const { data: rol } = await usuario.rpc("rol_en_encargo", { p_encargo: b.encargo_id });
+      if (!rol && !esAdmin) return json({ error: "Sin acceso." }, 403);
+      const { data: e } = await admin.from("encargos").select("onedrive_carpeta").eq("id", b.encargo_id).single();
+      if (!e?.onedrive_carpeta) return json({ error: "El encargo no tiene carpeta en OneDrive." }, 404);
+      const at = await acceso();
+      const enc = (p: string) => p.split("/").map(encodeURIComponent).join("/");
+      for (const c of b.modulo === "presupuesto" ? ["PRESUPUESTO"] : ["PROGRAMACIÓN", "PROGRAMACION"]) {
+        const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${enc(`${e.onedrive_carpeta}/${c}`)}:/createLink`, { method: "POST", headers: { Authorization: `Bearer ${at}`, "Content-Type": "application/json" }, body: JSON.stringify({ type: "view", scope: "anonymous" }) });
+        if (r.status === 404) continue;
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d?.link?.webUrl) return json({ url: d.link.webUrl });
+        return json({ error: d?.error?.message || "No se pudo abrir la carpeta." }, 500);
+      }
+      return json({ error: "Todavía no hay carpeta para este módulo." }, 404);
+    }
+    if (!esAdmin) return json({ error: "Solo administración." }, 403);
     const url = String(b.url || "");
     if (!/^https:\/\/[a-z0-9-]+(-my)?\.sharepoint\.com\//i.test(url)) return json({ error: "Enlace no válido." }, 400);
     const at = await acceso();

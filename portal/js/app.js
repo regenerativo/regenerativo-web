@@ -1,9 +1,9 @@
-import * as D from './datos.js?v=176';
-import * as M from './modulos.js?v=176';
-import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=176';
-import { vistaPersonal } from './personal.js?v=176';
-import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=176';
-import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=176';
+import * as D from './datos.js?v=177';
+import * as M from './modulos.js?v=177';
+import { vistaFinanzas, modalMov, icoCat as icoCatF, cuentasEncargo } from './finanzas.js?v=177';
+import { vistaPersonal } from './personal.js?v=177';
+import { cop, fecha, pct, diasDeTrabajo, fechaCorte, DIAS_TRABAJO, ESTADOS_ENCARGO, AYUDA_ESTADOS, faseEncargo } from './formato.js?v=177';
+import { ico, icoMenu, btnIco, enlaceIco } from './iconos.js?v=177';
 
 // Avisos con la gráfica de regenerativo (no la ventana gris del sistema): aparecen abajo y se van solos
 window.alert = m => {
@@ -978,12 +978,26 @@ async function programacionExcel(ctx, pintar) {
   await pintarGantt(cab, cambio ? '<p class="sub">Se trajeron al portal los cambios hechos en el Excel.</p>' : '');
 }
 
+// Icono de carpeta del visor: abre en OneDrive (solo lectura) la carpeta PRESUPUESTO o PROGRAMACIÓN del encargo
+const icoCarpetaMod = (ctx, modulo) => btnIco('carpeta', modulo === 'gantt' ? 'Abrir la carpeta de programación' : 'Abrir la carpeta de presupuesto', `data-carpeta-mod="${modulo}" data-enc="${ctx.e.id}"`);
+document.addEventListener('click', ev => {
+  const b = ev.target.closest?.('[data-carpeta-mod]'); if (!b) return;
+  ev.preventDefault();
+  const w = window.open('', '_blank');
+  b.disabled = true;
+  D.carpetaModulo(b.dataset.enc, b.dataset.carpetaMod)
+    .then(u => { if (w && !w.closed) w.location.href = u; else location.href = u; })
+    .catch(err => { if (w && !w.closed) w.close(); b.insertAdjacentHTML('afterend', ` <span class="sub">${esc(msg(err))}</span>`); })
+    .finally(() => { b.disabled = false; });
+});
+
 async function visorDocumento(ctx, modulo, el) {
   el.innerHTML = '<p class="sub">Buscando el documento…</p>';
-  let r; try { r = await D.onedrive('visor', { encargo_id: ctx.e.id, modulo }); } catch (err) { el.innerHTML = `<p class="sub">No se pudo abrir el documento: ${esc(msg(err))}</p>`; return false; }
-  if (!r.archivo) { el.innerHTML = `<p class="sub">Todavía no hay un documento en la carpeta ${esc(r.carpeta || (modulo === 'gantt' ? 'PROGRAMACIÓN' : 'PRESUPUESTO'))}.</p>`; return false; }
+  const carpeta = icoCarpetaMod(ctx, modulo);
+  let r; try { r = await D.onedrive('visor', { encargo_id: ctx.e.id, modulo }); } catch (err) { el.innerHTML = `<div class="visor-cab"><p class="sub">No se pudo abrir el documento: ${esc(msg(err))}</p>${carpeta}</div>`; return false; }
+  if (!r.archivo) { el.innerHTML = `<div class="visor-cab"><p class="sub">Todavía no hay un documento en la carpeta ${esc(r.carpeta || (modulo === 'gantt' ? 'PROGRAMACIÓN' : 'PRESUPUESTO'))}.</p>${carpeta}</div>`; return false; }
   const a = r.archivo;
-  el.innerHTML = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · se edita en la carpeta y aquí se ve al día</span></div>${ctx.admin ? `<a class="btn mini sec" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en OneDrive ↗</a>` : ''}</div>
+  el.innerHTML = `<div class="visor-cab"><div><b>${esc(a.nombre.replace(/\.[^.]+$/, ''))}</b><span class="sub">Actualizado ${a.fecha ? fecha(a.fecha.slice(0, 10)) : ''} · se edita en la carpeta y aquí se ve al día</span></div><div class="visor-acc">${ctx.admin ? `<a class="btn mini sec" href="${esc(a.web)}" target="_blank" rel="noopener">Abrir en OneDrive ↗</a>` : ''}${carpeta}</div></div>
     ${a.vista ? `<div class="visor-marco"><iframe src="${esc(a.vista)}" title="${esc(a.nombre)}" loading="lazy" allowfullscreen></iframe></div>` : '<p class="sub">La vista previa no está disponible para este archivo.</p>'}`;
   return true;
 }
@@ -1365,6 +1379,7 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   const n = k => (web[k] || 0) + (od[k] || 0);
   const visible = k => {
     if (k === 'resumen' || k === 'comentarios') return true;
+    if (k === 'presupuesto' && esCliente) return true;   // el cliente siempre ve Presupuesto (visor + icono de carpeta), en todos los encargos
     if (!e.tiene_obra && (k === 'presupuesto' || k === 'obra')) return false;
     if (e.tiene_diseno === false && k === 'tecnica') return false;
     if (k === 'resena') return esCliente;
@@ -1557,9 +1572,10 @@ async function vistaExpediente(s, codigo, seccion, sub) {
   }
   if (seccion === 'gantt' && esCliente) {
     const v = web.gantt > 0 ? await M.VISTAS.gantt(ctx) : null;
-    pintar(v ? v.html : '<div class="vacio">Por ahora el cronograma de obra no se puede visualizar en el portal.</div>');
+    // El documento de la carpeta PROGRAMACIÓN (con el icono de carpeta) y, si existe, el cronograma del portal
+    pintar(`<section class="panel visor" id="visor"></section>` + (v ? v.html : ''));
     if (v?.montar) v.montar();
-    return;
+    return visorDocumento(ctx, 'gantt', $('#visor'));
   }
   if (seccion === 'gantt' && !D.MODO_DEMO) return programacionExcel(ctx, pintar);
   if ((seccion === 'presupuesto' || seccion === 'gantt') && !D.MODO_DEMO) {

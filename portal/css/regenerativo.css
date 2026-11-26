@@ -10419,3 +10419,9 @@ html body .modal .cc-nota { margin: 10px 0 0; font-size: 12px; }
   html body .od-meta .pdf-estado { margin-left: 0; margin-top: 4px; }
   html body .od-fila .od-meta .btn[data-pdf] { display: inline-flex; margin: 4px 0 0 6px; }
 }
+/* Icono de carpeta del visor (Presupuesto y Programación) */
+html body .lv .visor-acc { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: none; }
+html body .lv .visor-cab { flex-wrap: nowrap; align-items: flex-start; }
+html body .lv .visor-cab > div:first-child { min-width: 0; }
+html body .lv .visor-cab > [data-carpeta-mod] { flex: none; }
+html body .lv .visor-cab > .sub { margin: 0; }

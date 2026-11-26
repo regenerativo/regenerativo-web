@@ -1,8 +1,9 @@
 // Avisos al cliente (solo de lo que él ve en su portal), cada hora con pg_cron (clave 'cron'):
 // · documentos de DOC _ ENV y PDF de LEGALES que se ACTUALIZARON (los nuevos de DOC _ ENV los avisa revisar_envios)
 // · PDF nuevos de LEGALES
+// · archivos nuevos o actualizados en PRESUPUESTO y PROGRAMACIÓN (el cliente los abre desde el icono de carpeta de su portal)
 // · cambios del cronograma de obra (Gantt), máximo un aviso al día
-// No avisa nada de carpetas internas (PRESUPUESTO, COOR…), ni Word de legales, ni datos del resumen.
+// No avisa nada de carpetas internas (COOR…, carpetas ZL_), ni Word de legales, ni datos del resumen.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TENANT = "d5bde326-cff3-4067-b8ed-8821209cee21";
@@ -13,6 +14,8 @@ const ENVIADOS = ["DOC _ ENV", "DOC _ ENVIADOS"];
 // Legales que ve el cliente en su portal (solo PDF)
 const LEGALES = [["LEGALES/00 PROPUESTA", "LEGALES/PROP _ ECONOMICAS"], ["LEGALES/01 CONTRATOS", "LEGALES/OPS CONTRATOS"], ["LEGALES/02 ADENDAS"],
   ["LEGALES/03 ACTAS DE ENTREGA", "LEGALES/04 ACTAS DE ENTREGA"], ["LEGALES/04 CUENTAS DE COBRO", "LEGALES/05 CUENTAS DE COBRO", "LEGALES/CUENTAS DE COBRO"], ["LEGALES/05 FACTURACION"]];
+// Carpetas que el cliente abre desde el visor de Presupuesto y Programación (todos los archivos)
+const CARPETAS_OBRA = [["PRESUPUESTO"], ["PROGRAMACIÓN", "PROGRAMACION"]];
 const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const json = (c: unknown, s = 200) => new Response(JSON.stringify(c), { status: s, headers: { "Content-Type": "application/json" } });
 const esc = (s: string) => String(s ?? "").replace(/[&<>"]/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" } as any)[x]);
@@ -42,7 +45,8 @@ async function documentos(at: string, base: string) {
   };
   for (const c of ENVIADOS) { const raiz = await hijos(at, `${base}/${c}`); if (!raiz) continue; await andar(c, raiz, 3, false); break; }
   for (const g of LEGALES) for (const c of g) { const raiz = await hijos(at, `${base}/${c}`); if (!raiz) continue; await andar(c, raiz, 3, true); break; }
-  return out.filter((d) => !/XXXX/.test(d.ruta));
+  for (const g of CARPETAS_OBRA) for (const c of g) { const raiz = await hijos(at, `${base}/${c}`); if (!raiz) continue; await andar(c, raiz, 3, false); break; }
+  return out.filter((d) => !/XXXX/.test(d.ruta) && !/(^|\/)ZL_/i.test(d.ruta) && !d.nombre.startsWith("~"));
 }
 // Membrete de los correos: encabezado y pie van como imagen (Stolzl se ve igual en cualquier correo); el texto en Metronic Pro con Arial de respaldo.
 const MEMB = "https://regenerativo.co/portal/assets/correo";
@@ -96,6 +100,9 @@ async function revisar() {
     const nuevosLegales = primera || !conLegalesAntes ? [] : docs.filter((d) => d.ruta.startsWith("LEGALES/") && !docsAntes[d.ruta]);
     const enEnv = new Set(docs.filter((d) => !d.ruta.startsWith("LEGALES/")).map((d) => d.nombre.toLowerCase()));
     const nuevosAll = nuevosLegales.filter((d) => !enEnv.has(d.nombre.toLowerCase()));   // si también se envió por DOC _ ENV, ya se avisó
+    // Archivos nuevos en PRESUPUESTO / PROGRAMACIÓN. La primera vez se toma como base.
+    const esObra = (r: string) => /^(PRESUPUESTO|PROGRAMACI[OÓ]N)\//.test(r);
+    const nuevosObra = primera || !est.obra_base ? [] : docs.filter((d) => esObra(d.ruta) && !docsAntes[d.ruta]);
     const docsAhora = Object.fromEntries(docs.map((d) => [d.ruta, d.fecha]));
     // 2. Cronograma de obra (lo que el cliente ve): nombre, fechas, avance
     const { data: t } = await admin.from("gantt_tareas").select("nombre,inicio_esperado,dias_esperados,inicio_real,fin_real,avance").eq("encargo_id", e.id).order("orden");
@@ -103,13 +110,18 @@ async function revisar() {
     const ultimoG = est.gantt_aviso ? new Date(est.gantt_aviso).getTime() : 0;
     const cambioG = !primera && est.gantt !== undefined && est.gantt !== firma && (t || []).length > 0;
     const avisarG = cambioG && Date.now() - ultimoG > 20 * 3600e3;   // máximo un aviso del cronograma al día
-    const nuevo: any = { legales_base: true, docs: docsAhora, gantt: cambioG && !avisarG ? est.gantt : firma, gantt_aviso: avisarG ? new Date().toISOString() : (est.gantt_aviso || null) };
+    const nuevo: any = { legales_base: true, obra_base: true, docs: docsAhora, gantt: cambioG && !avisarG ? est.gantt : firma, gantt_aviso: avisarG ? new Date().toISOString() : (est.gantt_aviso || null) };
     let enviado = false;
-    if ((actualizados.length || nuevosAll.length || avisarG) && para.length) {
+    if ((actualizados.length || nuevosAll.length || nuevosObra.length || avisarG) && para.length) {
       atCorreo = atCorreo || await token("offline_access Mail.Send");
       const partes: string[] = [];
       if (nuevosAll.length) partes.push(`<p style="font-size:15px;line-height:1.5">${nuevosAll.length === 1 ? "Hay un documento nuevo" : `Hay ${nuevosAll.length} documentos nuevos`} en Legales:</p>
         <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px">${nuevosAll.map((d) => `<li>${esc(d.nombre)}</li>`).join("")}</ul>`);
+      for (const [pre, nom] of [["PRESUPUESTO", "Presupuesto"], ["PROGRAMACI", "Programación"]]) {
+        const l = nuevosObra.filter((d) => d.ruta.startsWith(pre)); if (!l.length) continue;
+        partes.push(`<p style="font-size:15px;line-height:1.5">${l.length === 1 ? "Hay un archivo nuevo" : `Hay ${l.length} archivos nuevos`} en <b>${nom}</b>:</p>
+        <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px">${l.map((d) => `<li>${esc(d.ruta.split("/").slice(1).join(" / "))}</li>`).join("")}</ul>`);
+      }
       if (actualizados.length) partes.push(`<p style="font-size:15px;line-height:1.5">Se ${actualizados.length === 1 ? "actualizó un documento" : `actualizaron ${actualizados.length} documentos`} del proyecto:</p>
         <ul style="font-size:15px;line-height:1.5;background:#F3EFE6;border-radius:14px;padding:14px 14px 14px 34px">${actualizados.map((d) => `<li>${esc(d.nombre)}</li>`).join("")}</ul>`);
       if (avisarG) { const av = (t || []).length ? Math.round((t || []).reduce((s: number, x: any) => s + Number(x.avance || 0), 0) / (t || []).length * 100) : 0;
@@ -119,7 +131,7 @@ async function revisar() {
     }
     // Sin correo del cliente: se toma lo actual como base, para no avisar cosas viejas cuando se agregue el correo
     await admin.from("encargos").update({ avisos_cliente: nuevo }).eq("id", e.id);
-    res.push({ encargo: e.nombre, base: primera, actualizados: actualizados.length, nuevos_legales: nuevosAll.length, cronograma: avisarG, enviado, sin_correo: !para.length });
+    res.push({ encargo: e.nombre, base: primera, actualizados: actualizados.length, nuevos_legales: nuevosAll.length, nuevos_obra: nuevosObra.length, cronograma: avisarG, enviado, sin_correo: !para.length });
   }
   return { revisados: res.length, desde: comoProyectos === false ? CORREO_APARDO : comoProyectos ? CORREO_PROYECTOS : null, detalle: res };
 }
