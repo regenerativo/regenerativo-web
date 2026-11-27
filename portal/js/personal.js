@@ -1,9 +1,9 @@
 // Finanzas personales de Andrés: lo mismo que tenía en MONAI (categorías y etiquetas en inglés, como él las escribe),
 // con Movimientos y Rendimiento como las finanzas de regenerativo. Tres tipos: ingreso, gasto y ahorro (el ahorro no cuenta como gasto).
-import * as D from './datos.js?v=181';
-import { cop, fecha, iso } from './formato.js?v=181';
-import { btnIco, ico } from './iconos.js?v=181';
-import { barras } from './finanzas.js?v=181';
+import * as D from './datos.js?v=182';
+import { cop, fecha, iso } from './formato.js?v=182';
+import { btnIco, ico } from './iconos.js?v=182';
+import { barras } from './finanzas.js?v=182';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -105,7 +105,7 @@ export async function vistaPersonal(mesSel) {
       <label class="per-sel per-proy"><span>Etiqueta</span><select id="sel-eti"><option value="">Todas</option>${etis.map(t => `<option value="${esc(t.nombre)}" ${t.nombre === ESTADO.eti ? 'selected' : ''}>#${esc(t.nombre)}</option>`).join('')}</select></label></div>`;
 
   const htmlMov = aclarar + `
-    <div class="fin-mon">
+    <div class="fin-mon${modoAnio ? ' solo-anio' : ''}">
       <section class="mon">
         <div class="mon-total">
           <div class="mon-et">Disponible ${modoAnio ? 'del año' : 'del mes'}</div>
@@ -119,11 +119,12 @@ export async function vistaPersonal(mesSel) {
         <p class="sub mon-ley">Ingresos &nbsp; <span class="ley-pres"></span>Esperado &nbsp; <span class="ley-gas"></span>Gastado &nbsp; <span class="ley-aho"></span>Ahorro${presTot ? ` &nbsp;·&nbsp; ${Math.round(gas / presTot * 100)} % de lo esperado` : ''}</p>
         <div class="mon-mas"><button class="btn sec mini btn-ing" data-nuevo="ingreso">+ Ingreso</button><button class="btn sec mini btn-aho" data-nuevo="ahorro">+ Ahorro</button><button class="btn mini btn-gas" data-nuevo="gasto">+ Gasto</button></div>
       </section>
-      <section class="panel fin-lado">
+      ${modoAnio ? '' : `      <section class="panel fin-lado">
         <div class="od-cab"><h3>Movimientos del ${modoAnio ? 'año' : 'mes'}</h3><span class="sub">${delPer.length}</span></div>
         ${delPer.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar: concepto, categoría, #etiqueta, valor…">' : ''}
         ${delPer.length ? `<div class="lista-filas" id="lista-per">${delPer.slice(0, TANDA).map(fila).join('')}</div>${delPer.length > TANDA ? `<button type="button" class="btn sec mini" id="ver-mas-mov">Ver más (${delPer.length - TANDA})</button>` : ''}` : `<p class="sub">No hay movimientos ${modoAnio ? 'este año' : 'este mes'}${ESTADO.eti ? ' con esa etiqueta' : ''}.</p>`}
       </section>
+`}
     </div>
     <section class="panel panel-anio"><div class="od-cab"><h3>Ingresos y gastos</h3><span class="graf-vistas" role="group" aria-label="Periodo"><button type="button" class="chip-f${ESTADO.graf === 'anio' ? ' on' : ''}" data-graf="anio">Año ${a}</button><button type="button" class="chip-f${ESTADO.graf === 'seis' ? ' on' : ''}" data-graf="seis">6 meses</button></span></div>
       ${ESTADO.graf === 'anio' ? barras(serieAnio) + tablaAnio : barras(serie6)}</section>`;
