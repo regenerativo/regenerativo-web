@@ -1,9 +1,9 @@
 // Finanzas personales de Andrés: lo mismo que tenía en MONAI (categorías y etiquetas en inglés, como él las escribe),
 // con Movimientos y Rendimiento como las finanzas de regenerativo. Tres tipos: ingreso, gasto y ahorro (el ahorro no cuenta como gasto).
-import * as D from './datos.js?v=180';
-import { cop, fecha, iso } from './formato.js?v=180';
-import { btnIco, ico } from './iconos.js?v=180';
-import { barras } from './finanzas.js?v=180';
+import * as D from './datos.js?v=181';
+import { cop, fecha, iso } from './formato.js?v=181';
+import { btnIco, ico } from './iconos.js?v=181';
+import { barras } from './finanzas.js?v=181';
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,6 +15,7 @@ const conHora = x => fecha(x.fecha) + (x.hora ? ' · ' + horaTxt(x.hora) : '');
 const masReciente = (a, b) => (a.fecha + (a.hora || '')) < (b.fecha + (b.hora || '')) ? 1 : -1;
 const TIPOS = { ingreso: 'Ingreso', gasto: 'Gasto', ahorro: 'Ahorro' };
 const SIGNO = { ingreso: '+', gasto: '−', ahorro: '' };
+const TANDA = 60;
 const ESTADO = { vista: 'mov', graf: 'anio', eti: '', presModo: 'base', presVista: 'mes', abierto: '', crecIng: 0, crecGas: 0, aclarar: false };
 const emoji = c => `<span class="per-emo" style="--c:${esc(c?.color || '#BFBFBF')}">${esc(c?.emoji || '·')}</span>`;
 const DIEZMO = ['ministerio_diezmo', 'savings_diezmo'];
@@ -121,7 +122,7 @@ export async function vistaPersonal(mesSel) {
       <section class="panel fin-lado">
         <div class="od-cab"><h3>Movimientos del ${modoAnio ? 'año' : 'mes'}</h3><span class="sub">${delPer.length}</span></div>
         ${delPer.length > 3 ? '<input type="search" id="buscar-mov" class="buscar-mov" placeholder="Buscar: concepto, categoría, #etiqueta, valor…">' : ''}
-        ${delPer.length ? `<div class="lista-filas">${delPer.map(fila).join('')}</div>` : `<p class="sub">No hay movimientos ${modoAnio ? 'este año' : 'este mes'}${ESTADO.eti ? ' con esa etiqueta' : ''}.</p>`}
+        ${delPer.length ? `<div class="lista-filas" id="lista-per">${delPer.slice(0, TANDA).map(fila).join('')}</div>${delPer.length > TANDA ? `<button type="button" class="btn sec mini" id="ver-mas-mov">Ver más (${delPer.length - TANDA})</button>` : ''}` : `<p class="sub">No hay movimientos ${modoAnio ? 'este año' : 'este mes'}${ESTADO.eti ? ' con esa etiqueta' : ''}.</p>`}
       </section>
     </div>
     <section class="panel panel-anio"><div class="od-cab"><h3>Ingresos y gastos</h3><span class="graf-vistas" role="group" aria-label="Periodo"><button type="button" class="chip-f${ESTADO.graf === 'anio' ? ' on' : ''}" data-graf="anio">Año ${a}</button><button type="button" class="chip-f${ESTADO.graf === 'seis' ? ' on' : ''}" data-graf="seis">6 meses</button></span></div>
@@ -161,7 +162,14 @@ export async function vistaPersonal(mesSel) {
       f.querySelector('[data-agregar]').onclick = () => { f.remove(); modalMov({ tipo: t, fecha: iso(new Date()), categoria_id: id || null, etiquetas: [] }, cats, etis, recargar, proys); };
       f.querySelectorAll('[data-editar]').forEach(r => r.onclick = () => { f.remove(); modalMov(movs.find(x => x.id === r.dataset.editar), cats, etis, recargar, proys); });
     });
-    const bm = $('#buscar-mov'); if (bm) bm.oninput = () => { const t = bm.value.toLowerCase().replace(/^#/, '').trim(); document.querySelectorAll('.fin-lado .mov-fila[data-buscar]').forEach(f => { f.hidden = !!t && !f.dataset.buscar.includes(t); }); };
+    // Lista por tandas (todo el año son cientos de filas: en el iPhone pesaban demasiado)
+    let pintadas = Math.min(TANDA, delPer.length);
+    const mas = (hasta) => { const l = $('#lista-per'); if (!l || pintadas >= delPer.length) return;
+      const n = Math.min(delPer.length, hasta); l.insertAdjacentHTML('beforeend', delPer.slice(pintadas, n).map(fila).join(''));
+      l.querySelectorAll('[data-editar]').forEach(b => b.onclick = () => modalMov(movs.find(x => x.id === b.dataset.editar), cats, etis, recargar, proys));
+      pintadas = n; const bt = $('#ver-mas-mov'); if (bt) { if (pintadas >= delPer.length) bt.remove(); else bt.textContent = `Ver más (${delPer.length - pintadas})`; } };
+    const vm = $('#ver-mas-mov'); if (vm) vm.onclick = () => mas(pintadas + TANDA);
+    const bm = $('#buscar-mov'); if (bm) bm.oninput = () => { if (bm.value.trim()) mas(delPer.length); const t = bm.value.toLowerCase().replace(/^#/, '').trim(); document.querySelectorAll('.fin-lado .mov-fila[data-buscar]').forEach(f => { f.hidden = !!t && !f.dataset.buscar.includes(t); }); };
     document.querySelectorAll('[data-graf]').forEach(b => b.onclick = () => { ESTADO.graf = b.dataset.graf; const y = scrollY; recargar(); requestAnimationFrame(() => scrollTo(0, y)); });
     document.querySelectorAll('[data-ir-mes]').forEach(tr => tr.onclick = () => { location.hash = `#/personal/${tr.dataset.irMes}`; scrollTo(0, 0); });
     document.querySelectorAll('.g-col').forEach(c => {
